@@ -1,9 +1,9 @@
 <?php
 
-$host = '185.56.170.138';
-$db   = 'baseweb';
-$user = 'baseweb_user';
-$pass = 'BaSe!!SQLpaSS10';
+$host = '127.0.0.1';
+$db   = 'b2bbicap';
+$user = 'root';
+$pass = '';
 $port = "3306";
 $charset = 'utf8mb4';
 
