@@ -12,7 +12,11 @@ class AgentController extends Controller
      */
     public function index()
     {
-        $agents = \App\Models\User::where('role', 'agent')->with('b2bBrands', 'b2bCustomers')->get();
+        $agents = \App\Models\User::where('role', 'agent')
+            ->with('b2bBrands', 'b2bCustomers')
+            ->withCount('b2bOrders')
+            ->withSum('b2bOrders', 'total_amount')
+            ->get();
         return view('admin.b2b.agents.index', compact('agents'));
     }
 

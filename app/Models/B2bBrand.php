@@ -12,4 +12,9 @@ class B2bBrand extends Model
     {
         return $this->belongsToMany(User::class, 'agent_brand', 'b2b_brand_id', 'user_id');
     }
+
+    public function products()
+    {
+        return $this->hasMany(B2bProduct::class, 'b2b_brand_id');
+    }
 }

@@ -41,7 +41,7 @@ class AuthenticatedSessionController extends Controller
             } else {
                 $fallbackRoute = route('dashboard', absolute: false);
             }
-        } elseif ($request->user()->role === 'agent') {
+        } elseif ($request->user()->role === 'agent' || ($request->user()->role === 'customer' && $request->user()->b2b_customer_id !== null)) {
             $fallbackRoute = route('agent.dashboard', absolute: false);
         } else {
             $fallbackRoute = route('public.account.dashboard', absolute: false);
@@ -56,6 +56,7 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $role = $request->user()?->role;
+        $isB2bCustomer = $request->user()?->b2b_customer_id !== null;
 
         Auth::guard('web')->logout();
 
@@ -63,7 +64,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        if ($role === 'admin' || $role === 'agent') {
+        if ($role === 'admin' || $role === 'agent' || ($role === 'customer' && $isB2bCustomer)) {
             return redirect()->route('login');
         }
 

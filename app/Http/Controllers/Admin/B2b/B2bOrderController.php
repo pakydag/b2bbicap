@@ -10,10 +10,54 @@ class B2bOrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = \App\Models\B2bOrder::with('agent', 'customer')->latest()->get();
-        return view('admin.b2b.orders.index', compact('orders'));
+        $query = \App\Models\B2bOrder::with('agent', 'customer');
+
+        if ($request->filled('agent_id')) {
+            $query->where('agent_id', $request->agent_id);
+        }
+
+        if ($request->filled('customer_id')) {
+            $query->where('b2b_customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('business_name', 'like', "%{$search}%")
+                         ->orWhere('vat_number', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('agent', function ($aq) use ($search) {
+                      $aq->where('name', 'like', "%{$search}%")
+                         ->orWhere('surname', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $orders = $query->latest()->get();
+
+        $agents = \App\Models\User::where('role', 'agent')->orderBy('name')->get();
+        $customers = \App\Models\B2bCustomer::orderBy('business_name')->get();
+
+        return view('admin.b2b.orders.index', compact('orders', 'agents', 'customers'));
+    }
+
+    public function pdf(\App\Models\B2bOrder $order)
+    {
+        $order->load(['agent', 'customer', 'items.product', 'items.variant']);
+        return view('admin.b2b.orders.pdf', compact('order'));
+    }
+
+    public function show(\App\Models\B2bOrder $order)
+    {
+        return $this->edit($order);
     }
 
     public function edit(\App\Models\B2bOrder $order)
@@ -24,6 +68,10 @@ class B2bOrderController extends Controller
 
     public function update(Request $request, \App\Models\B2bOrder $order)
     {
+        if ($order->status === 'confirmed') {
+            return redirect()->back()->with('error', 'L\'ordine #' . $order->id . ' è stato già confermato e non può più essere modificato.');
+        }
+
         $request->validate([
             'status' => 'required|in:pending,confirmed,cancelled',
             'payment_method' => 'nullable|string',
@@ -53,7 +101,10 @@ class B2bOrderController extends Controller
             $order->update(['total_amount' => $total]);
         }
 
-        return redirect()->route('admin.b2b.orders.edit', $order)->with('success', 'Ordine aggiornato con successo.');
+        // Genera ed invia il file CSV dell'ordine nella cartella Input su FTP
+        app(\App\Http\Controllers\Agent\AgentPortalController::class)->exportOrderToFtpCsv($order);
+
+        return redirect()->route('admin.b2b.orders.edit', $order)->with('success', 'Ordine aggiornato ed inviato a FTP con successo.');
     }
 
     public function sendOrderCopy(Request $request, \App\Models\B2bOrder $order)

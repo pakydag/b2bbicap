@@ -8,7 +8,8 @@ class B2bCustomer extends Model
 {
     protected $fillable = [
         'business_name', 'vat_number', 'contact_name', 
-        'contact_surname', 'phone', 'email', 'payment_condition_id'
+        'contact_surname', 'phone', 'email', 'payment_condition_id',
+        'b2b_price_list_id'
     ];
 
     public function paymentCondition()
@@ -16,9 +17,19 @@ class B2bCustomer extends Model
         return $this->belongsTo(B2bPaymentCondition::class, 'payment_condition_id');
     }
 
+    public function priceList()
+    {
+        return $this->belongsTo(B2bPriceList::class, 'b2b_price_list_id');
+    }
+
     public function agents()
     {
         return $this->belongsToMany(User::class, 'agent_customer', 'b2b_customer_id', 'user_id');
+    }
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'b2b_customer_id');
     }
 
     public function orders()

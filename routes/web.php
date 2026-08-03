@@ -12,7 +12,9 @@ use App\Http\Controllers\PublicController;
 use Illuminate\Support\Facades\Route;
 
 // Rotte Pubbliche (Homepage)
-Route::get('/', [PublicController::class, 'home'])->name('public.home');
+Route::get('/', function () {
+    return redirect()->route('login');
+})->name('public.home');
 
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['it', 'en'])) {
@@ -204,7 +206,10 @@ Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')-
         Route::resource('payment-conditions', \App\Http\Controllers\Admin\B2b\B2bPaymentConditionController::class);
         Route::resource('customers', \App\Http\Controllers\Admin\B2b\B2bCustomerController::class);
         Route::resource('agents', \App\Http\Controllers\Admin\B2b\AgentController::class);
+        Route::post('products/import', [\App\Http\Controllers\Admin\B2b\B2bProductController::class, 'import'])->name('products.import');
+        Route::post('products/sync-giacenze', [\App\Http\Controllers\Admin\B2b\B2bProductController::class, 'syncGiacenze'])->name('products.sync_giacenze');
         Route::resource('products', \App\Http\Controllers\Admin\B2b\B2bProductController::class);
+        Route::get('orders/{order}/pdf', [\App\Http\Controllers\Admin\B2b\B2bOrderController::class, 'pdf'])->name('orders.pdf');
         Route::resource('orders', \App\Http\Controllers\Admin\B2b\B2bOrderController::class);
         Route::post('orders/{order}/send-copy', [\App\Http\Controllers\Admin\B2b\B2bOrderController::class, 'sendOrderCopy'])->name('orders.send_copy');
         Route::get('dashboard', [\App\Http\Controllers\Admin\B2b\B2bDashboardController::class, 'index'])->name('dashboard');
@@ -216,6 +221,7 @@ Route::middleware(['auth', 'agent'])->prefix('agenti')->name('agent.')->group(fu
     Route::get('/dashboard', [\App\Http\Controllers\Agent\AgentPortalController::class, 'dashboard'])->name('dashboard');
     Route::get('/catalogo', [\App\Http\Controllers\Agent\AgentPortalController::class, 'catalog'])->name('catalog');
     Route::get('/prodotto/{product}', [\App\Http\Controllers\Agent\AgentPortalController::class, 'product'])->name('product');
+    Route::get('/prodotto-variant/{product}', [\App\Http\Controllers\Agent\AgentPortalController::class, 'productVariant'])->name('product.variant');
     Route::get('/carrello', [\App\Http\Controllers\Agent\AgentPortalController::class, 'cart'])->name('cart');
     Route::post('/carrello/add', [\App\Http\Controllers\Agent\AgentPortalController::class, 'addToCart'])->name('cart.add');
     Route::post('/carrello/update', [\App\Http\Controllers\Agent\AgentPortalController::class, 'updateCart'])->name('cart.update');
@@ -224,7 +230,16 @@ Route::middleware(['auth', 'agent'])->prefix('agenti')->name('agent.')->group(fu
     Route::post('/checkout', [\App\Http\Controllers\Agent\AgentPortalController::class, 'processCheckout'])->name('process_checkout');
     Route::get('/ordini', [\App\Http\Controllers\Agent\AgentPortalController::class, 'orders'])->name('orders');
     Route::get('/ordini/{order}', [\App\Http\Controllers\Agent\AgentPortalController::class, 'orderDetail'])->name('order_detail');
+    Route::get('/ordini/{order}/pdf', [\App\Http\Controllers\Agent\AgentPortalController::class, 'orderPdf'])->name('orders.pdf');
+    Route::put('/ordini/{order}/items', [\App\Http\Controllers\Agent\AgentPortalController::class, 'updateOrderItems'])->name('orders.update_items');
+    Route::post('/ordini/{order}/accept', [\App\Http\Controllers\Agent\AgentPortalController::class, 'acceptOrderModifications'])->name('orders.accept');
+    Route::post('/ordini/{order}/reject', [\App\Http\Controllers\Agent\AgentPortalController::class, 'rejectOrderModifications'])->name('orders.reject');
+    Route::post('/ordini/{order}/confirm', [\App\Http\Controllers\Agent\AgentPortalController::class, 'confirmOrder'])->name('orders.confirm');
     Route::get('/profilo', [\App\Http\Controllers\Agent\AgentPortalController::class, 'profile'])->name('profile');
+    
+    // Gestione Listini Prezzi Agente
+    Route::post('/price-lists/assign-customer', [\App\Http\Controllers\Agent\AgentPriceListController::class, 'assignCustomer'])->name('price-lists.assign_customer');
+    Route::resource('price-lists', \App\Http\Controllers\Agent\AgentPriceListController::class);
 });
 
 require __DIR__.'/auth.php';

@@ -12,32 +12,26 @@ class B2bBrandController extends Controller
      */
     public function index()
     {
-        $brands = \App\Models\B2bBrand::all();
+        $brands = \App\Models\B2bBrand::withCount('products')->orderBy('name')->get();
         return view('admin.b2b.brands.index', compact('brands'));
     }
 
     public function create()
     {
-        return view('admin.b2b.brands.create');
+        return redirect()->route('admin.b2b.brands.index')->with('info', 'Le linee non possono essere create manualmente. Vengono generate automaticamente durante l\'importazione del file CSV.');
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        \App\Models\B2bBrand::create($request->all());
-
-        return redirect()->route('admin.b2b.brands.index')->with('success', 'Marchio creato con successo.');
+        return redirect()->route('admin.b2b.brands.index')->with('error', 'Creazione manuale disabilitata.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(\App\Models\B2bBrand $brand)
     {
-        //
+        return redirect()->route('admin.b2b.products.index', ['brand_id' => $brand->id]);
     }
 
     /**
@@ -45,7 +39,7 @@ class B2bBrandController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        return redirect()->route('admin.b2b.brands.index');
     }
 
     /**
@@ -53,7 +47,7 @@ class B2bBrandController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        return redirect()->route('admin.b2b.brands.index');
     }
 
     /**
@@ -61,8 +55,6 @@ class B2bBrandController extends Controller
      */
     public function destroy(\App\Models\B2bBrand $brand)
     {
-        $brand->delete();
-
-        return redirect()->route('admin.b2b.brands.index')->with('success', 'Marchio eliminato con successo.');
+        return redirect()->route('admin.b2b.brands.index')->with('error', 'Le linee di prodotto provengono dalla sincronizzazione del catalogo e non possono essere eliminate manualmente.');
     }
 }

@@ -38,14 +38,17 @@
                             </div>
 
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Autorizzazioni Brand</h3>
-                                <p class="text-sm text-gray-600 mb-4">L'agente potrà visualizzare ed ordinare solo i prodotti dei marchi selezionati.</p>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Autorizzazioni Linee</h3>
+                                    <button type="button" onclick="toggleAllBrands()" class="text-xs font-bold text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded transition">Seleziona/Deseleziona Tutto</button>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-4">L'agente potrà visualizzare ed ordinare solo i prodotti delle linee selezionate.</p>
                                 
                                 <div class="space-y-2 max-h-48 overflow-y-auto p-4 border border-gray-200 rounded-md bg-gray-50 mb-6">
                                     @php $assignedBrands = $agent->b2bBrands->pluck('id')->toArray(); @endphp
                                     @foreach($brands as $brand)
                                         <div class="flex items-center">
-                                            <input type="checkbox" name="brands[]" id="brand_{{ $brand->id }}" value="{{ $brand->id }}" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" {{ in_array($brand->id, old('brands', $assignedBrands)) ? 'checked' : '' }}>
+                                            <input type="checkbox" name="brands[]" id="brand_{{ $brand->id }}" value="{{ $brand->id }}" class="brand-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" {{ in_array($brand->id, old('brands', $assignedBrands)) ? 'checked' : '' }}>
                                             <label for="brand_{{ $brand->id }}" class="ml-2 text-sm text-gray-700">{{ $brand->name }}</label>
                                         </div>
                                     @endforeach
@@ -54,10 +57,18 @@
                                 <h3 class="text-lg font-medium text-gray-900 mb-4">Clienti Autorizzati</h3>
                                 <p class="text-sm text-gray-600 mb-4">L'agente potrà caricare ordini solo per i clienti selezionati.</p>
                                 
+                                <!-- Filtro di Ricerca Clienti -->
+                                <div class="mb-3">
+                                    <input type="text" id="customer-search-input" onkeyup="filterB2bCustomers()" placeholder="Cerca cliente per ragione sociale o P.IVA..." class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+
+                                <!-- Clienti Selezionati Rapidi -->
+                                <div id="selected-customers-container" class="mb-4 flex flex-wrap gap-1.5 hidden"></div>
+
                                 <div class="space-y-2 max-h-48 overflow-y-auto p-4 border border-gray-200 rounded-md bg-gray-50">
                                     @php $assignedCustomers = $agent->b2bCustomers->pluck('id')->toArray(); @endphp
                                     @foreach($customers as $customer)
-                                        <div class="flex items-center">
+                                        <div class="customer-item flex items-center" data-name="{{ strtolower($customer->business_name) }}" data-vat="{{ $customer->vat_number }}">
                                             <input type="checkbox" name="customers[]" id="cust_{{ $customer->id }}" value="{{ $customer->id }}" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" {{ in_array($customer->id, old('customers', $assignedCustomers)) ? 'checked' : '' }}>
                                             <label for="cust_{{ $customer->id }}" class="ml-2 text-sm text-gray-700">{{ $customer->business_name }} ({{ $customer->vat_number }})</label>
                                         </div>
@@ -77,4 +88,74 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleAllBrands() {
+            const checkboxes = document.querySelectorAll('.brand-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+        }
+
+        function filterB2bCustomers() {
+            const query = document.getElementById('customer-search-input').value.toLowerCase();
+            const items = document.querySelectorAll('.customer-item');
+            items.forEach(item => {
+                const name = item.getAttribute('data-name') || '';
+                const vat = item.getAttribute('data-vat') || '';
+                if (name.includes(query) || vat.includes(query)) {
+                    item.style.setProperty('display', 'flex', 'important');
+                } else {
+                    item.style.setProperty('display', 'none', 'important');
+                }
+            });
+        }
+
+        function updateSelectedCustomersList() {
+            const container = document.getElementById('selected-customers-container');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            const checkedBoxes = document.querySelectorAll('input[name="customers[]"]:checked');
+            
+            if (checkedBoxes.length > 0) {
+                container.classList.remove('hidden');
+                
+                const label = document.createElement('div');
+                label.className = 'w-full text-xs font-bold text-gray-500 mb-1';
+                label.innerText = 'Clienti Selezionati (clicca la × per rimuoverli):';
+                container.appendChild(label);
+                
+                checkedBoxes.forEach(cb => {
+                    const labelText = cb.nextElementSibling.innerText;
+                    
+                    const badge = document.createElement('span');
+                    badge.className = 'inline-flex items-center bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-md border border-indigo-100 font-medium shadow-sm';
+                    badge.innerHTML = `
+                        <span>${labelText}</span>
+                        <button type="button" class="ml-1.5 text-indigo-400 hover:text-indigo-900 font-bold focus:outline-none" onclick="uncheckCustomer('${cb.id}')">×</button>
+                    `;
+                    container.appendChild(badge);
+                });
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+        
+        function uncheckCustomer(checkboxId) {
+            const cb = document.getElementById(checkboxId);
+            if (cb) {
+                cb.checked = false;
+                cb.dispatchEvent(new Event('change'));
+                updateSelectedCustomersList();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('input[name="customers[]"]');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateSelectedCustomersList);
+            });
+            updateSelectedCustomersList();
+        });
+    </script>
 </x-app-layout>

@@ -291,9 +291,9 @@
                 </div>
                 
                 <div class="flex items-center gap-2 shrink-0">
-                    <a href="{{ route('agent.product.variant', $product->id) }}" class="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
-                        <span>Simulazione Variante</span>
-                        <span class="text-sm">🧪</span>
+                    <a href="{{ route('agent.product', $product->id) }}" class="bg-gray-900 border border-black text-white hover:bg-black hover:text-yellow-400 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
+                        <span>Torna al Prodotto Reale</span>
+                        <span class="text-sm">🔙</span>
                     </a>
                     <button type="button" @click="showDetails = !showDetails" class="bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-black hover:border-yellow-400 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
                         <span x-text="showDetails ? '⬅️ Espandi Griglia (Schermo Intero)' : '➡️ Mostra Foto Prodotto'"></span>
@@ -330,8 +330,7 @@
                     $inputIndex = 0;
                 @endphp
 
-                <form action="{{ route('agent.cart.add') }}" method="POST">
-                    @csrf
+                <div class="variant-form-container">
                     
                     <!-- 1. Griglia Disponibilità Immediata -->
                     <div class="mb-10">
@@ -406,99 +405,115 @@
                         </div>
                     </div>
 
-                    <!-- 2. Griglie Disponibilità Future (Prenotazione) -->
+                    <!-- 2. Griglia Disponibilità Future Aggregate (Prenotazione) -->
                     @if(!empty($giacenzaMatch['future_stock']))
+                        @php
+                            // Calcolo date disponibili
+                            $futureDates = array_keys($giacenzaMatch['future_stock']);
+                            $datesListText = implode(', ', $futureDates);
+                            
+                            // Aggregazione giacenze future
+                            $summedFutureStock = [];
+                            foreach ($giacenzaMatch['future_stock'] as $date => $stocks) {
+                                foreach ($stocks as $s => $q) {
+                                    if (!isset($summedFutureStock[$s])) {
+                                        $summedFutureStock[$s] = 0;
+                                    }
+                                    $summedFutureStock[$s] += $q;
+                                }
+                            }
+                        @endphp
+                        
                         <div class="mt-12 space-y-12">
-                            @foreach($giacenzaMatch['future_stock'] as $deliveryDate => $futureStocks)
-                                <div class="bg-indigo-50/30 rounded-3xl p-6 border border-indigo-100/50">
-                                    <h4 class="font-black text-xs uppercase tracking-widest text-indigo-800 mb-4 flex items-center gap-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse shrink-0"></span>
-                                        Prenotazione Disponibilità dal {{ $deliveryDate }}
-                                    </h4>
-                                    
-                                    <div class="overflow-x-auto pb-4">
-                                        <table class="w-full text-left border-collapse">
-                                            <thead>
-                                                <tr class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                                                    <th class="py-4 px-2 whitespace-nowrap">Variante / Colore</th>
+                            <div class="bg-indigo-50/30 rounded-3xl p-6 border border-indigo-100/50">
+                                <h4 class="font-black text-xs uppercase tracking-widest text-indigo-800 mb-2 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse shrink-0"></span>
+                                    Prenotazione Disponibilità Future Associate
+                                </h4>
+                                <p class="text-[10px] font-bold text-indigo-600/70 uppercase tracking-widest mb-4 ml-4">
+                                    Date previste di arrivo: {{ $datesListText }}
+                                </p>
+                                
+                                <div class="overflow-x-auto pb-4">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                                <th class="py-4 px-2 whitespace-nowrap">Variante / Colore</th>
+                                                @foreach($sizes as $size)
+                                                    <th class="py-4 px-2 text-center whitespace-nowrap">{{ $size }}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-50">
+                                            @foreach($groupedVariants as $color => $variants)
+                                                <tr class="group hover:bg-indigo-50/30 transition">
+                                                    <td class="py-6 px-2">
+                                                        <div class="flex items-center">
+                                                            <div class="w-2 h-2 rounded-full mr-3 bg-indigo-500"></div>
+                                                            <span class="text-xs font-black text-gray-900 uppercase">{{ $color }}</span>
+                                                        </div>
+                                                    </td>
                                                     @foreach($sizes as $size)
-                                                        <th class="py-4 px-2 text-center whitespace-nowrap">{{ $size }}</th>
+                                                        <td class="py-6 px-1 text-center">
+                                                            @php 
+                                                                $variant = $variants->where('size', $size)->first(); 
+                                                                $qtyFuture = $summedFutureStock[$size] ?? 0;
+                                                            @endphp
+                                                            @if($variant)
+                                                                <div class="relative inline-block">
+                                                                    <input type="hidden" name="items[{{ $inputIndex }}][variant_id]" value="{{ $variant->id }}">
+                                                                    <input type="hidden" name="items[{{ $inputIndex }}][delivery_date]" value="Aggregato">
+                                                                    <input type="number" 
+                                                                           name="items[{{ $inputIndex }}][quantity]" 
+                                                                           min="0" 
+                                                                           max="{{ $qtyFuture > 0 ? $qtyFuture : 0 }}" 
+                                                                           value="0" 
+                                                                           placeholder="0"
+                                                                           {{ $qtyFuture <= 0 ? 'disabled' : '' }}
+                                                                           class="qty-input w-16 text-center text-xs font-black rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition p-2 {{ $qtyFuture <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-white border-indigo-100 text-gray-900' }} disabled:cursor-not-allowed">
+                                                                    
+                                                                    @if($qtyFuture > 0)
+                                                                        <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-indigo-600 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-indigo-50 mb-1">
+                                                                            +{{ $qtyFuture }}
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-gray-400 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-gray-100 mb-1">
+                                                                            ESAU.
+                                                                        </span>
+                                                                    @endif
+                                                                </div>
+                                                                @php $inputIndex++; @endphp
+                                                            @else
+                                                                <div class="w-16 mx-auto h-8 bg-gray-50/50 rounded-lg flex items-center justify-center opacity-30">
+                                                                    <div class="w-1 h-3 bg-gray-200 rotate-45 transform"></div>
+                                                                </div>
+                                                            @endif
+                                                        </td>
                                                     @endforeach
                                                 </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-50">
-                                                @foreach($groupedVariants as $color => $variants)
-                                                    <tr class="group hover:bg-indigo-50/30 transition">
-                                                        <td class="py-6 px-2">
-                                                            <div class="flex items-center">
-                                                                <div class="w-2 h-2 rounded-full mr-3 bg-indigo-500"></div>
-                                                                <span class="text-xs font-black text-gray-900 uppercase">{{ $color }}</span>
-                                                            </div>
-                                                        </td>
-                                                        @foreach($sizes as $size)
-                                                            <td class="py-6 px-1 text-center">
-                                                                @php 
-                                                                    $variant = $variants->where('size', $size)->first(); 
-                                                                    $qtyFuture = $futureStocks[$size] ?? 0;
-                                                                @endphp
-                                                                @if($variant)
-                                                                    <div class="relative inline-block">
-                                                                        <input type="hidden" name="items[{{ $inputIndex }}][variant_id]" value="{{ $variant->id }}">
-                                                                        <input type="hidden" name="items[{{ $inputIndex }}][delivery_date]" value="{{ $deliveryDate }}">
-                                                                        <input type="number" 
-                                                                               name="items[{{ $inputIndex }}][quantity]" 
-                                                                               min="0" 
-                                                                               max="{{ $qtyFuture > 0 ? $qtyFuture : 0 }}" 
-                                                                               value="0" 
-                                                                               placeholder="0"
-                                                                               {{ $qtyFuture <= 0 ? 'disabled' : '' }}
-                                                                               class="qty-input w-16 text-center text-xs font-black rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition p-2 {{ $qtyFuture <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-white border-indigo-100 text-gray-900' }} disabled:cursor-not-allowed">
-                                                                        
-                                                                        @if($qtyFuture > 0)
-                                                                            <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-indigo-600 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-indigo-50 mb-1">
-                                                                                +{{ $qtyFuture }}
-                                                                            </span>
-                                                                        @else
-                                                                            <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-gray-400 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-gray-100 mb-1">
-                                                                                ESAU.
-                                                                            </span>
-                                                                        @endif
-                                                                    </div>
-                                                                    @php $inputIndex++; @endphp
-                                                                @else
-                                                                    <div class="w-16 mx-auto h-8 bg-gray-50/50 rounded-lg flex items-center justify-center opacity-30">
-                                                                        <div class="w-1 h-3 bg-gray-200 rotate-45 transform"></div>
-                                                                    </div>
-                                                                @endif
-                                                            </td>
-                                                        @endforeach
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
                                 </div>
-                            @endforeach
+                            </div>
                         </div>
                     @endif
 
-                    <!-- Sezione Riepilogo e Invio -->
+                    <!-- Sezione Riepilogo -->
                     <div class="mt-12 bg-gray-50 rounded-[32px] p-8 border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
                         <div>
                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Riepilogo Selezione</span>
                             <div class="flex items-baseline gap-2">
                                 <span id="total-qty-display" class="text-4xl font-black text-slate-900 leading-none">0</span>
-                                <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Pezzi Totali</span>
-                            </div>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 text-center md:text-right w-full block">La variante è in modalità sola lettura (non aggiunge al carrello)</p>
                         </div>
                         
-                        <button type="submit" class="w-full md:w-auto px-12 bg-black border border-zinc-950 text-white py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:border-yellow-400 hover:text-yellow-400 shadow-xl shadow-black/10 transition duration-300 flex items-center justify-center gap-3">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            Aggiungi al Carrello
-                        </button>
+                        <a href="{{ route('agent.product', $product->id) }}" class="w-full md:w-auto px-12 bg-black border border-zinc-950 text-white py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:border-yellow-400 hover:text-yellow-400 shadow-xl shadow-black/10 transition duration-300 flex items-center justify-center gap-3">
+                            <span class="text-xl">🔙</span>
+                            Torna al Prodotto Standard
+                        </a>
                     </div>
-                    <p class="text-[10px] text-slate-400 text-center mt-4 font-black uppercase tracking-widest opacity-60">L'ordine verrà salvato come bozza nel carrello B2B.</p>
-                </form>
+                </div>
             @endif
         </div>
     </div>

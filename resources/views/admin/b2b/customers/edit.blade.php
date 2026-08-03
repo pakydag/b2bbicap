@@ -54,6 +54,33 @@
                                     @endforeach
                                 </select>
                             </div>
+
+                            <div class="mb-4">
+                                <label for="b2b_price_list_id" class="block text-sm font-medium text-gray-700">Listino Prezzi Assegnato</label>
+                                <select name="b2b_price_list_id" id="b2b_price_list_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <option value="">Listino Predefinito di Sistema</option>
+                                    @foreach($priceLists as $list)
+                                        <option value="{{ $list->id }}" {{ old('b2b_price_list_id', $customer->b2b_price_list_id) == $list->id ? 'selected' : '' }}>
+                                            {{ $list->name }} {{ $list->is_default ? '(Predefinito)' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-span-2 border-t border-gray-200 pt-6 mt-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">Credenziali Accesso Portale B2B</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="mb-4">
+                                        <label for="b2b_email" class="block text-sm font-medium text-gray-700">Email di Accesso / Login (lascia vuoto per disabilitare l'accesso)</label>
+                                        <input type="email" name="b2b_email" id="b2b_email" value="{{ old('b2b_email', $customerUser?->email) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('b2b_email') border-red-500 @enderror">
+                                        @error('b2b_email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="b2b_password" class="block text-sm font-medium text-gray-700">Password (lascia vuoto per non modificare la password attuale)</label>
+                                        <input type="password" name="b2b_password" id="b2b_password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex items-center justify-end mt-6">

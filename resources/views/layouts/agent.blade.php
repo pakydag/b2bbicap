@@ -22,85 +22,137 @@
     <!-- Scripts & Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+    <style>
+        @media (min-width: 768px) {
+            .b2b-sidebar-open {
+                width: 16rem !important;
+            }
+            .b2b-sidebar-closed {
+                width: 5rem !important;
+            }
+        }
+    </style>
 </head>
-<body class="font-sans antialiased bg-gray-50">
-    <div class="min-h-screen flex flex-col md:flex-row">
-        
-        <!-- Sidebar Agente -->
-        <aside class="w-full md:w-64 bg-white text-gray-900 flex-shrink-0 shadow-sm z-20 border-r border-gray-200">
-            <div class="p-6 border-b border-gray-100">
-                <h1 class="text-2xl font-bold tracking-tight uppercase text-indigo-900">B2B Portal</h1>
-                <p class="text-xs text-gray-400 font-medium uppercase mt-1 tracking-widest">Area Agenti</p>
-            </div>
+    <body class="font-sans antialiased overflow-hidden bg-gray-50">
+        <div class="flex flex-col h-screen" x-data="{ sidebarOpen: localStorage.getItem('b2b_sidebar_open') === 'true' }">
             
-            <nav class="p-4 space-y-1">
-                <a href="{{ route('agent.dashboard') }}" class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('agent.dashboard') ? 'bg-indigo-600 text-white font-black shadow-lg' : 'hover:bg-gray-100 text-gray-900 font-bold' }}">
-                    <span class="mr-3 text-lg">📊</span> <span class="text-sm uppercase tracking-wide">Dashboard</span>
-                </a>
-                <a href="{{ route('agent.catalog') }}" class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('agent.catalog') || request()->routeIs('agent.product') ? 'bg-indigo-600 text-white font-black shadow-lg' : 'hover:bg-gray-100 text-gray-900 font-bold' }}">
-                    <span class="mr-3 text-lg">📦</span> <span class="text-sm uppercase tracking-wide">Catalogo Prodotti</span>
-                </a>
-                <a href="{{ route('agent.cart') }}" class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('agent.cart') ? 'bg-indigo-600 text-white font-black shadow-lg' : 'hover:bg-gray-100 text-gray-900 font-bold' }}">
-                    <span class="mr-3 text-lg">🛒</span> <span class="text-sm uppercase tracking-wide">Carrello</span>
-                    @if(count(session('b2b_cart', [])) > 0)
-                        <span class="ml-auto bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm">{{ count(session('b2b_cart')) }}</span>
+            <!-- Top Header Bar Nero Completo -->
+            <header class="bg-black text-white border-b border-zinc-900 h-16 flex items-center justify-between px-6 shrink-0 z-30 shadow-md">
+                <div class="flex items-center gap-3">
+                    @php
+                        $logo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?? '';
+                    @endphp
+                    @if(!empty($logo))
+                        <img src="{{ asset($logo) }}" class="h-8 w-auto object-contain" alt="Logo">
+                    @else
+                        <h1 class="text-xl font-bold tracking-tight uppercase text-yellow-400">B2B Portal</h1>
                     @endif
-                </a>
-                <a href="{{ route('agent.orders') }}" class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('agent.orders') || request()->routeIs('agent.order_detail') ? 'bg-indigo-600 text-white font-black shadow-lg' : 'hover:bg-gray-100 text-gray-900 font-bold' }}">
-                    <span class="mr-3 text-lg">📝</span> <span class="text-sm uppercase tracking-wide">Ordini Inviati</span>
-                </a>
-                
-                <div class="pt-10">
-                    <a href="{{ route('agent.profile') }}" class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('agent.profile') ? 'bg-indigo-600 text-white font-black shadow-lg' : 'hover:bg-gray-100 text-gray-900 font-bold' }}">
-                        <span class="mr-3 text-lg">👤</span> <span class="text-sm uppercase tracking-wide">Il Mio Profilo</span>
+                    <span class="text-xs font-black uppercase tracking-widest text-zinc-400 border-l border-zinc-800 pl-3">
+                        {{ Auth::user()->role === 'customer' ? 'Area Clienti' : 'Area Agenti' }}
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <span class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-1.5 rounded-xl font-bold uppercase flex items-center gap-2">
+                        👤 {{ Auth::user()->name }}
+                    </span>
+                    
+                    <a href="{{ route('agent.profile') }}" class="text-xs font-black text-yellow-400 hover:text-slate-950 bg-zinc-900 hover:bg-yellow-400 border border-zinc-800 hover:border-yellow-400 px-3.5 py-1.5 rounded-xl transition duration-300 uppercase shadow-sm hidden md:block">
+                        Profilo
                     </a>
-                    <form method="POST" action="{{ route('logout') }}" class="mt-2">
+
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
-                        <button type="submit" class="w-full text-left flex items-center px-4 py-3 rounded-lg text-rose-600 hover:bg-rose-50 font-bold transition">
-                            <span class="mr-3 text-lg">🚪</span> <span class="text-sm uppercase tracking-wide">Esci</span>
+                        <button type="submit" class="text-xs font-black text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-900/50 px-3 py-1.5 rounded-xl transition duration-200 uppercase">
+                            🚪 Esci
                         </button>
                     </form>
                 </div>
-            </nav>
-        </aside>
-
-        <!-- Content Area -->
-        <div class="flex-1 flex flex-col">
-            <!-- Mobile Header -->
-            <header class="md:hidden bg-indigo-900 text-white p-4 flex justify-between items-center shadow-lg">
-                <span class="font-black">B2B PORTAL</span>
-                <button class="p-2 border border-indigo-700 rounded text-indigo-100">Menu</button>
             </header>
 
-            <!-- Desktop Sub-header -->
-            @isset($header)
-                <div class="bg-white border-b border-gray-200">
-                    <div class="max-w-7xl mx-auto px-6 py-4">
-                        {{ $header }}
+            <div class="flex flex-1 overflow-hidden">
+                
+                <!-- Sidebar Chiara -->
+                <aside class="flex-shrink-0 bg-white text-gray-800 hidden md:flex flex-col h-full border-r border-gray-100 shadow-sm transition-all duration-300" :class="sidebarOpen ? 'w-64' : 'w-20'">
+                    
+                    <div class="flex items-center justify-end p-4 h-14 shrink-0 border-b border-gray-50">
+                        <button type="button" @click="sidebarOpen = !sidebarOpen; localStorage.setItem('b2b_sidebar_open', sidebarOpen)" class="text-gray-400 hover:text-gray-900 p-1.5 hover:bg-gray-100 rounded-lg transition duration-200" title="Espandi/Comprimi Menu">
+                            <span x-text="sidebarOpen ? '◀' : '▶'"></span>
+                        </button>
                     </div>
+                    
+                    <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-2" aria-label="Sidebar">
+                        @php 
+                            $activeClass = 'bg-yellow-400 text-slate-950 font-black shadow-lg shadow-yellow-400/20 rounded-xl';
+                            $inactiveClass = 'text-gray-600 hover:bg-gray-100/80 hover:text-slate-950 font-bold rounded-xl';
+                        @endphp
+                        
+                        <a href="{{ route('agent.dashboard') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.dashboard') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="Dashboard">
+                            <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">📊</span> 
+                            <span x-show="sidebarOpen" x-transition class="text-sm">Dashboard</span>
+                        </a>
+                        <a href="{{ route('agent.catalog') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.catalog') || request()->routeIs('agent.product') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="Catalogo Prodotti">
+                            <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">📦</span> 
+                            <span x-show="sidebarOpen" x-transition class="text-sm">Catalogo Prodotti</span>
+                        </a>
+                        <a href="{{ route('agent.cart') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.cart') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center relative'" title="Carrello">
+                            <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">🛒</span> 
+                            <span x-show="sidebarOpen" x-transition class="text-sm">Carrello</span>
+                            @if(count(session('b2b_cart', [])) > 0)
+                                <span :class="sidebarOpen ? 'ml-auto bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm' : 'absolute -top-1 -right-1 bg-rose-600 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black shadow-sm'">{{ count(session('b2b_cart')) }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('agent.orders') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.orders') || request()->routeIs('agent.order_detail') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="Ordini Inviati">
+                            <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">📝</span> 
+                            <span x-show="sidebarOpen" x-transition class="text-sm">Ordini Inviati</span>
+                        </a>
+                        @if(Auth::user()->role === 'agent' || Auth::user()->role === 'admin')
+                        <a href="{{ route('agent.price-lists.index') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.price-lists.*') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="Listini Prezzi">
+                            <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">🏷️</span> 
+                            <span x-show="sidebarOpen" x-transition class="text-sm">Listini Prezzi</span>
+                        </a>
+                        @endif
+                    </nav>
+                </aside>
+
+                <!-- Mobile Header -->
+                <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+                    <header class="md:hidden bg-black text-white p-4 flex justify-between items-center shadow-lg shrink-0">
+                        <span class="font-black text-yellow-400">B2B PORTAL</span>
+                        <a href="{{ route('agent.dashboard') }}" class="p-2 border border-yellow-400 rounded text-yellow-400 font-black text-xs uppercase">Menu</a>
+                    </header>
+
+                    <!-- Desktop Sub-header -->
+                    @isset($header)
+                        <div class="bg-white shadow-sm border-b border-gray-100 shrink-0">
+                            <div class="max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+                                {{ $header }}
+                            </div>
+                        </div>
+                    @endisset
+
+                    <!-- Main Content Area -->
+                    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-6 lg:p-8">
+                        @if(session('success'))
+                            <div class="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl shadow-sm font-bold text-sm">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+                        @if(session('error'))
+                            <div class="mb-6 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl shadow-sm font-bold text-sm">
+                                {{ session('error') }}
+                            </div>
+                        @endif
+
+                        {{ $slot }}
+                    </main>
+                    
+                    <footer class="bg-white border-t border-gray-200 p-4 text-center text-xs font-bold text-gray-400 shrink-0">
+                        &copy; {{ date('Y') }} {{ config('app.name') }} B2B Portal. Tutti i diritti riservati.
+                    </footer>
                 </div>
-            @endisset
-
-            <main class="p-6 md:p-10 flex-1">
-                @if(session('success'))
-                    <div class="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl shadow-sm">
-                        {{ session('success') }}
-                    </div>
-                @endif
-                @if(session('error'))
-                    <div class="mb-6 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl shadow-sm">
-                        {{ session('error') }}
-                    </div>
-                @endif
-
-                {{ $slot }}
-            </main>
-            
-            <footer class="bg-white border-t border-gray-200 p-6 text-center text-xs text-gray-400">
-                &copy; {{ date('Y') }} {{ config('app.name') }} B2B Portal. Tutti i diritti riservati.
-            </footer>
+            </div>
         </div>
-    </div>
 
     @stack('scripts')
 </body>

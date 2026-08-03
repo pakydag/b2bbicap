@@ -8,14 +8,16 @@
     <div class="max-w-4xl mx-auto">
         <div class="bg-white rounded-[40px] shadow-sm border border-gray-100 p-12">
             <div class="flex flex-col md:flex-row gap-12 items-start">
-                <div class="w-32 h-32 bg-indigo-100 rounded-[40px] flex items-center justify-center text-4xl shadow-inner border border-indigo-200">
+                <div class="w-32 h-32 bg-zinc-100 rounded-[40px] flex items-center justify-center text-4xl shadow-inner border border-zinc-200">
                     👤
                 </div>
                 
                 <div class="flex-1 space-y-8">
                     <div>
                         <h3 class="text-3xl font-black text-gray-900 uppercase tracking-tight">{{ $user->name }} {{ $user->surname }}</h3>
-                        <p class="text-indigo-600 font-bold uppercase text-xs tracking-[0.2em] mt-1">{{ __('Agente Autorizzato') }}</p>
+                        <p class="text-yellow-600 font-bold uppercase text-xs tracking-[0.2em] mt-1">
+                            {{ Auth::user()->role === 'customer' ? __('Cliente B2B Autorizzato') : __('Agente Autorizzato') }}
+                        </p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-8 border-t border-b border-gray-50 text-base">
@@ -29,22 +31,38 @@
                         </div>
                     </div>
 
-                    <div>
-                        <p class="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 italic">{{ __('Marchi Abilitati') }}</p>
+                    <div class="mb-6">
+                        <p class="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 italic">{{ __('Linee Abilitate') }}</p>
                         <div class="flex flex-wrap gap-2">
                             @foreach($user->b2bBrands as $brand)
-                                <span class="bg-indigo-900 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm">
+                                <span class="bg-black border border-zinc-950 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm">
                                     {{ $brand->name }}
                                 </span>
                             @endforeach
                             @if($user->b2bBrands->isEmpty())
-                                <span class="text-xs text-gray-400 italic">Nessun marchio assegnato. Contatta l'amministratore.</span>
+                                <span class="text-xs text-gray-400 italic">Nessuna linea assegnata. Contatta l'amministratore.</span>
                             @endif
                         </div>
                     </div>
 
+                    @if($user->role === 'agent')
+                    <div class="mb-6">
+                        <p class="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 italic">{{ __('Clienti Abilitati') }}</p>
+                        <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-2">
+                            @foreach($user->b2bCustomers as $customer)
+                                <span class="bg-zinc-100 border border-zinc-200 text-gray-800 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-tight shadow-sm">
+                                    {{ $customer->business_name }} ({{ $customer->vat_number }})
+                                </span>
+                            @endforeach
+                            @if($user->b2bCustomers->isEmpty())
+                                <span class="text-xs text-gray-400 italic">Nessun cliente assegnato. Contatta l'amministratore.</span>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
                     <div class="pt-8 flex flex-wrap gap-4">
-                        <a href="{{ route('profile.edit') }}" class="bg-indigo-600 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition duration-300">
+                        <a href="{{ route('profile.edit') }}" class="bg-black border border-zinc-950 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:border-yellow-400 hover:text-yellow-400 shadow-xl shadow-black/10 transition duration-300">
                             {{ __('Modifica Dati & Password') }}
                         </a>
                         <form method="POST" action="{{ route('logout') }}">

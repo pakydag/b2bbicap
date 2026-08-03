@@ -47,6 +47,7 @@ class User extends Authenticatable
         'can_manage_booking',
         'can_manage_voip',
         'can_manage_agents',
+        'b2b_customer_id',
     ];
 
     /**
@@ -63,6 +64,19 @@ class User extends Authenticatable
     public function b2bCustomers()
     {
         return $this->belongsToMany(B2bCustomer::class, 'agent_customer', 'user_id', 'b2b_customer_id');
+    }
+
+    public function b2bOrders()
+    {
+        return $this->hasMany(B2bOrder::class, 'agent_id');
+    }
+
+    /**
+     * Get the B2B customer profile associated with this user.
+     */
+    public function b2bCustomer()
+    {
+        return $this->belongsTo(B2bCustomer::class, 'b2b_customer_id');
     }
 
     /**

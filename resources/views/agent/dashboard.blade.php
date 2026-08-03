@@ -11,8 +11,8 @@
             <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
                 <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl group-hover:scale-110 transition duration-500">📝</div>
                 <p class="text-sm font-black text-gray-500 uppercase tracking-widest mb-1">Totale Ordini</p>
-                <p class="text-4xl font-black text-indigo-900">{{ $stats['orders_count'] }}</p>
-                <p class="text-xs text-indigo-400 font-bold mt-2 uppercase tracking-tight">Inviati alla sede</p>
+                <p class="text-4xl font-black text-slate-900">{{ $stats['orders_count'] }}</p>
+                <p class="text-xs text-slate-400 font-bold mt-2 uppercase tracking-tight">Inviati alla sede</p>
             </div>
             
             <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
@@ -35,23 +35,50 @@
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                     <h3 class="font-black text-gray-800 uppercase text-sm tracking-wider">Ultimi Ordini Inviati</h3>
-                    <a href="{{ route('agent.orders') }}" class="text-xs font-bold text-indigo-600 hover:underline">Vedi Archivio</a>
+                    <a href="{{ route('agent.orders') }}" class="text-xs font-bold text-slate-800 hover:text-yellow-600 hover:underline transition">Vedi Archivio</a>
                 </div>
                 <div class="divide-y divide-gray-50">
                     @forelse($recent_orders as $order)
-                        <div class="px-8 py-5 flex justify-between items-center hover:bg-indigo-50/30 transition">
+                        <a href="{{ route('agent.order_detail', $order) }}" class="px-8 py-5 flex justify-between items-center hover:bg-amber-50/50 transition cursor-pointer group">
                             <div>
-                                <p class="text-base font-black text-gray-900">#{{ $order->id }} - {{ $order->customer->business_name }}</p>
-                                <p class="text-xs text-gray-500 font-bold uppercase">{{ $order->created_at->format('d/m/Y H:i') }}</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-base font-black text-gray-900 group-hover:text-indigo-600 transition">#{{ $order->id }} - {{ $order->customer->business_name }}</p>
+                                    @if($order->is_modified)
+                                        <span class="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                                            ✏️ Modificato
+                                        </span>
+                                    @endif
+                                </div>
+                                <p class="text-xs text-gray-500 font-bold uppercase mt-0.5">{{ $order->created_at->format('d/m/Y H:i') }}</p>
                             </div>
-                            <div class="text-right">
-                                <p class="text-base font-black text-indigo-900">€ {{ number_format($order->total_amount, 2, ',', '.') }}</p>
-                                <span class="text-xs px-2 py-0.5 rounded-full font-bold uppercase 
-                                    {{ $order->status == 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }}">
-                                    {{ $order->status }}
-                                </span>
+                            <div class="text-right flex items-center gap-4">
+                                <div>
+                                    <p class="text-base font-black text-slate-900">€ {{ number_format($order->total_amount, 2, ',', '.') }}</p>
+                                    @php
+                                        $dashStatusClasses = [
+                                            'pending' => 'bg-amber-100 text-amber-800 border-amber-300',
+                                            'revision_pending' => 'bg-orange-100 text-orange-800 border-orange-300',
+                                            'customer_approved' => 'bg-blue-100 text-blue-800 border-blue-300',
+                                            'customer_rejected' => 'bg-rose-100 text-rose-800 border-rose-300',
+                                            'confirmed' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                                            'cancelled' => 'bg-slate-100 text-slate-700 border-slate-300',
+                                        ];
+                                        $dashStatusLabels = [
+                                            'pending' => 'In Attesa',
+                                            'revision_pending' => 'In Attesa Cliente',
+                                            'customer_approved' => 'Approvato da Cliente',
+                                            'customer_rejected' => 'Rifiutato',
+                                            'confirmed' => 'Confermato',
+                                            'cancelled' => 'Annullato',
+                                        ];
+                                    @endphp
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border {{ $dashStatusClasses[$order->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ $dashStatusLabels[$order->status] ?? $order->status }}
+                                    </span>
+                                </div>
+                                <span class="text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition text-lg font-bold">➔</span>
                             </div>
-                        </div>
+                        </a>
                     @empty
                         <div class="px-8 py-12 text-center text-gray-500 uppercase tracking-widest text-xs font-bold font-medium">
                             Non hai ancora inviato alcun ordine.
@@ -62,12 +89,12 @@
 
             <!-- Quick Actions -->
             <div class="grid grid-cols-1 gap-6">
-                <a href="{{ route('agent.catalog') }}" class="bg-indigo-600 p-8 rounded-3xl text-white shadow-lg shadow-indigo-200 hover:scale-[1.02] transition duration-300 flex items-center justify-between group">
+                <a href="{{ route('agent.catalog') }}" class="bg-black border border-zinc-950 p-8 rounded-3xl text-white shadow-lg shadow-black/10 hover:scale-[1.02] hover:border-yellow-400 transition duration-300 flex items-center justify-between group">
                     <div>
-                        <h4 class="text-2xl font-black mb-1">Nuovo Ordine</h4>
-                        <p class="text-indigo-100 text-sm font-medium opacity-90">Sfoglia il catalogo e inserisci una nuova raccolta.</p>
+                        <h4 class="text-2xl font-black mb-1 group-hover:text-yellow-400 transition">Nuovo Ordine</h4>
+                        <p class="text-zinc-400 text-sm font-medium">Sfoglia il catalogo e inserisci una nuova raccolta.</p>
                     </div>
-                    <span class="text-4xl group-hover:translate-x-2 transition">➔</span>
+                    <span class="text-4xl text-zinc-400 group-hover:text-yellow-400 group-hover:translate-x-2 transition">➔</span>
                 </a>
 
                 <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">

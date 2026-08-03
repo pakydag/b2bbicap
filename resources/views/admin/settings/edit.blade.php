@@ -63,6 +63,7 @@
                         </button>
                         @endif
 
+                        @if($user->is_super_admin)
                         <button @click="activeTab = 'ai_spoki'" :class="{'bg-indigo-50 border-t border-l border-r border-indigo-200 text-indigo-700 font-bold': activeTab === 'ai_spoki', 'text-gray-600 hover:text-indigo-600': activeTab !== 'ai_spoki'}" class="py-2 px-4 rounded-t-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ml-1 text-sm">
                             🤖 AI & Spoki
                         </button>
@@ -74,6 +75,7 @@
                         <button @click="activeTab = 'contatti'" :class="{'bg-indigo-50 border-t border-l border-r border-indigo-200 text-indigo-700 font-bold': activeTab === 'contatti', 'text-gray-600 hover:text-indigo-600': activeTab !== 'contatti'}" class="py-2 px-4 rounded-t-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ml-1 text-sm">
                             📱 Contatti & Social
                         </button>
+                        @endif
                     </div>
 
                     <form action="{{ route('admin.settings.update') }}" method="POST">

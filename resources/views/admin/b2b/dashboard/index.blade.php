@@ -36,18 +36,18 @@
                     </div>
                     <div class="divide-y divide-gray-100">
                         @forelse($recent_orders as $order)
-                            <div class="px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition">
+                            <a href="{{ route('admin.b2b.orders.edit', $order) }}" class="px-6 py-4 flex justify-between items-center hover:bg-yellow-50/60 transition group cursor-pointer block border-b border-gray-100 last:border-b-0">
                                 <div>
-                                    <p class="text-sm font-bold text-gray-900">Ordine #{{ $order->id }} - {{ $order->customer->business_name }}</p>
+                                    <p class="text-sm font-bold text-gray-900 group-hover:text-amber-600 transition">Ordine #{{ $order->id }} - {{ $order->customer->business_name }}</p>
                                     <p class="text-xs text-gray-500">Inviato da {{ $order->agent->name }} {{ $order->agent->surname }}</p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-sm font-bold text-indigo-700">€ {{ number_format($order->total_amount, 2, ',', '.') }}</p>
-                                    <span class="text-[10px] uppercase px-1.5 py-0.5 rounded {{ $order->status == 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800' }}">
-                                        {{ $order->status }}
+                                    <p class="text-sm font-bold text-gray-900">€ {{ number_format($order->total_amount, 2, ',', '.') }}</p>
+                                    <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {{ $order->status == 'pending' ? 'bg-amber-100 text-amber-900 border border-amber-300' : ($order->status == 'confirmed' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : ($order->status == 'customer_approved' ? 'bg-blue-100 text-blue-900 border border-blue-300' : 'bg-purple-100 text-purple-900 border border-purple-300')) }}">
+                                        {{ $order->status_label }}
                                     </span>
                                 </div>
-                            </div>
+                            </a>
                         @empty
                             <div class="px-6 py-10 text-center text-gray-400 text-sm">Nessun ordine recente</div>
                         @endforelse
@@ -58,16 +58,16 @@
                 <div class="bg-indigo-600 shadow sm:rounded-lg p-6 text-white flex flex-col justify-between">
                     <div>
                         <h3 class="font-black text-xl mb-2">Benvenuto nel Portale B2B</h3>
-                        <p class="text-indigo-100 text-sm leading-relaxed">Da qui puoi gestire l'intera rete vendita. Ricorda di abilitare i brand corretti per ogni agente affinché possano raccogliere ordini con precisione.</p>
+                        <p class="text-indigo-100 text-sm leading-relaxed">Da qui puoi gestire l'intera rete vendita. Ricorda di abilitare le linee corrette per ogni agente affinché possano raccogliere ordini con precisione.</p>
                     </div>
                     <div class="mt-8 grid grid-cols-2 gap-4">
-                        <a href="{{ route('admin.b2b.agents.create') }}" class="bg-white/10 hover:bg-white/20 p-4 rounded-xl text-center border border-white/20 transition">
+                        <a href="{{ route('admin.b2b.agents.index') }}" class="bg-white/10 hover:bg-white/20 p-4 rounded-xl text-center border border-white/20 transition">
                             <span class="block text-2xl mb-1">👤</span>
-                            <span class="text-xs font-bold uppercase">Nuovo Agente</span>
+                            <span class="text-xs font-bold uppercase">Agenti</span>
                         </a>
-                        <a href="{{ route('admin.b2b.products.create') }}" class="bg-white/10 hover:bg-white/20 p-4 rounded-xl text-center border border-white/20 transition">
+                        <a href="{{ route('admin.b2b.products.index') }}" class="bg-white/10 hover:bg-white/20 p-4 rounded-xl text-center border border-white/20 transition">
                             <span class="block text-2xl mb-1">📦</span>
-                            <span class="text-xs font-bold uppercase">Carica Inventario</span>
+                            <span class="text-xs font-bold uppercase">Inventario Prodotti</span>
                         </a>
                     </div>
                 </div>
