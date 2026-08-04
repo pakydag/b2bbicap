@@ -1011,9 +1011,6 @@ class AgentPortalController extends Controller
             $name = trim($row[1]);
             $size = trim($row[2]);
             $qty = floatval($row[3]);
-            if ($qty < 0) {
-                $qty = 0;
-            }
             $consegna = trim($row[4] ?? '');
             
             if (empty($code)) continue;
