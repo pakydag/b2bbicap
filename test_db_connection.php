@@ -2,8 +2,8 @@
 
 $host = '127.0.0.1';
 $db   = 'b2bbicap';
-$user = 'root';
-$pass = '';
+$user = 'b2bbicap';
+$pass = 'b2bbicap';
 $port = "3306";
 $charset = 'utf8mb4';
 

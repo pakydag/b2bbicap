@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('ai_tickets', function (Blueprint $table) {
-            $table->string('phone')->nullable()->after('email');
-        });
+        if (!Schema::hasColumn('ai_tickets', 'phone')) {
+            Schema::table('ai_tickets', function (Blueprint $table) {
+                $table->string('phone')->nullable()->after('email');
+            });
+        }
     }
 
     /**

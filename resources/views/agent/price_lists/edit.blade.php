@@ -82,9 +82,9 @@
                     <div class="bg-gray-50/50 rounded-2xl border border-gray-100 p-3">
                         <div class="grid grid-cols-12 gap-2 text-[10px] font-black uppercase tracking-wider text-gray-400 pb-1.5 border-b border-gray-200">
                             <div class="col-span-3">Da Quantità (Min)</div>
-                            <div class="col-span-3">A Quantità (Max - opzionale)</div>
+                            <div class="col-span-2">A Quantità (Max)</div>
                             <div class="col-span-3">Tipo Regola</div>
-                            <div class="col-span-2">Valore (% Sconto o € Netto)</div>
+                            <div class="col-span-3">Valore (% Sconto 1+2+3 o €)</div>
                             <div class="col-span-1 text-center">Azione</div>
                         </div>
                         <div id="general-tiers-container" class="space-y-2 mt-2">
@@ -93,7 +93,7 @@
                                     <div class="col-span-3">
                                         <input type="number" name="general_tiers[{{ $gIdx }}][min_quantity]" value="{{ $gtier->min_quantity }}" min="1" required class="w-full text-xs rounded-lg border-gray-200 p-2 font-bold">
                                     </div>
-                                    <div class="col-span-3">
+                                    <div class="col-span-2">
                                         <input type="number" name="general_tiers[{{ $gIdx }}][max_quantity]" value="{{ $gtier->max_quantity }}" min="1" placeholder="Illimitato" class="w-full text-xs rounded-lg border-gray-200 p-2">
                                     </div>
                                     <div class="col-span-3">
@@ -102,8 +102,12 @@
                                             <option value="fixed_price" {{ $gtier->discount_type === 'fixed_price' ? 'selected' : '' }}>Prezzo Netto Personalizzato (€)</option>
                                         </select>
                                     </div>
-                                    <div class="col-span-2">
-                                        <input type="number" step="0.01" min="0" name="general_tiers[{{ $gIdx }}][discount_value]" value="{{ number_format($gtier->discount_value, 2, '.', '') }}" required class="w-full text-xs rounded-lg border-gray-200 p-2 font-bold text-amber-700 bg-amber-50/30">
+                                    <div class="col-span-3 flex gap-1 items-center">
+                                        <input type="number" step="0.01" min="0" name="general_tiers[{{ $gIdx }}][discount_value]" value="{{ number_format($gtier->discount_value, 2, '.', '') }}" required class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-amber-700 bg-amber-50/30 px-1" title="Sconto 1 / Prezzo" placeholder="% 1 / €">
+                                        <span class="text-[10px] text-gray-400 font-black">+</span>
+                                        <input type="number" step="0.01" min="0" name="general_tiers[{{ $gIdx }}][discount_2]" value="{{ $gtier->discount_2 ? number_format($gtier->discount_2, 2, '.', '') : '' }}" class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-amber-700 bg-amber-50/30 px-1" title="Sconto 2" placeholder="% 2">
+                                        <span class="text-[10px] text-gray-400 font-black">+</span>
+                                        <input type="number" step="0.01" min="0" name="general_tiers[{{ $gIdx }}][discount_3]" value="{{ $gtier->discount_3 ? number_format($gtier->discount_3, 2, '.', '') : '' }}" class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-amber-700 bg-amber-50/30 px-1" title="Sconto 3" placeholder="% 3">
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <button type="button" onclick="removeGeneralTierRow(this)" class="text-rose-600 hover:text-rose-800 font-bold text-sm">✕</button>
@@ -163,9 +167,9 @@
                                 <div class="bg-white rounded-xl border border-gray-100 p-3">
                                     <div class="grid grid-cols-12 gap-2 text-[10px] font-black uppercase tracking-wider text-gray-400 pb-1.5 border-b border-gray-100">
                                         <div class="col-span-3">Da Quantità (Min)</div>
-                                        <div class="col-span-3">A Quantità (Max - opzionale)</div>
+                                        <div class="col-span-2">A Quantità (Max)</div>
                                         <div class="col-span-3">Tipo Regola</div>
-                                        <div class="col-span-2">Valore (% o € Netto)</div>
+                                        <div class="col-span-3">Valore (% Sconto 1+2+3 o €)</div>
                                         <div class="col-span-1 text-center">Azione</div>
                                     </div>
                                     <div id="tiers-container-{{ $product->id }}" class="space-y-2 mt-2">
@@ -174,7 +178,7 @@
                                                 <div class="col-span-3">
                                                     <input type="number" name="tiers[{{ $product->id }}][{{ $idx }}][min_quantity]" value="{{ $tier->min_quantity }}" min="1" required class="w-full text-xs rounded-lg border-gray-200 p-1.5 font-bold">
                                                 </div>
-                                                <div class="col-span-3">
+                                                <div class="col-span-2">
                                                     <input type="number" name="tiers[{{ $product->id }}][{{ $idx }}][max_quantity]" value="{{ $tier->max_quantity }}" min="1" placeholder="Illimitato" class="w-full text-xs rounded-lg border-gray-200 p-1.5">
                                                 </div>
                                                 <div class="col-span-3">
@@ -183,8 +187,12 @@
                                                         <option value="fixed_price" {{ $tier->discount_type === 'fixed_price' ? 'selected' : '' }}>Prezzo Netto Personalizzato (€)</option>
                                                     </select>
                                                 </div>
-                                                <div class="col-span-2">
-                                                    <input type="number" step="0.01" min="0" name="tiers[{{ $product->id }}][{{ $idx }}][discount_value]" value="{{ number_format($tier->discount_value, 2, '.', '') }}" required class="w-full text-xs rounded-lg border-gray-200 p-1.5 font-bold text-indigo-700 bg-indigo-50/20">
+                                                <div class="col-span-3 flex gap-1 items-center">
+                                                    <input type="number" step="0.01" min="0" name="tiers[{{ $product->id }}][{{ $idx }}][discount_value]" value="{{ number_format($tier->discount_value, 2, '.', '') }}" required class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-indigo-700 bg-indigo-50/20 px-1" title="Sconto 1 / Prezzo" placeholder="% 1 / €">
+                                                    <span class="text-[10px] text-gray-400 font-black">+</span>
+                                                    <input type="number" step="0.01" min="0" name="tiers[{{ $product->id }}][{{ $idx }}][discount_2]" value="{{ $tier->discount_2 ? number_format($tier->discount_2, 2, '.', '') : '' }}" class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-indigo-700 bg-indigo-50/20 px-1" title="Sconto 2" placeholder="% 2">
+                                                    <span class="text-[10px] text-gray-400 font-black">+</span>
+                                                    <input type="number" step="0.01" min="0" name="tiers[{{ $product->id }}][{{ $idx }}][discount_3]" value="{{ $tier->discount_3 ? number_format($tier->discount_3, 2, '.', '') : '' }}" class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-indigo-700 bg-indigo-50/20 px-1" title="Sconto 3" placeholder="% 3">
                                                 </div>
                                                 <div class="col-span-1 text-center">
                                                     <button type="button" onclick="removeTierRow(this)" class="text-rose-600 hover:text-rose-800 font-bold text-sm">✕</button>
@@ -245,7 +253,7 @@
                     <div class="col-span-3">
                         <input type="number" name="general_tiers[${index}][min_quantity]" value="${defaultMin}" min="1" required class="w-full text-xs rounded-lg border-gray-200 p-1.5 font-bold">
                     </div>
-                    <div class="col-span-3">
+                    <div class="col-span-2">
                         <input type="number" name="general_tiers[${index}][max_quantity]" value="" min="1" placeholder="Illimitato" class="w-full text-xs rounded-lg border-gray-200 p-1.5">
                     </div>
                     <div class="col-span-3">
@@ -254,8 +262,12 @@
                             <option value="fixed_price">Prezzo Netto Personalizzato (€)</option>
                         </select>
                     </div>
-                    <div class="col-span-2">
-                        <input type="number" step="0.01" min="0" name="general_tiers[${index}][discount_value]" value="0" required class="w-full text-xs rounded-lg border-gray-200 p-1.5 font-bold text-amber-700 bg-amber-50/30">
+                    <div class="col-span-3 flex gap-1 items-center">
+                        <input type="number" step="0.01" min="0" name="general_tiers[${index}][discount_value]" value="0" required class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-amber-700 bg-amber-50/30 px-1" placeholder="% 1 / €">
+                        <span class="text-[10px] text-gray-400 font-black">+</span>
+                        <input type="number" step="0.01" min="0" name="general_tiers[${index}][discount_2]" value="" class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-amber-700 bg-amber-50/30 px-1" placeholder="% 2">
+                        <span class="text-[10px] text-gray-400 font-black">+</span>
+                        <input type="number" step="0.01" min="0" name="general_tiers[${index}][discount_3]" value="" class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-amber-700 bg-amber-50/30 px-1" placeholder="% 3">
                     </div>
                     <div class="col-span-1 text-center">
                         <button type="button" onclick="removeGeneralTierRow(this)" class="text-rose-600 hover:text-rose-800 font-bold text-sm">✕</button>
@@ -289,7 +301,7 @@
                     <div class="col-span-3">
                         <input type="number" name="tiers[${productId}][${index}][min_quantity]" value="${defaultMin}" min="1" required class="w-full text-xs rounded-lg border-gray-200 p-1.5 font-bold">
                     </div>
-                    <div class="col-span-3">
+                    <div class="col-span-2">
                         <input type="number" name="tiers[${productId}][${index}][max_quantity]" value="" min="1" placeholder="Illimitato" class="w-full text-xs rounded-lg border-gray-200 p-1.5">
                     </div>
                     <div class="col-span-3">
@@ -298,8 +310,12 @@
                             <option value="fixed_price">Prezzo Netto Personalizzato (€)</option>
                         </select>
                     </div>
-                    <div class="col-span-2">
-                        <input type="number" step="0.01" min="0" name="tiers[${productId}][${index}][discount_value]" value="0" required class="w-full text-xs rounded-lg border-gray-200 p-1.5 font-bold text-indigo-700 bg-indigo-50/20">
+                    <div class="col-span-3 flex gap-1 items-center">
+                        <input type="number" step="0.01" min="0" name="tiers[${productId}][${index}][discount_value]" value="0" required class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-indigo-700 bg-indigo-50/20 px-1" placeholder="% 1 / €">
+                        <span class="text-[10px] text-gray-400 font-black">+</span>
+                        <input type="number" step="0.01" min="0" name="tiers[${productId}][${index}][discount_2]" value="" class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-indigo-700 bg-indigo-50/20 px-1" placeholder="% 2">
+                        <span class="text-[10px] text-gray-400 font-black">+</span>
+                        <input type="number" step="0.01" min="0" name="tiers[${productId}][${index}][discount_3]" value="" class="w-1/3 text-xs rounded-lg border-gray-200 p-1 font-bold text-indigo-700 bg-indigo-50/20 px-1" placeholder="% 3">
                     </div>
                     <div class="col-span-1 text-center">
                         <button type="button" onclick="removeTierRow(this)" class="text-rose-600 hover:text-rose-800 font-bold text-sm">✕</button>

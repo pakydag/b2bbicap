@@ -100,6 +100,8 @@ class AgentPriceListController extends Controller
                     $min = intval($gtier['min_quantity'] ?? 1);
                     $max = isset($gtier['max_quantity']) && $gtier['max_quantity'] !== '' ? intval($gtier['max_quantity']) : null;
                     $val = floatval($gtier['discount_value'] ?? 0);
+                    $val2 = floatval($gtier['discount_2'] ?? 0);
+                    $val3 = floatval($gtier['discount_3'] ?? 0);
                     $type = in_array($gtier['discount_type'] ?? '', ['percentage', 'fixed_price']) ? $gtier['discount_type'] : 'percentage';
                     if ($min > 0) {
                         B2bPriceListItem::create([
@@ -109,6 +111,8 @@ class AgentPriceListController extends Controller
                             'max_quantity' => $max,
                             'discount_type' => $type,
                             'discount_value' => $val,
+                            'discount_2' => $val2,
+                            'discount_3' => $val3,
                         ]);
                     }
                 }
@@ -198,6 +202,8 @@ class AgentPriceListController extends Controller
                     $min = intval($gtier['min_quantity'] ?? 1);
                     $max = isset($gtier['max_quantity']) && $gtier['max_quantity'] !== '' ? intval($gtier['max_quantity']) : null;
                     $val = floatval($gtier['discount_value'] ?? 0);
+                    $val2 = floatval($gtier['discount_2'] ?? 0);
+                    $val3 = floatval($gtier['discount_3'] ?? 0);
                     $type = in_array($gtier['discount_type'] ?? '', ['percentage', 'fixed_price']) ? $gtier['discount_type'] : 'percentage';
                     if ($min > 0) {
                         B2bPriceListItem::create([
@@ -207,6 +213,8 @@ class AgentPriceListController extends Controller
                             'max_quantity' => $max,
                             'discount_type' => $type,
                             'discount_value' => $val,
+                            'discount_2' => $val2,
+                            'discount_3' => $val3,
                         ]);
                     }
                 }
@@ -222,6 +230,8 @@ class AgentPriceListController extends Controller
                     $max = isset($tier['max_quantity']) && $tier['max_quantity'] !== '' ? intval($tier['max_quantity']) : null;
                     $type = in_array($tier['discount_type'] ?? '', ['percentage', 'fixed_price']) ? $tier['discount_type'] : 'percentage';
                     $val = floatval($tier['discount_value'] ?? 0);
+                    $val2 = floatval($tier['discount_2'] ?? 0);
+                    $val3 = floatval($tier['discount_3'] ?? 0);
 
                     if ($min > 0) {
                         B2bPriceListItem::create([
@@ -231,6 +241,8 @@ class AgentPriceListController extends Controller
                             'max_quantity' => $max,
                             'discount_type' => $type,
                             'discount_value' => $val,
+                            'discount_2' => $val2,
+                            'discount_3' => $val3,
                         ]);
                     }
                 }

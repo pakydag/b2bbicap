@@ -376,17 +376,17 @@
                                                                    value="0" 
                                                                    placeholder="0"
                                                                    {{ $qtyAvailable <= 0 ? 'disabled' : '' }}
-                                                                   class="qty-input w-16 text-center text-xs font-black rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition p-2 {{ $qtyAvailable <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-gray-50 border-gray-100 hover:bg-white text-gray-900' }} disabled:cursor-not-allowed">
+                                                                   class="qty-input w-20 text-center text-base font-black rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition p-3 {{ $qtyAvailable <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-gray-50 border-gray-100 hover:bg-white text-gray-900' }} disabled:cursor-not-allowed">
                                                             @if($qtyAvailable > 5)
-                                                                <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-emerald-600 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-emerald-50 mb-1">
+                                                                <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-emerald-600 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-emerald-50 mb-1">
                                                                     {{ $qtyAvailable }}
                                                                 </span>
                                                             @elseif($qtyAvailable <= 5 && $qtyAvailable > 0)
-                                                                <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-orange-500 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-orange-50 mb-1">
+                                                                <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-orange-500 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-orange-50 mb-1">
                                                                     SOLO {{ $qtyAvailable }}
                                                                 </span>
                                                             @elseif($qtyAvailable <= 0)
-                                                                <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-rose-400 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-rose-50 mb-1">
+                                                                <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-rose-400 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-rose-50 mb-1">
                                                                     ESAU.
                                                                 </span>
                                                             @endif
@@ -452,14 +452,14 @@
                                                                                value="0" 
                                                                                placeholder="0"
                                                                                {{ $qtyFuture <= 0 ? 'disabled' : '' }}
-                                                                               class="qty-input w-16 text-center text-xs font-black rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition p-2 {{ $qtyFuture <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-white border-indigo-100 text-gray-900' }} disabled:cursor-not-allowed">
+                                                                               class="qty-input w-20 text-center text-base font-black rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition p-3 {{ $qtyFuture <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-white border-indigo-100 text-gray-900' }} disabled:cursor-not-allowed">
                                                                         
                                                                         @if($qtyFuture > 0)
-                                                                            <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-indigo-600 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-indigo-50 mb-1">
+                                                                            <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-indigo-600 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-indigo-50 mb-1">
                                                                                 +{{ $qtyFuture }}
                                                                             </span>
                                                                         @else
-                                                                            <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-gray-400 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-gray-100 mb-1">
+                                                                            <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-gray-400 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-gray-100 mb-1">
                                                                                 ESAU.
                                                                             </span>
                                                                         @endif

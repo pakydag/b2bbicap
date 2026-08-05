@@ -106,10 +106,18 @@ class B2bProduct extends Model
             $result['tier'] = $tier;
             $result['discount_type'] = $tier->discount_type;
             $result['discount_value'] = (float) $tier->discount_value;
+            $result['discount_2'] = $tier->discount_2 ? (float) $tier->discount_2 : null;
+            $result['discount_3'] = $tier->discount_3 ? (float) $tier->discount_3 : null;
 
             if ($tier->discount_type === 'percentage') {
-                $discountAmount = $basePrice * ($tier->discount_value / 100);
-                $result['unit_price'] = max(0, round($basePrice - $discountAmount, 2));
+                $unitPrice = $basePrice * (1 - ($tier->discount_value / 100));
+                if ($tier->discount_2 > 0) {
+                    $unitPrice = $unitPrice * (1 - ($tier->discount_2 / 100));
+                }
+                if ($tier->discount_3 > 0) {
+                    $unitPrice = $unitPrice * (1 - ($tier->discount_3 / 100));
+                }
+                $result['unit_price'] = max(0, round($unitPrice, 2));
             } else if ($tier->discount_type === 'fixed_price') {
                 $result['unit_price'] = (float) $tier->discount_value;
             }

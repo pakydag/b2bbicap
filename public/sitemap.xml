@@ -1,130 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
     <url>
-    <loc>https://www.elysionostuni.it</loc>
+    <loc>http://localhost/b2bbicap</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/contatti</loc>
+    <loc>http://localhost/b2bbicap/contatti</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/elysion-ostuni</loc>
+    <loc>http://localhost/b2bbicap/shop</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/3-it</loc>
+    <loc>http://localhost/b2bbicap/booking</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/informative</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/shop</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/booking</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/10-it</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/come-arrivare-ostuni</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/cancellazione-prenotazione</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/richieste</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/elysion-ostuni/elysion-ostuni</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/categoria/gastronomia</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/informative/informativa-form-contatti</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/categoria/salame</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/contatti/contatti</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/categoria/mortadella</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/3-it/11-it</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/categoria/pane-pizza-focaccia</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/3-it/12-it</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/categoria/pae</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/3-it/13-it</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/categoria/pizza</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/3-it/14-it</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/categoria/focaccia</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/richieste/richiedi-transfer</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/collezione/per-la-cena</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/richieste/noleggio-auto</loc>
-    <changefreq>weekly</changefreq>
+    <loc>http://localhost/b2bbicap/shop/collezione/pranzo</loc>
     <priority>0.8</priority>
             </url>
     <url>
-    <loc>https://www.elysionostuni.it/informative/18-it</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/informative/19-it</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/informative/20-it</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/booking/6</loc>
-    <priority>0.8</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/booking/7</loc>
-    <priority>0.8</priority>
-            </url>
-    <url>
-    <loc>https://www.elysionostuni.it/booking/8</loc>
+    <loc>http://localhost/b2bbicap/shop/collezione/occasioni-speciali</loc>
     <priority>0.8</priority>
             </url>
 </urlset>

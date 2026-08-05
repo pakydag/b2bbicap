@@ -377,7 +377,8 @@
                                                 <td class="py-6 px-2 text-center">
                                                     @php 
                                                         $variant = $variants->where('size', $size)->first(); 
-                                                        $qtyAvailable = ($giacenzaMatch['current_stock'][$size] ?? 0) + ($summedFutureStock[$size] ?? 0);
+                                                        $current = $giacenzaMatch['current_stock'][$size] ?? 0;
+                                                        $qtyAvailable = $current > 0 ? $current : 0;
                                                     @endphp
                                                     @if($variant)
                                                         <div class="relative inline-block">
@@ -456,7 +457,8 @@
                                                         <td class="py-6 px-2 text-center">
                                                             @php 
                                                                 $variant = $variants->where('size', $size)->first(); 
-                                                                $qtyFuture = $summedFutureStock[$size] ?? 0;
+                                                                $current = $giacenzaMatch['current_stock'][$size] ?? 0;
+                                                                $qtyFuture = ($summedFutureStock[$size] ?? 0) + $current;
                                                             @endphp
                                                             @if($variant)
                                                                 <div class="relative inline-block">
