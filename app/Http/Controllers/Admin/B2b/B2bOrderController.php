@@ -101,10 +101,15 @@ class B2bOrderController extends Controller
             $order->update(['total_amount' => $total]);
         }
 
-        // Genera ed invia il file CSV dell'ordine nella cartella Input su FTP
-        app(\App\Http\Controllers\Agent\AgentPortalController::class)->exportOrderToFtpCsv($order);
+        // Genera ed invia il file CSV dell'ordine nella cartella Input su FTP SOLO se confermato
+        if ($request->status === 'confirmed') {
+            app(\App\Http\Controllers\Agent\AgentPortalController::class)->exportOrderToFtpCsv($order);
+            $msg = 'Ordine #' . $order->id . ' confermato con successo ed inviato su FTP.';
+        } else {
+            $msg = 'Ordine #' . $order->id . ' salvato con successo.';
+        }
 
-        return redirect()->route('admin.b2b.orders.edit', $order)->with('success', 'Ordine aggiornato ed inviato a FTP con successo.');
+        return redirect()->route('admin.b2b.orders.edit', $order)->with('success', $msg);
     }
 
     public function sendOrderCopy(Request $request, \App\Models\B2bOrder $order)

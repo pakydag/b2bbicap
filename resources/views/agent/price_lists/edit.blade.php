@@ -100,6 +100,7 @@
                                         <select name="general_tiers[{{ $gIdx }}][discount_type]" class="w-full text-xs rounded-lg border-gray-200 p-2">
                                             <option value="percentage" {{ $gtier->discount_type === 'percentage' ? 'selected' : '' }}>Sconto % su Prezzo Base</option>
                                             <option value="fixed_price" {{ $gtier->discount_type === 'fixed_price' ? 'selected' : '' }}>Prezzo Netto Personalizzato (€)</option>
+                                            <option value="discount_amount" {{ $gtier->discount_type === 'discount_amount' ? 'selected' : '' }}>Sconto € su Prezzo Base</option>
                                         </select>
                                     </div>
                                     <div class="col-span-3 flex gap-1 items-center">
@@ -185,6 +186,7 @@
                                                     <select name="tiers[{{ $product->id }}][{{ $idx }}][discount_type]" class="w-full text-xs rounded-lg border-gray-200 p-1.5">
                                                         <option value="percentage" {{ $tier->discount_type === 'percentage' ? 'selected' : '' }}>Sconto % su Prezzo Base</option>
                                                         <option value="fixed_price" {{ $tier->discount_type === 'fixed_price' ? 'selected' : '' }}>Prezzo Netto Personalizzato (€)</option>
+                                                        <option value="discount_amount" {{ $tier->discount_type === 'discount_amount' ? 'selected' : '' }}>Sconto € su Prezzo Base</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-span-3 flex gap-1 items-center">
@@ -260,6 +262,7 @@
                         <select name="general_tiers[${index}][discount_type]" class="w-full text-xs rounded-lg border-gray-200 p-1.5">
                             <option value="percentage">Sconto % su Prezzo Base</option>
                             <option value="fixed_price">Prezzo Netto Personalizzato (€)</option>
+                            <option value="discount_amount">Sconto € su Prezzo Base</option>
                         </select>
                     </div>
                     <div class="col-span-3 flex gap-1 items-center">
@@ -308,6 +311,7 @@
                         <select name="tiers[${productId}][${index}][discount_type]" class="w-full text-xs rounded-lg border-gray-200 p-1.5">
                             <option value="percentage">Sconto % su Prezzo Base</option>
                             <option value="fixed_price">Prezzo Netto Personalizzato (€)</option>
+                            <option value="discount_amount">Sconto € su Prezzo Base</option>
                         </select>
                     </div>
                     <div class="col-span-3 flex gap-1 items-center">

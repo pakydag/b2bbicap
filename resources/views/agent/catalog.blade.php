@@ -279,6 +279,10 @@
                                             <p class="text-xl font-black text-indigo-700 leading-none">
                                                 € {{ number_format($product->calculated_price, 2, ',', '.') }}
                                             </p>
+                                        @elseif(isset($product->calculated_price) && !empty($product->price_details['tier']))
+                                            <p class="text-xl font-black text-indigo-700 leading-none">
+                                                € {{ number_format($product->calculated_price, 2, ',', '.') }}
+                                            </p>
                                         @else
                                             <p class="text-xl font-black text-slate-900 leading-none">
                                                 € {{ number_format($product->price, 2, ',', '.') }}

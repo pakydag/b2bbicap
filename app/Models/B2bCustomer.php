@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class B2bCustomer extends Model
 {
     protected $fillable = [
-        'business_name', 'vat_number', 'contact_name', 
+        'code', 'business_name', 'vat_number', 'contact_name', 
         'contact_surname', 'phone', 'email', 'payment_condition_id',
         'b2b_price_list_id'
     ];

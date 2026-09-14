@@ -108,7 +108,7 @@
                  @keydown.escape.window="showLightbox = false"
                  style="display: none; background-color: rgba(0, 0, 0, 0.98); z-index: 99999; backdrop-filter: blur(8px);">
                  
-                 <!-- Bottone Chiudi (X grande, sfondo bianco, testo scuro ad alta leggibilità) -->
+                 <!-- Bottone Chiudi -->
                  <button type="button" @click="showLightbox = false" class="absolute top-6 right-6 bg-gray-900 text-white hover:bg-yellow-500 hover:text-black hover:scale-110 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition duration-200 text-xl font-bold z-[100000]">
                      ✕
                  </button>
@@ -184,7 +184,6 @@
                     $settoreKey = $isIt ? 'SETTORE-DI-UTILIZZO-IT' : 'SETTORE-DI-UTILIZZO-EN';
                     if (!empty($c[$settoreKey])) $specs[$isIt ? 'Settori di Utilizzo' : 'Work Environments'] = $c[$settoreKey];
                     
-                    // Tomaia: usa tomaia-descrizione-it/en con fallback su PUNTALE (visto che nel foglio contiene tomaia, es. PELLE SCAMOSCIATA)
                     $tomaiaKey = $isIt ? 'tomaia-descrizione-it' : 'tomaia-descrizione-en';
                     $tomaiaVal = !empty($c[$tomaiaKey]) ? $c[$tomaiaKey] : ($c['PUNTALE'] ?? '');
                     if (!empty($tomaiaVal)) $specs[$isIt ? 'Tomaia' : 'Upper'] = $tomaiaVal;
@@ -192,7 +191,6 @@
                     $foderaKey = $isIt ? 'fodera-descrizione-it' : 'fodera-descrizione-en';
                     if (!empty($c[$foderaKey])) $specs[$isIt ? 'Fodera' : 'Lining'] = $c[$foderaKey];
                     
-                    // Puntale: mappato su puntale-descrizione-it/en per avere la vera descrizione metallo/composito
                     $puntaleDescKey = $isIt ? 'puntale-descrizione-it' : 'puntale-descrizione-en';
                     if (!empty($c[$puntaleDescKey])) {
                         $specs[$isIt ? 'Puntale' : 'Toe Cap'] = $c[$puntaleDescKey];
@@ -266,20 +264,57 @@
 
         <!-- Variant Matrix & Form -->
         <div class="flex-1 min-w-0 bg-white rounded-[40px] shadow-sm border border-gray-100 p-8 md:p-12 overflow-hidden transition-all duration-300">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
                     <h3 class="font-black text-xl text-gray-900 uppercase tracking-tight">{{ $product->name }}</h3>
-                    @if(isset($priceDetails) && $priceDetails['unit_price'] < $product->price)
+                    @if(isset($priceDetails) && ($priceDetails['unit_price'] < $product->price || !empty($priceDetails['tier'])))
                         <div class="flex items-center gap-2 mt-1">
-                            <span class="text-xs text-gray-400 line-through font-bold">
-                                € {{ number_format($product->price, 2, ',', '.') }}
-                            </span>
+                            @if($priceDetails['unit_price'] < $product->price)
+                                <span class="text-xs text-gray-400 line-through font-bold">
+                                    € {{ number_format($product->price, 2, ',', '.') }}
+                                </span>
+                            @endif
                             <span class="text-2xl font-black text-indigo-700">
                                 € {{ number_format($priceDetails['unit_price'], 2, ',', '.') }}
                             </span>
-                            <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
-                                RISERVATO AZIENDA (-{{ number_format($priceDetails['discount_value'], 1) }}%)
-                            </span>
+                            @if(($priceDetails['discount_type'] ?? '') === 'fixed_price')
+                                @php
+                                    $calcDiscountPct = (1 - ($priceDetails['unit_price'] / max(0.01, (float)$product->price))) * 100;
+                                    $extraDiscounts = [];
+                                    if (!empty($priceDetails['discount_2']) && $priceDetails['discount_2'] > 0) {
+                                        $extraDiscounts[] = '-' . floatval($priceDetails['discount_2']) . '%';
+                                    }
+                                    if (!empty($priceDetails['discount_3']) && $priceDetails['discount_3'] > 0) {
+                                        $extraDiscounts[] = '-' . floatval($priceDetails['discount_3']) . '%';
+                                    }
+                                @endphp
+                                @if(!empty($extraDiscounts))
+                                    <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                                        PREZZO NETTO RISERVATO (€ {{ number_format($priceDetails['discount_value'], 2, ',', '.') }} {{ implode(' ', $extraDiscounts) }})
+                                    </span>
+                                @elseif($calcDiscountPct > 0)
+                                    <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                                        PREZZO NETTO RISERVATO (-{{ number_format($calcDiscountPct, 1) }}%)
+                                    </span>
+                                @else
+                                    <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                                        PREZZO NETTO RISERVATO
+                                    </span>
+                                @endif
+                            @else
+                                @php
+                                    $pctParts = ['-' . floatval($priceDetails['discount_value']) . '%'];
+                                    if (!empty($priceDetails['discount_2']) && $priceDetails['discount_2'] > 0) {
+                                        $pctParts[] = '+' . floatval($priceDetails['discount_2']) . '%';
+                                    }
+                                    if (!empty($priceDetails['discount_3']) && $priceDetails['discount_3'] > 0) {
+                                        $pctParts[] = '+' . floatval($priceDetails['discount_3']) . '%';
+                                    }
+                                @endphp
+                                <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                                    RISERVATO AZIENDA ({{ implode(' ', $pctParts) }})
+                                </span>
+                            @endif
                         </div>
                     @else
                         <div class="mt-1">
@@ -291,10 +326,6 @@
                 </div>
                 
                 <div class="flex items-center gap-2 shrink-0">
-                    <a href="{{ route('agent.product.variant', $product->id) }}" class="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
-                        <span>Simulazione Variante</span>
-                        <span class="text-sm">🧪</span>
-                    </a>
                     <button type="button" @click="showDetails = !showDetails" class="bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-black hover:border-yellow-400 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
                         <span x-text="showDetails ? '⬅️ Espandi Griglia (Schermo Intero)' : '➡️ Mostra Foto Prodotto'"></span>
                     </button>
@@ -330,40 +361,56 @@
                     $inputIndex = 0;
                 @endphp
 
-                <form action="{{ route('agent.cart.add') }}" method="POST">
+                <form action="{{ route('agent.cart.add') }}" method="POST" class="variant-form-container">
                     @csrf
+
+                    @php
+                        // Aggregazione giacenze future per la griglia immediata
+                        $summedFutureStock = [];
+                        if(!empty($giacenzaMatch['future_stock'])) {
+                            foreach ($giacenzaMatch['future_stock'] as $date => $stocks) {
+                                foreach ($stocks as $s => $q) {
+                                    if (!isset($summedFutureStock[$s])) {
+                                        $summedFutureStock[$s] = 0;
+                                    }
+                                    $summedFutureStock[$s] += $q;
+                                }
+                            }
+                        }
+                    @endphp
                     
                     <!-- 1. Griglia Disponibilità Immediata -->
-                    <div class="mb-10">
-                        <h4 class="font-black text-xs uppercase tracking-widest text-indigo-600 mb-4 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
+                    <div class="mb-12">
+                        <h4 class="font-black text-sm uppercase tracking-widest text-indigo-600 mb-6 flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
                             Disponibilità Immediata (Pronta Consegna)
                         </h4>
                         
                         <div class="overflow-x-auto pb-4">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                                        <th class="py-4 px-2 whitespace-nowrap">Variante / Colore</th>
+                                    <tr class="text-base font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                        <th class="py-6 px-4 whitespace-nowrap">Variante / Colore</th>
                                         @foreach($sizes as $size)
-                                            <th class="py-4 px-2 text-center whitespace-nowrap">{{ $size }}</th>
+                                            <th class="py-6 px-3 text-center whitespace-nowrap">{{ $size }}</th>
                                         @endforeach
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-50">
+                                <tbody class="divide-y divide-gray-100">
                                     @foreach($groupedVariants as $color => $variants)
                                         <tr class="group hover:bg-indigo-50/30 transition">
-                                            <td class="py-6 px-2">
+                                            <td class="py-8 px-4">
                                                 <div class="flex items-center">
-                                                    <div class="w-2 h-2 rounded-full mr-3 bg-indigo-400"></div>
-                                                    <span class="text-xs font-black text-gray-900 uppercase">{{ $color }}</span>
+                                                    <div class="w-3 h-3 rounded-full mr-4 bg-indigo-500"></div>
+                                                    <span class="text-base font-black text-gray-900 uppercase">{{ $color }}</span>
                                                 </div>
                                             </td>
                                             @foreach($sizes as $size)
-                                                <td class="py-6 px-1 text-center">
+                                                <td class="py-6 px-2 text-center">
                                                     @php 
                                                         $variant = $variants->where('size', $size)->first(); 
-                                                        $qtyAvailable = $giacenzaMatch['current_stock'][$size] ?? 0;
+                                                        $current = $giacenzaMatch['current_stock'][$size] ?? 0;
+                                                        $qtyAvailable = $current > 0 ? $current : 0;
                                                     @endphp
                                                     @if($variant)
                                                         <div class="relative inline-block">
@@ -376,7 +423,7 @@
                                                                    value="0" 
                                                                    placeholder="0"
                                                                    {{ $qtyAvailable <= 0 ? 'disabled' : '' }}
-                                                                   class="qty-input w-20 text-center text-base font-black rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition p-3 {{ $qtyAvailable <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-gray-50 border-gray-100 hover:bg-white text-gray-900' }} disabled:cursor-not-allowed">
+                                                                   class="qty-input w-20 text-center text-base font-black rounded-xl focus:ring-2 focus:ring-indigo-500 transition p-3 {{ $qtyAvailable <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-gray-50 border-gray-100 hover:bg-white text-gray-900' }} disabled:cursor-not-allowed">
                                                             @if($qtyAvailable > 5)
                                                                 <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-emerald-600 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-emerald-50 mb-1">
                                                                     {{ $qtyAvailable }}
@@ -393,8 +440,8 @@
                                                         </div>
                                                         @php $inputIndex++; @endphp
                                                     @else
-                                                        <div class="w-16 mx-auto h-8 bg-gray-50/50 rounded-lg flex items-center justify-center opacity-30">
-                                                            <div class="w-1 h-3 bg-gray-200 rotate-45 transform"></div>
+                                                        <div class="w-20 mx-auto h-12 bg-gray-50 rounded-xl flex items-center justify-center opacity-20">
+                                                            <div class="w-1.5 h-6 bg-gray-300 rotate-45"></div>
                                                         </div>
                                                     @endif
                                                 </td>
@@ -406,83 +453,86 @@
                         </div>
                     </div>
 
-                    <!-- 2. Griglie Disponibilità Future (Prenotazione) -->
+                    <!-- 2. Griglia Disponibilità Future Aggregate (Prenotazione) -->
                     @if(!empty($giacenzaMatch['future_stock']))
-                        <div class="mt-12 space-y-12">
-                            @foreach($giacenzaMatch['future_stock'] as $deliveryDate => $futureStocks)
-                                <div class="bg-indigo-50/30 rounded-3xl p-6 border border-indigo-100/50">
-                                    <h4 class="font-black text-xs uppercase tracking-widest text-indigo-800 mb-4 flex items-center gap-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse shrink-0"></span>
-                                        Prenotazione Disponibilità dal {{ $deliveryDate }}
-                                    </h4>
-                                    
-                                    <div class="overflow-x-auto pb-4">
-                                        <table class="w-full text-left border-collapse">
-                                            <thead>
-                                                <tr class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                                                    <th class="py-4 px-2 whitespace-nowrap">Variante / Colore</th>
+                        @php
+                            $futureDates = array_keys($giacenzaMatch['future_stock']);
+                            $datesListText = implode(', ', $futureDates);
+                            $defaultFutureDate = $futureDates[0] ?? '';
+                        @endphp
+                        
+                        <div class="mt-16 border-t border-gray-100 pt-12">
+                            <div class="bg-indigo-50/40 rounded-3xl p-8 border border-indigo-100">
+                                <h4 class="font-black text-sm uppercase tracking-widest text-indigo-800 mb-2 flex items-center gap-3">
+                                    <span class="w-3 h-3 rounded-full bg-indigo-600 animate-pulse"></span>
+                                    Prenotazione Disponibilità Future
+                                </h4>
+                                <p class="text-xs font-bold text-indigo-600/80 uppercase tracking-widest mb-6">
+                                    Arrivi previsti: {{ $datesListText }}
+                                </p>
+                                
+                                <div class="overflow-x-auto pb-4">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="text-base font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                                <th class="py-6 px-4 whitespace-nowrap">Variante / Colore</th>
+                                                @foreach($sizes as $size)
+                                                    <th class="py-6 px-3 text-center whitespace-nowrap">{{ $size }}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-indigo-100/50">
+                                            @foreach($groupedVariants as $color => $variants)
+                                                <tr class="group hover:bg-indigo-50/50 transition">
+                                                    <td class="py-8 px-4">
+                                                        <div class="flex items-center">
+                                                            <div class="w-3 h-3 rounded-full mr-4 bg-indigo-400"></div>
+                                                            <span class="text-base font-black text-gray-900 uppercase">{{ $color }}</span>
+                                                        </div>
+                                                    </td>
                                                     @foreach($sizes as $size)
-                                                        <th class="py-4 px-2 text-center whitespace-nowrap">{{ $size }}</th>
+                                                        <td class="py-6 px-2 text-center">
+                                                            @php 
+                                                                $variant = $variants->where('size', $size)->first(); 
+                                                                $current = $giacenzaMatch['current_stock'][$size] ?? 0;
+                                                                $qtyFuture = ($summedFutureStock[$size] ?? 0) + $current;
+                                                            @endphp
+                                                            @if($variant)
+                                                                <div class="relative inline-block">
+                                                                    <input type="hidden" name="items[{{ $inputIndex }}][variant_id]" value="{{ $variant->id }}">
+                                                                    <input type="hidden" name="items[{{ $inputIndex }}][delivery_date]" value="{{ $defaultFutureDate }}">
+                                                                    <input type="number" 
+                                                                           name="items[{{ $inputIndex }}][quantity]" 
+                                                                           min="0" 
+                                                                           max="{{ $qtyFuture > 0 ? $qtyFuture : 0 }}" 
+                                                                           value="0" 
+                                                                           placeholder="0"
+                                                                           {{ $qtyFuture <= 0 ? 'disabled' : '' }}
+                                                                           class="qty-input w-20 text-center text-base font-black rounded-xl focus:ring-2 focus:ring-indigo-500 transition p-3 {{ $qtyFuture <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-white border-indigo-200 text-gray-900' }} disabled:cursor-not-allowed">
+                                                                    @if($qtyFuture > 0)
+                                                                        <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-indigo-600 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-indigo-100">
+                                                                            +{{ $qtyFuture }}
+                                                                        </span>
+                                                                    @endif
+                                                                </div>
+                                                                @php $inputIndex++; @endphp
+                                                            @else
+                                                                <div class="w-20 mx-auto h-12 bg-gray-50 rounded-xl flex items-center justify-center opacity-20">
+                                                                    <div class="w-1.5 h-6 bg-gray-300 rotate-45"></div>
+                                                                </div>
+                                                            @endif
+                                                        </td>
                                                     @endforeach
                                                 </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-50">
-                                                @foreach($groupedVariants as $color => $variants)
-                                                    <tr class="group hover:bg-indigo-50/30 transition">
-                                                        <td class="py-6 px-2">
-                                                            <div class="flex items-center">
-                                                                <div class="w-2 h-2 rounded-full mr-3 bg-indigo-500"></div>
-                                                                <span class="text-xs font-black text-gray-900 uppercase">{{ $color }}</span>
-                                                            </div>
-                                                        </td>
-                                                        @foreach($sizes as $size)
-                                                            <td class="py-6 px-1 text-center">
-                                                                @php 
-                                                                    $variant = $variants->where('size', $size)->first(); 
-                                                                    $qtyFuture = $futureStocks[$size] ?? 0;
-                                                                @endphp
-                                                                @if($variant)
-                                                                    <div class="relative inline-block">
-                                                                        <input type="hidden" name="items[{{ $inputIndex }}][variant_id]" value="{{ $variant->id }}">
-                                                                        <input type="hidden" name="items[{{ $inputIndex }}][delivery_date]" value="{{ $deliveryDate }}">
-                                                                        <input type="number" 
-                                                                               name="items[{{ $inputIndex }}][quantity]" 
-                                                                               min="0" 
-                                                                               max="{{ $qtyFuture > 0 ? $qtyFuture : 0 }}" 
-                                                                               value="0" 
-                                                                               placeholder="0"
-                                                                               {{ $qtyFuture <= 0 ? 'disabled' : '' }}
-                                                                               class="qty-input w-20 text-center text-base font-black rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition p-3 {{ $qtyFuture <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-white border-indigo-100 text-gray-900' }} disabled:cursor-not-allowed">
-                                                                        
-                                                                        @if($qtyFuture > 0)
-                                                                            <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-indigo-600 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-indigo-50 mb-1">
-                                                                                +{{ $qtyFuture }}
-                                                                            </span>
-                                                                        @else
-                                                                            <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-gray-400 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-gray-100 mb-1">
-                                                                                ESAU.
-                                                                            </span>
-                                                                        @endif
-                                                                    </div>
-                                                                    @php $inputIndex++; @endphp
-                                                                @else
-                                                                    <div class="w-16 mx-auto h-8 bg-gray-50/50 rounded-lg flex items-center justify-center opacity-30">
-                                                                        <div class="w-1 h-3 bg-gray-200 rotate-45 transform"></div>
-                                                                    </div>
-                                                                @endif
-                                                            </td>
-                                                        @endforeach
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
                                 </div>
-                            @endforeach
+                            </div>
                         </div>
                     @endif
 
-                    <!-- Sezione Riepilogo e Invio -->
+                    <!-- Sezione Riepilogo e Invio al Carrello -->
                     <div class="mt-12 bg-gray-50 rounded-[32px] p-8 border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
                         <div>
                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Riepilogo Selezione</span>

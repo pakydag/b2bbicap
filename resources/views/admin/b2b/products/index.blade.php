@@ -15,6 +15,12 @@
                 </div>
             @endif
 
+            @if(session('warning'))
+                <div class="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline">{{ session('warning') }}</span>
+                </div>
+            @endif
+
             @if(session('error'))
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                     <span class="block sm:inline">{{ session('error') }}</span>
@@ -22,7 +28,7 @@
             @endif
 
             <!-- Sezioni Sincronizzazione Dati -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 <!-- Sezione Importazione Google Sheet -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6 flex flex-col justify-between">
                     <div>
@@ -33,17 +39,17 @@
                             <h3 class="text-lg font-bold text-gray-800">Prodotti da Google Sheet</h3>
                         </div>
                         <p class="text-sm text-gray-600 mb-4">
-                            Importa o aggiorna l'inventario prodotti B2B dal foglio Google. Vengono letti ed importati solo i prodotti contrassegnati come <strong>"pronta consegna"</strong> in Colonna C.
+                            Importa o aggiorna l'inventario prodotti B2B dal foglio Google. Vengono letti solo i prodotti <strong>"pronta consegna"</strong> in Colonna C.
                         </p>
                     </div>
                     <form action="{{ route('admin.b2b.products.import') }}" method="POST" class="flex flex-col gap-3 mt-2">
                         @csrf
                         <div>
-                            <label for="url" class="block text-xs font-bold text-gray-700 uppercase mb-1">URL Esportazione CSV Google Sheet</label>
+                            <label for="url" class="block text-xs font-bold text-gray-700 uppercase mb-1">URL CSV Google Sheet</label>
                             <input type="url" name="url" id="url" 
                                    value="https://docs.google.com/spreadsheets/d/11HQN1nTtHUPt29p9ZFGH5jHaSk90Ltc19RGlNDis5Dw/export?format=csv&gid=1019847442" 
                                    required 
-                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs">
                         </div>
                         <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.283 8H18"></path></svg>
@@ -59,19 +65,55 @@
                             <span class="p-2 bg-blue-50 text-blue-600 rounded-lg">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
                             </span>
-                            <h3 class="text-lg font-bold text-gray-800">Giacenze & Taglie da Server FTPS</h3>
+                            <h3 class="text-lg font-bold text-gray-800">Giacenze FTPS (Giacenza.csv)</h3>
                         </div>
                         <p class="text-sm text-gray-600 mb-4">
-                            Scarica immediatamente l'ultimo file <strong>Giacenza.csv</strong> dal server remoto (<code>51.75.145.169 / Output</code>) per aggiornare le giacenze e le date di consegna degli agenti.
+                            Scarica l'ultimo file <strong>Giacenza.csv</strong> da FTPS (<code>51.75.145.169 / Output</code>) per aggiornare giacenze e date di consegna.
                         </p>
                     </div>
                     <form action="{{ route('admin.b2b.products.sync_giacenze') }}" method="POST" class="mt-2">
                         @csrf
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             Aggiorna File Giacenze FTPS Ora
                         </button>
                     </form>
+                </div>
+
+                <!-- Sezione Aggiornamento Clienti B2B -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </span>
+                            <h3 class="text-lg font-bold text-gray-800">Clienti & Codici Azienda</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2">
+                            Scarica <strong>Clienti_Bicap.xlsx</strong> direttamente da FTPS (<code>51.75.145.169 / Output</code>) per aggiornare anagrafiche e codici.
+                        </p>
+                    </div>
+                    <div class="space-y-3 mt-2">
+                        <form action="{{ route('admin.b2b.customers.sync_ftps') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-150">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                Sincronizza Clienti FTPS Ora
+                            </button>
+                        </form>
+
+                        <details class="text-xs text-gray-500 border-t border-gray-100 pt-2">
+                            <summary class="cursor-pointer hover:text-gray-700 font-semibold py-1">Oppure carica file dal computer (.xlsx/.csv)</summary>
+                            <form action="{{ route('admin.b2b.customers.import') }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2 mt-2">
+                                @csrf
+                                <input type="file" name="file" accept=".xlsx,.csv,.txt" required 
+                                       class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 border border-gray-300 rounded p-1 cursor-pointer">
+                                <button type="submit" class="w-full inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 rounded text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 transition">
+                                    Carica File Selezionato
+                                </button>
+                            </form>
+                        </details>
+                    </div>
                 </div>
             </div>
 

@@ -32,6 +32,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Avvio non-bloccante della sincronizzazione B2B in background ad ogni accesso (Google Sheet + FTPS)
+        try {
+            $phpBinary = PHP_BINARY ?: 'php';
+            $artisan = base_path('artisan');
+            exec("{$phpBinary} {$artisan} b2b:sync-all > /dev/null 2>&1 &");
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("[AuthLogin] Impossibile avviare il processo di sync background: " . $e->getMessage());
+        }
+
         // Determina la fallback route in base al ruolo se non c'è un url intended vero e proprio
         if ($request->user()->role === 'admin') {
             $user = $request->user();

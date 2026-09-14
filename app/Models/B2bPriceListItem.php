@@ -12,7 +12,9 @@ class B2bPriceListItem extends Model
         'min_quantity',
         'max_quantity',
         'discount_type',
-        'discount_value'
+        'discount_value',
+        'discount_2',
+        'discount_3'
     ];
 
     protected $casts = [

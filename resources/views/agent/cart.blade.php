@@ -165,13 +165,14 @@
                                                 selectedId: '',
                                                 customers: [
                                                     @foreach($customers as $customer)
-                                                    { id: '{{ $customer->id }}', name: '{{ addslashes($customer->business_name) }}', vat: '{{ $customer->vat_number }}' },
+                                                    { id: '{{ $customer->id }}', code: '{{ addslashes($customer->code ?? '') }}', name: '{{ addslashes($customer->business_name) }}', vat: '{{ $customer->vat_number }}' },
                                                     @endforeach
                                                 ],
                                                 get filteredCustomers() {
                                                     if (this.search === '') return this.customers;
                                                     return this.customers.filter(c => 
                                                         c.name.toLowerCase().includes(this.search.toLowerCase()) || 
+                                                        (c.code && c.code.toLowerCase().includes(this.search.toLowerCase())) || 
                                                         c.vat.toLowerCase().includes(this.search.toLowerCase())
                                                     );
                                                 }
@@ -193,15 +194,20 @@
                                                      class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden" 
                                                      x-cloak>
                                                     <div class="p-3 border-b border-gray-50">
-                                                        <input type="text" x-model="search" placeholder="Cerca per nome o P.IVA..." 
+                                                        <input type="text" x-model="search" placeholder="Cerca per codice, nome o P.IVA..." 
                                                                class="w-full border-gray-100 rounded-xl text-sm focus:ring-indigo-500 focus:border-indigo-500 p-3 bg-gray-50">
                                                     </div>
                                                     <div class="max-h-60 overflow-y-auto">
                                                         <template x-for="customer in filteredCustomers" :key="customer.id">
-                                                            <div @click="selectedId = customer.id; selectedName = customer.name; show = false; search = ''" 
+                                                            <div @click="selectedId = customer.id; selectedName = (customer.code ? '[' + customer.code + '] ' : '') + customer.name; show = false; search = ''" 
                                                                  class="px-4 py-3 hover:bg-indigo-50 cursor-pointer transition">
-                                                                <p class="font-black text-gray-900 text-sm uppercase" x-text="customer.name"></p>
-                                                                <p class="text-[10px] text-gray-400 font-bold" x-text="'P.IVA: ' + customer.vat"></p>
+                                                                <div class="flex items-center gap-2">
+                                                                    <template x-if="customer.code">
+                                                                        <span class="text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200" x-text="customer.code"></span>
+                                                                    </template>
+                                                                    <p class="font-black text-gray-900 text-sm uppercase" x-text="customer.name"></p>
+                                                                </div>
+                                                                <p class="text-[10px] text-gray-400 font-bold mt-0.5" x-text="'P.IVA: ' + (customer.vat || 'N/D')"></p>
                                                             </div>
                                                         </template>
                                                         <div x-show="filteredCustomers.length === 0" class="p-4 text-center text-xs text-gray-400 italic">
@@ -242,7 +248,13 @@
                                                             Da {{ $tier->min_quantity }} {{ $tier->max_quantity ? 'a ' . $tier->max_quantity : 'in poi' }} pz
                                                         </span>
                                                         <span>
-                                                            {{ $tier->discount_type === 'percentage' ? '-' . floatval($tier->discount_value) . '%' : '€ ' . number_format($tier->discount_value, 2, ',', '.') }}
+                                                            @if($tier->discount_type === 'percentage')
+                                                                -{{ floatval($tier->discount_value) }}%{{ $tier->discount_2 > 0 ? ' +' . floatval($tier->discount_2) . '%' : '' }}{{ $tier->discount_3 > 0 ? ' +' . floatval($tier->discount_3) . '%' : '' }}
+                                                            @elseif($tier->discount_type === 'fixed_price')
+                                                                € {{ number_format($tier->discount_value, 2, ',', '.') }}{{ $tier->discount_2 > 0 ? ' -' . floatval($tier->discount_2) . '%' : '' }}{{ $tier->discount_3 > 0 ? ' -' . floatval($tier->discount_3) . '%' : '' }}
+                                                            @else
+                                                                -€ {{ number_format($tier->discount_value, 2, ',', '.') }}{{ $tier->discount_2 > 0 ? ' -' . floatval($tier->discount_2) . '%' : '' }}{{ $tier->discount_3 > 0 ? ' -' . floatval($tier->discount_3) . '%' : '' }}
+                                                            @endif
                                                         </span>
                                                     </li>
                                                 @endforeach

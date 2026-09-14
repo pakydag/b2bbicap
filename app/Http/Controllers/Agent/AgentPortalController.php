@@ -155,7 +155,7 @@ class AgentPortalController extends Controller
         return view('agent.catalog', compact('products', 'authorizedBrands', 'filterOptions', 'customer'));
     }
 
-    protected function getSelectedCustomer(Request $request = null)
+    protected function getSelectedCustomer(?Request $request = null)
     {
         $user = auth()->user();
         if (!$user) return null;
@@ -199,22 +199,7 @@ class AgentPortalController extends Controller
 
     public function productVariant(B2bProduct $product)
     {
-        $user = auth()->user();
-        if ($user->role === 'agent') {
-            if (!$user->b2bBrands->contains($product->b2b_brand_id)) {
-                abort(403);
-            }
-        }
-        
-        $product->load('brand', 'variants');
-        
-        $customer = $this->getSelectedCustomer();
-        $priceDetails = $product->getPriceDetailsForCustomer($customer, 1);
-
-        $giacenzaData = $this->getGiacenzaData();
-        $giacenzaMatch = $this->findGiacenzaMatch($product, $giacenzaData);
-        
-        return view('agent.product_variant', compact('product', 'giacenzaMatch', 'priceDetails', 'customer'));
+        return redirect()->route('agent.product', $product->id);
     }
 
     private function recalculateCartPrices(array $cart, $customer)
@@ -318,6 +303,13 @@ class AgentPortalController extends Controller
                 $availableQty = $match['current_stock'][$size] ?? 0;
             } else {
                 $availableQty = $match['future_stock'][$deliveryDate][$size] ?? 0;
+                if ($availableQty == 0 && !empty($match['future_stock'])) {
+                    $sumFuture = 0;
+                    foreach ($match['future_stock'] as $fDate => $fSizes) {
+                        $sumFuture += (int)($fSizes[$size] ?? 0);
+                    }
+                    $availableQty = $sumFuture;
+                }
             }
             
             $totalRequestedQty = $currentCartQty + $qtyRequested;
@@ -505,6 +497,13 @@ class AgentPortalController extends Controller
                     $availableQty = $match['current_stock'][$size] ?? 0;
                 } else {
                     $availableQty = $match['future_stock'][$deliveryDate][$size] ?? 0;
+                    if ($availableQty == 0 && !empty($match['future_stock'])) {
+                        $sumFuture = 0;
+                        foreach ($match['future_stock'] as $fDate => $fSizes) {
+                            $sumFuture += (int)($fSizes[$size] ?? 0);
+                        }
+                        $availableQty = $sumFuture;
+                    }
                 }
                 
                 if ($newQty > $availableQty) {
@@ -680,15 +679,21 @@ class AgentPortalController extends Controller
 
         $order->update(['total_amount' => $total]);
         
-        // Genera ed invia il file CSV dell'ordine nella cartella Input su FTP
-        $this->exportOrderToFtpCsv($order);
-
         // Aggiorniamo la sessione con i restanti prodotti non inviati
         $cart = array_values($cart);
+        
+        if (count($cart) > 0) {
+            $cart = $this->recalculateCartPrices($cart, $b2bCustomer);
+            session()->put('b2b_cart', $cart);
+            $this->persistCart($cart);
+
+            return redirect()->route('agent.cart')->with('success', 'Ordine #' . $order->id . ' inviato correttamente all\'amministrazione. Nel carrello sono ancora presenti articoli da inviare.');
+        }
+
         session()->put('b2b_cart', $cart);
         $this->persistCart($cart);
 
-        return redirect()->route('agent.orders')->with('success', 'Ordine #' . $order->id . ' inviato correttamente all\'amministrazione ed inviato su FTP.');
+        return redirect()->route('agent.orders')->with('success', 'Ordine #' . $order->id . ' inviato correttamente all\'amministrazione.');
     }
 
     public function orders()
@@ -818,10 +823,7 @@ class AgentPortalController extends Controller
             'status' => $isMod ? 'revision_pending' : $order->status,
         ]);
 
-        // Genera ed invia il file CSV aggiornato dell'ordine nella cartella Input su FTP
-        $this->exportOrderToFtpCsv($order);
-
-        return redirect()->back()->with('success', 'Quantità e prezzi dell\'Ordine #' . $order->id . ' aggiornati con successo ed inviati via FTP! Ordine posto in attesa di approvazione del cliente.');
+        return redirect()->back()->with('success', 'Quantità e prezzi dell\'Ordine #' . $order->id . ' aggiornati con successo! Ordine posto in attesa di approvazione del cliente.');
     }
 
     public function acceptOrderModifications(B2bOrder $order)
@@ -833,15 +835,7 @@ class AgentPortalController extends Controller
 
         $order->update(['status' => 'customer_approved']);
 
-        // Genera ed invia il file CSV dell'ordine nella cartella Input su FTP
-        $csvResult = $this->exportOrderToFtpCsv($order);
-
-        $msg = 'Hai accettato le modifiche dell\'Ordine #' . $order->id . '. L\'ordine è in attesa di OK finale dall\'agente/amministrazione.';
-        if ($csvResult['uploaded']) {
-            $msg .= ' Il file CSV dell\'ordine (' . $csvResult['filename'] . ') è stato inviato al magazzino FTP (Input).';
-        }
-
-        return redirect()->back()->with('success', $msg);
+        return redirect()->back()->with('success', 'Hai accettato le modifiche dell\'Ordine #' . $order->id . '. L\'ordine è in attesa di OK finale dall\'agente/amministrazione.');
     }
 
     public function rejectOrderModifications(B2bOrder $order)
@@ -901,6 +895,13 @@ class AgentPortalController extends Controller
                 }
             } else {
                 $availableStock = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
+                if ($availableStock == 0 && !empty($match['future_stock'])) {
+                    $sumFuture = 0;
+                    foreach ($match['future_stock'] as $fDate => $fSizes) {
+                        $sumFuture += (int)($fSizes[$size] ?? 0);
+                    }
+                    $availableStock = $sumFuture;
+                }
                 if ($reqQty > $availableStock) {
                     $insufficientItems[] = "{$product->name} (Taglia {$size}): Richiesti {$reqQty} pz, Disponibilità per la data {$deliveryDate}: {$availableStock} pz.";
                 }
@@ -928,6 +929,7 @@ class AgentPortalController extends Controller
     public function exportOrderToFtpCsv(B2bOrder $order)
     {
         $order->load('customer', 'items.product', 'items.variant');
+        $giacenzaData = $this->getGiacenzaData();
         
         $filename = "{$order->id}.csv";
         $storageDir = storage_path('app/orders');
@@ -936,20 +938,30 @@ class AgentPortalController extends Controller
         }
         $localPath = $storageDir . '/' . $filename;
         
-        $file = fopen($localPath, 'w');
-        // Intestazione in linea con il formato Giacenza.csv
-        fputcsv($file, ['CODICE_ARTICOLO', 'DESCRIZIONE', 'TAGLIA', 'QUANTITA', 'DATA_CONSEGNA', 'PREZZO_UNITARIO', 'CLIENTE', 'NUMERO_ORDINE'], ';');
+        $file = @fopen($localPath, 'w');
+        if (!$file) {
+            \Illuminate\Support\Facades\Log::error("[ExportOrderCsv] Impossibile creare/aprire file {$localPath}");
+            return ['uploaded' => false, 'filename' => $filename, 'error' => 'Errore scrittura file'];
+        }
+
+        // Intestazione con codice articolo dal file giacenze e codice cliente
+        fputcsv($file, ['CODICE_ARTICOLO', 'DESCRIZIONE', 'TAGLIA', 'QUANTITA', 'DATA_CONSEGNA', 'PREZZO_UNITARIO', 'CODICE_CLIENTE', 'CLIENTE', 'NUMERO_ORDINE'], ';', '"', "\\");
         
         foreach ($order->items as $item) {
-            $code = $item->product ? ($item->product->code ?? $item->product->name) : 'N/D';
+            $code = 'N/D';
+            if ($item->product) {
+                $match = $this->findGiacenzaMatch($item->product, $giacenzaData);
+                $code = ($match && !empty($match['raw_code'])) ? $match['raw_code'] : ($item->product->code ?? $item->product->name);
+            }
             $name = $item->product ? $item->product->name : 'N/D';
             $size = $item->variant ? $item->variant->size : '';
             $qty = $item->quantity;
             $deliveryDate = !empty($item->delivery_date) ? $item->delivery_date : 'Pronta consegna';
             $price = number_format($item->price, 2, '.', '');
+            $customerCode = $order->customer ? ($order->customer->code ?? '') : '';
             $customerName = $order->customer ? $order->customer->business_name : 'N/D';
             
-            fputcsv($file, [$code, $name, $size, $qty, $deliveryDate, $price, $customerName, $order->id], ';');
+            fputcsv($file, [$code, $name, $size, $qty, $deliveryDate, $price, $customerCode, $customerName, $order->id], ';', '"', "\\");
         }
         fclose($file);
 
@@ -1002,10 +1014,10 @@ class AgentPortalController extends Controller
         }
         
         $file = fopen($csvPath, 'r');
-        $headers = fgetcsv($file, 0, ';');
+        $headers = fgetcsv($file, 0, ';', '"', '\\');
         
         $data = [];
-        while (($row = fgetcsv($file, 0, ';')) !== false) {
+        while (($row = fgetcsv($file, 0, ';', '"', '\\')) !== false) {
             if (count($row) < 4) continue;
             $code = trim($row[0]);
             $name = trim($row[1]);

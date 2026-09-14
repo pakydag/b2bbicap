@@ -204,6 +204,8 @@ Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')-
     Route::prefix('b2b')->name('b2b.')->group(function () {
         Route::resource('brands', \App\Http\Controllers\Admin\B2b\B2bBrandController::class);
         Route::resource('payment-conditions', \App\Http\Controllers\Admin\B2b\B2bPaymentConditionController::class);
+        Route::post('customers/import', [\App\Http\Controllers\Admin\B2b\B2bCustomerController::class, 'import'])->name('customers.import');
+        Route::post('customers/sync-ftps', [\App\Http\Controllers\Admin\B2b\B2bCustomerController::class, 'syncFtps'])->name('customers.sync_ftps');
         Route::resource('customers', \App\Http\Controllers\Admin\B2b\B2bCustomerController::class);
         Route::resource('agents', \App\Http\Controllers\Admin\B2b\AgentController::class);
         Route::post('products/import', [\App\Http\Controllers\Admin\B2b\B2bProductController::class, 'import'])->name('products.import');

@@ -31,7 +31,7 @@ class SyncGiacenze extends Command
         $password = env('FTPS_GIACENZE_PASSWORD', 'lB24RiL=^D');
         $remotePath = env('FTPS_GIACENZE_REMOTE_PATH', 'Output/Giacenza.csv');
         $destination = base_path('Giacenza.csv');
-        $tempPath = base_path('Giacenza_temp.csv');
+        $tempPath = sys_get_temp_dir() . '/Giacenza_temp_' . uniqid() . '.csv';
 
         $this->info("Connessione al server FTPS ({$host})...");
 
@@ -75,8 +75,10 @@ class SyncGiacenze extends Command
             return 1;
         }
 
-        // Sostituzione atomica del file Giacenza.csv
-        @rename($tempPath, $destination);
+        // Sostituzione sicura del file Giacenza.csv
+        @copy($tempPath, $destination);
+        @unlink($tempPath);
+        @chmod($destination, 0666);
 
         $size = filesize($destination);
         $this->info("File Giacenza.csv aggiornato con successo! Dimensione: {$size} byte.");

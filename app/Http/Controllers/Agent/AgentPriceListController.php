@@ -102,7 +102,7 @@ class AgentPriceListController extends Controller
                     $val = floatval($gtier['discount_value'] ?? 0);
                     $val2 = floatval($gtier['discount_2'] ?? 0);
                     $val3 = floatval($gtier['discount_3'] ?? 0);
-                    $type = in_array($gtier['discount_type'] ?? '', ['percentage', 'fixed_price']) ? $gtier['discount_type'] : 'percentage';
+                    $type = in_array($gtier['discount_type'] ?? '', ['percentage', 'fixed_price', 'discount_amount']) ? $gtier['discount_type'] : 'percentage';
                     if ($min > 0) {
                         B2bPriceListItem::create([
                             'b2b_price_list_id' => $priceList->id,
@@ -204,7 +204,7 @@ class AgentPriceListController extends Controller
                     $val = floatval($gtier['discount_value'] ?? 0);
                     $val2 = floatval($gtier['discount_2'] ?? 0);
                     $val3 = floatval($gtier['discount_3'] ?? 0);
-                    $type = in_array($gtier['discount_type'] ?? '', ['percentage', 'fixed_price']) ? $gtier['discount_type'] : 'percentage';
+                    $type = in_array($gtier['discount_type'] ?? '', ['percentage', 'fixed_price', 'discount_amount']) ? $gtier['discount_type'] : 'percentage';
                     if ($min > 0) {
                         B2bPriceListItem::create([
                             'b2b_price_list_id' => $priceList->id,
@@ -228,7 +228,7 @@ class AgentPriceListController extends Controller
                 foreach ($productTiers as $tier) {
                     $min = intval($tier['min_quantity'] ?? 1);
                     $max = isset($tier['max_quantity']) && $tier['max_quantity'] !== '' ? intval($tier['max_quantity']) : null;
-                    $type = in_array($tier['discount_type'] ?? '', ['percentage', 'fixed_price']) ? $tier['discount_type'] : 'percentage';
+                    $type = in_array($tier['discount_type'] ?? '', ['percentage', 'fixed_price', 'discount_amount']) ? $tier['discount_type'] : 'percentage';
                     $val = floatval($tier['discount_value'] ?? 0);
                     $val2 = floatval($tier['discount_2'] ?? 0);
                     $val3 = floatval($tier['discount_3'] ?? 0);

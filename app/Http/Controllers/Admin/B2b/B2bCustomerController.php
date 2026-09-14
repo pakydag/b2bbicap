@@ -20,7 +20,8 @@ class B2bCustomerController extends Controller
         
         if (!empty($search)) {
             $query->where(function($q) use ($search) {
-                $q->where('business_name', 'like', "%{$search}%")
+                $q->where('code', 'like', "%{$search}%")
+                  ->orWhere('business_name', 'like', "%{$search}%")
                   ->orWhere('vat_number', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
@@ -28,6 +29,36 @@ class B2bCustomerController extends Controller
         
         $customers = $query->orderBy('business_name')->get();
         return view('admin.b2b.customers.index', compact('customers', 'search'));
+    }
+
+    public function import(Request $request, \App\Services\CustomerImportService $importer)
+    {
+        $request->validate([
+            'file' => 'required|file|max:20480',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+
+        $result = $importer->import($path);
+
+        $msg = "Importazione completata: {$result['total']} clienti elaborati ({$result['created']} nuovi, {$result['updated']} aggiornati con codice gestionale).";
+        if (!empty($result['errors'])) {
+            return redirect()->back()->with('warning', $msg . ' Alcune righe hanno generato errori: ' . implode(', ', array_slice($result['errors'], 0, 5)));
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
+
+    public function syncFtps(\App\Services\CustomerImportService $importer)
+    {
+        $result = $importer->syncFromFtps();
+
+        if ($result['success'] ?? false) {
+            return redirect()->back()->with('success', $result['message']);
+        } else {
+            return redirect()->back()->with('error', $result['message'] ?? 'Errore durante la sincronizzazione da FTPS.');
+        }
     }
 
     public function create()
