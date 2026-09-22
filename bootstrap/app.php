@@ -28,10 +28,31 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->redirectTo(
             guests: function (\Illuminate\Http\Request $request) {
+                if ($request->expectsJson() || $request->is('*ping-sync*') || $request->is('api/*')) {
+                    return null;
+                }
                 if ($request->is('booking*')) {
                     return route('public.booking.login.view');
                 }
                 return route('login');
+            },
+            users: function (\Illuminate\Http\Request $request) {
+                $user = $request->user();
+                if ($user) {
+                    if ($user->role === 'agent' || ($user->role === 'customer' && $user->b2b_customer_id !== null)) {
+                        return route('agent.dashboard');
+                    }
+                    if ($user->role === 'admin') {
+                        if (!$user->is_super_admin && $user->can_manage_agents && !$user->can_manage_site) {
+                            return route('admin.b2b.dashboard');
+                        }
+                        return route('dashboard');
+                    }
+                    if ($user->role === 'customer') {
+                        return route('public.account.dashboard');
+                    }
+                }
+                return route('dashboard');
             }
         );
     })

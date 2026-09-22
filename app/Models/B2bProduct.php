@@ -59,7 +59,13 @@ class B2bProduct extends Model
             'original_price' => $basePrice,
             'discount_type' => null,
             'discount_value' => 0,
+            'discount_2' => null,
+            'discount_3' => null,
             'tier' => null,
+            'is_product_exception' => false,
+            'price_list' => null,
+            'price_list_name' => null,
+            'rule_summary' => null,
         ];
 
         if (!$customer) {
@@ -76,6 +82,9 @@ class B2bProduct extends Model
             return $result;
         }
 
+        $result['price_list'] = $priceList;
+        $result['price_list_name'] = $priceList->name;
+
         // 1. Cerca prima fascia specifica valida per questo prodotto (con discount_value > 0)
         $tier = B2bPriceListItem::where('b2b_price_list_id', $priceList->id)
             ->where('b2b_product_id', $this->id)
@@ -88,8 +97,11 @@ class B2bProduct extends Model
             ->orderBy('min_quantity', 'desc')
             ->first();
 
-        // 2. Se non c'è una fascia specifica valida, cerca la fascia GENERALE per tutti i prodotti (b2b_product_id null)
-        if (!$tier) {
+        $isProductException = false;
+        if ($tier) {
+            $isProductException = true;
+        } else {
+            // 2. Se non c'è una fascia specifica valida, cerca la fascia GENERALE per tutti i prodotti (b2b_product_id null)
             $tier = B2bPriceListItem::where('b2b_price_list_id', $priceList->id)
                 ->whereNull('b2b_product_id')
                 ->where('min_quantity', '<=', $quantity)
@@ -104,42 +116,17 @@ class B2bProduct extends Model
 
         if ($tier) {
             $result['tier'] = $tier;
+            $result['is_product_exception'] = $isProductException;
+            $result['rule_summary'] = $tier->rule_summary;
             $result['discount_type'] = $tier->discount_type;
             $result['discount_value'] = (float) $tier->discount_value;
             $result['discount_2'] = $tier->discount_2 ? (float) $tier->discount_2 : null;
             $result['discount_3'] = $tier->discount_3 ? (float) $tier->discount_3 : null;
-
-            if ($tier->discount_type === 'percentage') {
-                $unitPrice = $basePrice * (1 - ($tier->discount_value / 100));
-                if ($tier->discount_2 > 0) {
-                    $unitPrice = $unitPrice * (1 - ($tier->discount_2 / 100));
-                }
-                if ($tier->discount_3 > 0) {
-                    $unitPrice = $unitPrice * (1 - ($tier->discount_3 / 100));
-                }
-                $result['unit_price'] = max(0, round($unitPrice, 2));
-            } else if ($tier->discount_type === 'fixed_price') {
-                $unitPrice = (float) $tier->discount_value;
-                if ($tier->discount_2 > 0) {
-                    $unitPrice = $unitPrice * (1 - ($tier->discount_2 / 100));
-                }
-                if ($tier->discount_3 > 0) {
-                    $unitPrice = $unitPrice * (1 - ($tier->discount_3 / 100));
-                }
-                $result['unit_price'] = max(0, round($unitPrice, 2));
-            } else if ($tier->discount_type === 'discount_amount') {
-                $unitPrice = $basePrice - (float) $tier->discount_value;
-                if ($tier->discount_2 > 0) {
-                    $unitPrice = $unitPrice * (1 - ($tier->discount_2 / 100));
-                }
-                if ($tier->discount_3 > 0) {
-                    $unitPrice = $unitPrice * (1 - ($tier->discount_3 / 100));
-                }
-                $result['unit_price'] = max(0, round($unitPrice, 2));
-            }
+            $result['unit_price'] = $tier->calculateUnitPrice($basePrice);
         } elseif ($priceList->general_discount_percent > 0) {
             $result['discount_type'] = 'percentage';
             $result['discount_value'] = (float) $priceList->general_discount_percent;
+            $result['rule_summary'] = 'Sconto Listino: -' . floatval($priceList->general_discount_percent) . '%';
             $discountAmount = $basePrice * ($priceList->general_discount_percent / 100);
             $result['unit_price'] = max(0, round($basePrice - $discountAmount, 2));
         }

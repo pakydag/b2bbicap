@@ -91,7 +91,7 @@
             
             <!-- Top Header Bar Nero Completo -->
             <header class="bg-black text-white border-b border-zinc-900 h-16 flex items-center justify-between px-6 shrink-0 z-30 shadow-md">
-                <div class="flex items-center gap-3">
+                <a href="{{ route('admin.b2b.dashboard') }}" class="flex items-center gap-3 hover:opacity-90 transition">
                     @php
                         $logo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?? '';
                     @endphp
@@ -103,14 +103,14 @@
                     <span class="text-xs font-black uppercase tracking-widest text-zinc-400 border-l border-zinc-800 pl-3">
                         BICAP ADMIN PORTAL
                     </span>
-                </div>
+                </a>
 
                 <div class="flex items-center gap-4">
                     <span class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-1.5 rounded-xl font-bold uppercase flex items-center gap-2">
                         👤 {{ Auth::user()->name }}
                     </span>
                     
-                    <a href="{{ route('agent.dashboard') }}" class="text-xs font-black text-yellow-400 hover:text-slate-950 bg-zinc-900 hover:bg-yellow-400 border border-zinc-800 hover:border-yellow-400 px-3.5 py-1.5 rounded-xl transition duration-300 uppercase shadow-sm">
+                    <a href="{{ Auth::user()->role === 'admin' ? route('admin.b2b.dashboard') : route('agent.dashboard') }}" class="text-xs font-black text-yellow-400 hover:text-slate-950 bg-zinc-900 hover:bg-yellow-400 border border-zinc-800 hover:border-yellow-400 px-3.5 py-1.5 rounded-xl transition duration-300 uppercase shadow-sm">
                         🌐 Portale Agente / B2B
                     </a>
 
@@ -123,7 +123,7 @@
                 </div>
             </header>
 
-            <div class="flex flex-1 overflow-hidden">
+            <div class="flex flex-1 overflow-hidden min-w-0">
                 <!-- Sidebar Navigation -->
                 @include('layouts.navigation')
 
@@ -139,7 +139,7 @@
                     @endisset
 
                     <!-- Scrollable Page Content -->
-                    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-6 lg:p-8">
+                    <main class="flex-1 overflow-y-auto overflow-x-auto min-w-0 bg-gray-50 p-3 sm:p-4 md:p-6 lg:p-8">
                         {{ $slot }}
                     </main>
                 </div>

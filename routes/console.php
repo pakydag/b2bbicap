@@ -9,4 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('sitemap:generate')->daily();
-Schedule::command('b2b:sync-giacenze')->everyFifteenMinutes();
+Schedule::command('b2b:sync-giacenze')->everyTwoMinutes()->withoutOverlapping();
+

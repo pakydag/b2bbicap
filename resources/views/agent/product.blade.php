@@ -50,15 +50,21 @@
     @endphp
 
     <style>
-        @media (min-width: 1024px) {
+        @media (min-width: 1024px) and (max-width: 1279px) {
             .product-left-col {
-                width: 350px !important;
-                flex: 0 0 350px !important;
+                width: 270px !important;
+                flex: 0 0 270px !important;
+            }
+        }
+        @media (min-width: 1280px) {
+            .product-left-col {
+                width: 340px !important;
+                flex: 0 0 340px !important;
             }
         }
     </style>
 
-    <div class="flex flex-col lg:flex-row gap-12" x-data="{ showDetails: true }">
+    <div class="flex flex-col lg:flex-row gap-6 xl:gap-10 min-w-0" x-data="{ showDetails: true }">
         <!-- Image Gallery & Info -->
         <div x-show="showDetails" x-transition.duration.300ms class="w-full product-left-col space-y-6" x-data="{ currentImg: 0, showLightbox: false, images: {{ json_encode($gallery) }} }">
             <div class="bg-white rounded-[40px] shadow-sm border border-gray-100 p-12 aspect-square flex items-center justify-center relative overflow-hidden group">
@@ -263,7 +269,7 @@
         </div>
 
         <!-- Variant Matrix & Form -->
-        <div class="flex-1 min-w-0 bg-white rounded-[40px] shadow-sm border border-gray-100 p-8 md:p-12 overflow-hidden transition-all duration-300">
+        <div class="flex-1 min-w-0 bg-white rounded-[40px] shadow-sm border border-gray-100 p-5 sm:p-8 xl:p-12 overflow-hidden transition-all duration-300">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
                     <h3 class="font-black text-xl text-gray-900 uppercase tracking-tight">{{ $product->name }}</h3>
@@ -277,7 +283,26 @@
                             <span class="text-2xl font-black text-indigo-700">
                                 € {{ number_format($priceDetails['unit_price'], 2, ',', '.') }}
                             </span>
-                            @if(($priceDetails['discount_type'] ?? '') === 'fixed_price')
+                            @if(!empty($priceDetails['is_product_exception']))
+                                @if(($priceDetails['discount_type'] ?? '') === 'fixed_price')
+                                    @php
+                                        $extraDiscounts = [];
+                                        if (!empty($priceDetails['discount_2']) && $priceDetails['discount_2'] > 0) {
+                                            $extraDiscounts[] = '-' . floatval($priceDetails['discount_2']) . '%';
+                                        }
+                                        if (!empty($priceDetails['discount_3']) && $priceDetails['discount_3'] > 0) {
+                                            $extraDiscounts[] = '-' . floatval($priceDetails['discount_3']) . '%';
+                                        }
+                                    @endphp
+                                    <span class="text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full shadow-2xs">
+                                        ⭐ LISTINO PERSONALIZZATO: PREZZO NETTO € {{ number_format($priceDetails['discount_value'], 2, ',', '.') }}{{ !empty($extraDiscounts) ? ' (' . implode(' ', $extraDiscounts) . ')' : '' }}
+                                    </span>
+                                @else
+                                    <span class="text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full shadow-2xs">
+                                        ⭐ LISTINO PERSONALIZZATO ({{ $priceDetails['rule_summary'] ?? 'Prezzo Dedicato' }})
+                                    </span>
+                                @endif
+                            @elseif(($priceDetails['discount_type'] ?? '') === 'fixed_price')
                                 @php
                                     $calcDiscountPct = (1 - ($priceDetails['unit_price'] / max(0.01, (float)$product->price))) * 100;
                                     $extraDiscounts = [];
@@ -311,8 +336,8 @@
                                         $pctParts[] = '+' . floatval($priceDetails['discount_3']) . '%';
                                     }
                                 @endphp
-                                <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
-                                    RISERVATO AZIENDA ({{ implode(' ', $pctParts) }})
+                                <span class="text-[10px] font-black bg-indigo-50 text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                    📉 SCONTO QUANTITÀ AZIENDA ({{ implode(' ', $pctParts) }})
                                 </span>
                             @endif
                         </div>
@@ -331,6 +356,134 @@
                     </button>
                 </div>
             </div>
+
+            @php
+                $currentCustomer = $customer ?? (auth()->user()->role === 'customer' ? auth()->user()->b2bCustomer : null);
+                if (!isset($assignedPriceList) && $currentCustomer && $currentCustomer->b2b_price_list_id) {
+                    $assignedPriceList = \App\Models\B2bPriceList::find($currentCustomer->b2b_price_list_id);
+                }
+                if ((!isset($specificTiers) || $specificTiers->isEmpty()) && $assignedPriceList) {
+                    $specificTiers = \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
+                        ->where('b2b_product_id', $product->id)
+                        ->orderBy('min_quantity', 'asc')
+                        ->get();
+                }
+                if ((!isset($generalTiers) || $generalTiers->isEmpty()) && $assignedPriceList) {
+                    $generalTiers = \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
+                        ->whereNull('b2b_product_id')
+                        ->orderBy('min_quantity', 'asc')
+                        ->get();
+                }
+            @endphp
+
+            <!-- Card Dettaglio Listino Prezzi & Fasce per questo Articolo -->
+            @if($assignedPriceList || ($specificTiers && $specificTiers->count() > 0) || ($generalTiers && $generalTiers->count() > 0))
+                <div class="mb-6 bg-gradient-to-br from-indigo-50/80 via-white to-amber-50/50 border border-indigo-100 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100/70 pb-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-2xl">📋</span>
+                            <div>
+                                <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block leading-none">Condizioni Listino Riservate</span>
+                                <h4 class="font-black text-indigo-950 uppercase tracking-tight text-sm mt-0.5">
+                                    {{ $assignedPriceList ? $assignedPriceList->name : 'Listino Prezzi Standard' }}
+                                    @if($currentCustomer)
+                                        <span class="text-xs font-bold text-gray-400 lowercase">per</span> <span class="text-xs font-black text-slate-900 uppercase">{{ $currentCustomer->business_name }}</span>
+                                    @endif
+                                </h4>
+                            </div>
+                        </div>
+                        @if($specificTiers && $specificTiers->count() > 0)
+                            <span class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-2xs self-start sm:self-auto">
+                                ⭐ Listino Personalizzato Articolo
+                            </span>
+                        @elseif($generalTiers && $generalTiers->count() > 0)
+                            <span class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-2xs self-start sm:self-auto">
+                                📉 Sconto Quantità da Listino
+                            </span>
+                        @endif
+                    </div>
+
+                    @if($specificTiers && $specificTiers->count() > 0)
+                        <!-- Eccezione specifica per questo prodotto -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-black text-amber-950 uppercase tracking-tight flex items-center gap-1.5">
+                                    <span>🎯</span> Regola Personalizzata per {{ $product->name }}
+                                </p>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">Prezzo Base di Listino: € {{ number_format($product->price, 2, ',', '.') }}</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                @foreach($specificTiers as $sTier)
+                                    @php
+                                        $tierPrice = $sTier->calculateUnitPrice($product->price);
+                                    @endphp
+                                    <div class="bg-white rounded-2xl border border-amber-200 p-3 shadow-2xs flex flex-col justify-between">
+                                        <div class="flex justify-between items-start mb-1">
+                                            <span class="text-[10px] font-black text-gray-500 uppercase">
+                                                @if($sTier->min_quantity > 1 || !empty($sTier->max_quantity))
+                                                    Da {{ $sTier->min_quantity }} {{ $sTier->max_quantity ? 'a ' . $sTier->max_quantity : 'in poi' }} pz
+                                                @else
+                                                    Tutte le Quantità (1+ pz)
+                                                @endif
+                                            </span>
+                                            <span class="text-[9px] font-black text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                                {{ $sTier->rule_summary }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-gray-50">
+                                            <span class="text-xs text-gray-500 font-bold">Prezzo Riservato:</span>
+                                            <span class="text-base font-black text-indigo-700">€ {{ number_format($tierPrice, 2, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <p class="text-[10px] text-amber-800 font-semibold italic mt-1">
+                                Questo articolo gode di un prezzo/sconto esclusivo configurato specificamente nel listino aziendale.
+                            </p>
+                        </div>
+                    @elseif($generalTiers && $generalTiers->count() > 0)
+                        <!-- Fasce generali applicabili a questo prodotto -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-black text-indigo-950 uppercase tracking-tight flex items-center gap-1.5">
+                                    <span>📊</span> Fasce di Sconto Quantità Applicabili a questo Articolo
+                                </p>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">Prezzo Base di Listino: € {{ number_format($product->price, 2, ',', '.') }}</span>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                @foreach($generalTiers as $gTier)
+                                    @php
+                                        $gTierPrice = $gTier->calculateUnitPrice($product->price);
+                                    @endphp
+                                    <div class="bg-white rounded-2xl border border-indigo-100 p-3 shadow-2xs flex flex-col justify-between">
+                                        <div class="flex justify-between items-start mb-1">
+                                            <span class="text-[10px] font-black text-gray-500 uppercase">
+                                                {{ $gTier->min_quantity }}{{ $gTier->max_quantity ? '-' . $gTier->max_quantity : '+' }} pz
+                                            </span>
+                                            <span class="text-[9px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                                                @if($gTier->discount_type === 'percentage')
+                                                    -{{ floatval($gTier->discount_value) }}%{{ $gTier->discount_2 > 0 ? ' +' . floatval($gTier->discount_2) . '%' : '' }}
+                                                @elseif($gTier->discount_type === 'fixed_price')
+                                                    € {{ number_format($gTier->discount_value, 2, ',', '.') }}
+                                                @else
+                                                    -€ {{ number_format($gTier->discount_value, 2, ',', '.') }}
+                                                @endif
+                                            </span>
+                                        </div>
+                                        <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-gray-50">
+                                            <span class="text-[10px] text-gray-400 font-bold">Prezzo:</span>
+                                            <span class="text-sm font-black text-indigo-700">€ {{ number_format($gTierPrice, 2, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <p class="text-[10px] text-indigo-500 font-semibold italic mt-1">
+                                Lo sconto per quantità viene calcolato sul totale complessivo dei pezzi ordinati all'interno dello stesso gruppo di consegna nel carrello.
+                            </p>
+                        </div>
+                    @endif
+                </div>
+            @endif
             
             @if(!$giacenzaMatch)
                 <!-- Prodotto Non Sincronizzato -->

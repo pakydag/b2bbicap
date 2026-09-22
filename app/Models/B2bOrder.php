@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class B2bOrder extends Model
 {
-    protected $fillable = ['agent_id', 'b2b_customer_id', 'total_amount', 'status', 'payment_method', 'notes', 'is_modified'];
+    protected $fillable = ['agent_id', 'b2b_customer_id', 'internal_reference', 'contact_id', 'total_amount', 'status', 'payment_method', 'notes', 'is_modified'];
 
     public function agent()
     {

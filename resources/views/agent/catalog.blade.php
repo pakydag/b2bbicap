@@ -1,10 +1,22 @@
 <x-agent-layout>
     <x-slot name="header">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h2 class="text-2xl font-black text-gray-800 tracking-tight uppercase">
-                {{ __('Catalogo Prodotti authorized') }}
-            </h2>
-
+            <div>
+                <h2 class="text-2xl font-black text-gray-800 tracking-tight uppercase">
+                    {{ __('Catalogo Prodotti') }}
+                </h2>
+                @if($customer)
+                    <p class="text-xs font-bold text-gray-500 mt-1 flex items-center gap-2">
+                        <span>Listino attivo per:</span>
+                        <strong class="text-slate-900 uppercase font-black">{{ $customer->business_name }}</strong>
+                        @if($customer->priceList)
+                            <span class="bg-yellow-400 text-slate-950 px-2 py-0.5 rounded text-[10px] font-black uppercase shadow-xs">
+                                🏷️ {{ $customer->priceList->name }}
+                            </span>
+                        @endif
+                    </p>
+                @endif
+            </div>
         </div>
     </x-slot>
 
@@ -287,6 +299,12 @@
                                             <p class="text-xl font-black text-slate-900 leading-none">
                                                 € {{ number_format($product->price, 2, ',', '.') }}
                                             </p>
+                                        @endif
+
+                                        @if(!empty($product->price_details['is_product_exception']))
+                                            <span class="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded uppercase inline-block mt-1">
+                                                ⭐ Prezzo Riservato
+                                            </span>
                                         @endif
                                     </div>
                                     <a href="{{ route('agent.product', $product) }}" class="bg-black border border-zinc-950 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:border-yellow-400 hover:text-yellow-400 shadow-lg shadow-black/10 transition duration-300">

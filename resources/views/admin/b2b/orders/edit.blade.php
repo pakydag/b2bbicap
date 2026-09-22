@@ -1,10 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Gestione Ordine B2B #') }}{{ $order->id }}
             </h2>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
                 <a href="{{ route('admin.b2b.orders.pdf', $order) }}" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black rounded-lg text-xs uppercase tracking-wider shadow transition duration-150">
                     <span>🖨️ STAMPA / PDF</span>
                 </a>
@@ -18,7 +18,7 @@
             @php $isConfirmed = ($order->status === 'confirmed'); @endphp
 
             @if($isConfirmed)
-                <div class="mb-6 bg-slate-900 border-2 border-yellow-400 text-white p-4 rounded-xl shadow-lg flex items-center justify-between">
+                <div class="mb-6 bg-slate-900 border-2 border-yellow-400 text-white p-4 rounded-xl shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">🔒</span>
                         <div>
@@ -26,7 +26,7 @@
                             <p class="text-xs text-slate-300">Questo ordine è stato confermato definitivamente e trasmesso al sistema FTP. Le quantità e i prezzi non possono più essere modificati.</p>
                         </div>
                     </div>
-                    <span class="bg-yellow-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg uppercase tracking-wider shadow">
+                    <span class="bg-yellow-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg uppercase tracking-wider shadow shrink-0">
                         BLOCCATO
                     </span>
                 </div>
@@ -137,9 +137,17 @@
                             <div class="space-y-4">
                                 <select name="status" {{ $isConfirmed ? 'disabled' : '' }} class="w-full rounded-md border-gray-300 font-bold mb-2 {{ $isConfirmed ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500' }}">
                                     <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>IN ATTESA</option>
+                                    <option value="revision_pending" {{ $order->status == 'revision_pending' ? 'selected' : '' }}>ATTESA CLIENTE (MODIFICATO)</option>
+                                    <option value="customer_approved" {{ $order->status == 'customer_approved' ? 'selected' : '' }}>APPROVATO DA CLIENTE</option>
+                                    <option value="customer_rejected" {{ $order->status == 'customer_rejected' ? 'selected' : '' }}>RIFIUTATO DA CLIENTE</option>
                                     <option value="confirmed" {{ $order->status == 'confirmed' ? 'selected' : '' }}>CONFERMATO</option>
                                     <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>ANNULLATO</option>
                                 </select>
+
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase font-black mb-1 block">Riferimento Ordine Interno</label>
+                                    <input type="text" name="internal_reference" value="{{ old('internal_reference', $order->internal_reference) }}" {{ $isConfirmed ? 'disabled' : '' }} placeholder="Es. ORD-2026-001..." class="w-full rounded-md border-gray-300 font-bold mb-3 text-sm {{ $isConfirmed ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500' }}">
+                                </div>
 
                                 <div class="mb-2">
                                     <label class="text-[10px] text-gray-400 uppercase font-black mb-1 block">Metodo Pagamento Ordine</label>
@@ -171,46 +179,79 @@
                         </div>
                     </form>
 
-                    <!-- NEW: Invia Copia Ordine / Link Pagamento -->
-                    <div class="bg-indigo-50 border border-indigo-100 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h3 class="font-bold text-md mb-4 border-b border-indigo-200 pb-2 uppercase text-indigo-900">Invia all'Agente</h3>
-                        <p class="text-xs text-indigo-700 mb-4 font-medium italic">Invia una copia del riepilogo ordine all'agente ({{ $order->agent->email }}), con o senza link di pagamento.</p>
+                    <!-- Invia Copia Ordine / Link Pagamento / Risposta -->
+                    <div class="bg-amber-50/80 border border-amber-200 overflow-hidden shadow-sm sm:rounded-2xl p-6">
+                        <h3 class="font-black text-sm mb-2 uppercase text-slate-900 flex items-center gap-2">
+                            <span>✉️</span> Invia Riepilogo / Notifica Ordine
+                        </h3>
+                        <p class="text-xs text-slate-600 mb-4 font-medium">Invia via email il riepilogo dell'ordine con il riferimento interno, l'agente e le modalità di pagamento.</p>
                         
-                        @php $settings = \App\Models\Setting::all()->pluck('value', 'key'); @endphp
+                        @php 
+                            $settings = \App\Models\Setting::all()->pluck('value', 'key');
+                            $custEmail = $order->customer?->user?->email ?: $order->customer?->email;
+                        @endphp
                         
-                        <form action="{{ route('admin.b2b.orders.send_copy', $order) }}" method="POST" class="space-y-3">
+                        <form action="{{ route('admin.b2b.orders.send_copy', $order) }}" method="POST" class="space-y-4">
                             @csrf
-                            <div class="space-y-2">
-                                <label class="flex items-center p-2 rounded-md hover:bg-white transition cursor-pointer border border-transparent hover:border-indigo-200">
-                                    <input type="radio" name="payment_method" value="none" {{ !$order->payment_method ? 'checked' : '' }} class="text-indigo-600 focus:ring-indigo-500 mr-3">
-                                    <span class="text-sm font-bold text-indigo-900">📄 Solo Riepilogo (Nessun link)</span>
-                                </label>
 
-                                @if(isset($settings['b2b_payment_stripe_enabled']) && $settings['b2b_payment_stripe_enabled'] == '1')
-                                <label class="flex items-center p-2 rounded-md hover:bg-white transition cursor-pointer border border-transparent hover:border-indigo-200">
-                                    <input type="radio" name="payment_method" value="stripe" {{ $order->payment_method == 'stripe' ? 'checked' : '' }} class="text-indigo-600 focus:ring-indigo-500 mr-3">
-                                    <span class="text-sm font-bold text-indigo-900">💳 Link Carta (Stripe)</span>
-                                </label>
-                                @endif
-
-                                @if(isset($settings['b2b_payment_paypal_enabled']) && $settings['b2b_payment_paypal_enabled'] == '1')
-                                <label class="flex items-center p-2 rounded-md hover:bg-white transition cursor-pointer border border-transparent hover:border-indigo-200">
-                                    <input type="radio" name="payment_method" value="paypal" {{ $order->payment_method == 'paypal' ? 'checked' : '' }} class="text-indigo-600 focus:ring-indigo-500 mr-3">
-                                    <span class="text-sm font-bold text-indigo-900">🅿️ Link PayPal</span>
-                                </label>
-                                @endif
-
-                                @if(isset($settings['b2b_payment_bonifico_enabled']) && $settings['b2b_payment_bonifico_enabled'] == '1')
-                                <label class="flex items-center p-2 rounded-md hover:bg-white transition cursor-pointer border border-transparent hover:border-indigo-200">
-                                    <input type="radio" name="payment_method" value="bonifico" {{ $order->payment_method == 'bonifico' ? 'checked' : '' }} class="text-indigo-600 focus:ring-indigo-500 mr-3">
-                                    <span class="text-sm font-bold text-indigo-900">🏦 Coordinate Bonifico</span>
-                                </label>
-                                @endif
+                            <!-- Scelta Destinatario -->
+                            <div>
+                                <label class="block text-[10px] font-black uppercase tracking-wider text-slate-700 mb-1">Destinatario Email</label>
+                                <div class="space-y-1.5 bg-white p-2.5 rounded-xl border border-amber-200">
+                                    <label class="flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                                        <input type="radio" name="recipient" value="both" checked class="text-yellow-500 focus:ring-yellow-400 mr-2">
+                                        <span>👥 Ad Entrambi (Cliente + Agente)</span>
+                                    </label>
+                                    @if($custEmail)
+                                        <label class="flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                                            <input type="radio" name="recipient" value="customer" class="text-yellow-500 focus:ring-yellow-400 mr-2">
+                                            <span>🏢 Solo al Cliente ({{ $custEmail }})</span>
+                                        </label>
+                                    @endif
+                                    @if($order->agent?->email)
+                                        <label class="flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                                            <input type="radio" name="recipient" value="agent" class="text-yellow-500 focus:ring-yellow-400 mr-2">
+                                            <span>👤 Solo all'Agente ({{ $order->agent->email }})</span>
+                                        </label>
+                                    @endif
+                                </div>
                             </div>
 
-                            <button type="submit" class="w-full bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white text-indigo-700 font-bold py-3 rounded-lg transition duration-300 shadow-sm text-[10px] uppercase tracking-wider flex items-center justify-center gap-2">
+                            <!-- Scelta Modalità Pagamento -->
+                            <div>
+                                <label class="block text-[10px] font-black uppercase tracking-wider text-slate-700 mb-1">Modalità di Pagamento da Includere</label>
+                                <div class="space-y-1.5 bg-white p-2.5 rounded-xl border border-amber-200">
+                                    <label class="flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                                        <input type="radio" name="payment_method" value="none" {{ !$order->payment_method ? 'checked' : '' }} class="text-yellow-500 focus:ring-yellow-400 mr-2">
+                                        <span>📄 Solo Riepilogo Ordine</span>
+                                    </label>
+
+                                    @if(isset($settings['b2b_payment_stripe_enabled']) && $settings['b2b_payment_stripe_enabled'] == '1')
+                                    <label class="flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                                        <input type="radio" name="payment_method" value="stripe" {{ $order->payment_method == 'stripe' ? 'checked' : '' }} class="text-yellow-500 focus:ring-yellow-400 mr-2">
+                                        <span>💳 Link Pagamento Carta (Stripe)</span>
+                                    </label>
+                                    @endif
+
+                                    @if(isset($settings['b2b_payment_paypal_enabled']) && $settings['b2b_payment_paypal_enabled'] == '1')
+                                    <label class="flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                                        <input type="radio" name="payment_method" value="paypal" {{ $order->payment_method == 'paypal' ? 'checked' : '' }} class="text-yellow-500 focus:ring-yellow-400 mr-2">
+                                        <span>🅿️ Link Pagamento PayPal</span>
+                                    </label>
+                                    @endif
+
+                                    @if(isset($settings['b2b_payment_bonifico_enabled']) && $settings['b2b_payment_bonifico_enabled'] == '1')
+                                    <label class="flex items-center text-xs font-bold text-slate-800 cursor-pointer">
+                                        <input type="radio" name="payment_method" value="bonifico" {{ $order->payment_method == 'bonifico' ? 'checked' : '' }} class="text-yellow-500 focus:ring-yellow-400 mr-2">
+                                        <span>🏦 Coordinate Bancarie (Bonifico)</span>
+                                    </label>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-slate-900 hover:bg-yellow-400 hover:text-slate-950 text-white font-black py-3 rounded-xl transition duration-200 shadow text-xs uppercase tracking-wider flex items-center justify-center gap-2">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                Invia Email all'Agente
+                                Invia Email Riepilogo Ordine
                             </button>
                         </form>
                     </div>

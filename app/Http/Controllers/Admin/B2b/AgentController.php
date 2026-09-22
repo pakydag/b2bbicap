@@ -36,6 +36,7 @@ class AgentController extends Controller
             'phone' => 'nullable|string',
             'brands' => 'nullable|array',
             'customers' => 'nullable|array',
+            'send_email_notification' => 'nullable',
         ]);
 
         // Genera una password casuale (verrà resettata dall'utente)
@@ -58,15 +59,23 @@ class AgentController extends Controller
             $agent->b2bCustomers()->sync($request->customers);
         }
 
-        // Invia email di benvenuto (riusiamo la mail esistente o ne creiamo una se necessario)
-        // Per ora usiamo quella standard se esiste, altrimenti commentiamo per non rompere.
-        try {
-            \Illuminate\Support\Facades\Mail::to($agent->email)->send(new \App\Mail\AdminUserCreated($agent, $tempPassword));
-        } catch (\Exception $e) {
-            // Log error but continue
+        $emailSent = false;
+        if ($request->has('send_email_notification') || $request->input('send_email_notification') == '1') {
+            $agent->load('b2bBrands', 'b2bCustomers');
+            try {
+                \Illuminate\Support\Facades\Mail::to($agent->email)->send(new \App\Mail\AgentWelcomeMail($agent, $tempPassword));
+                $emailSent = true;
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("[AgentCreateMail] Errore invio email agente: " . $e->getMessage());
+            }
         }
 
-        return redirect()->route('admin.b2b.agents.index')->with('success', 'Agente creato con successo. È stata inviata una email per l\'impostazione della password.');
+        $msg = 'Agente creato con successo.';
+        if ($emailSent) {
+            $msg .= ' È stata inviata un\'email con le credenziali e il riepilogo delle autorizzazioni.';
+        }
+
+        return redirect()->route('admin.b2b.agents.index')->with('success', $msg);
     }
 
     /**
@@ -102,6 +111,7 @@ class AgentController extends Controller
             'phone' => 'nullable|string',
             'brands' => 'nullable|array',
             'customers' => 'nullable|array',
+            'send_email_notification' => 'nullable',
         ]);
 
         $agent->update([
@@ -114,7 +124,23 @@ class AgentController extends Controller
         $agent->b2bBrands()->sync($request->brands ?? []);
         $agent->b2bCustomers()->sync($request->customers ?? []);
 
-        return redirect()->route('admin.b2b.agents.index')->with('success', 'Agente aggiornato con successo.');
+        $emailSent = false;
+        if ($request->has('send_email_notification') || $request->input('send_email_notification') == '1') {
+            $agent->load('b2bBrands', 'b2bCustomers');
+            try {
+                \Illuminate\Support\Facades\Mail::to($agent->email)->send(new \App\Mail\AgentUpdatedMail($agent));
+                $emailSent = true;
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("[AgentUpdateMail] Errore invio email aggiornamento agente: " . $e->getMessage());
+            }
+        }
+
+        $msg = 'Agente aggiornato con successo.';
+        if ($emailSent) {
+            $msg .= ' È stata inviata un\'email all\'agente con il riepilogo aggiornato delle autorizzazioni.';
+        }
+
+        return redirect()->route('admin.b2b.agents.index')->with('success', $msg);
     }
 
     /**

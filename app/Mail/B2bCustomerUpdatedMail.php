@@ -9,27 +9,23 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Setting;
 
-class B2bOrderCopy extends Mailable
+class B2bCustomerUpdatedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $order;
-    public $paymentLink;
-    public $paymentMethod;
-    public $title;
+    public $customer;
+    public $loginEmail;
     public $companyName;
     public $portalUrl;
 
     /**
      * Create a new message instance.
      */
-    public function __construct($order, $paymentLink = null, $paymentMethod = 'none', $title = 'Riepilogo Ordine B2B')
+    public function __construct($customer, $loginEmail = null)
     {
-        $this->order = $order;
-        $this->order->loadMissing('agent', 'customer.agents', 'customer.user', 'items.product.brand', 'items.variant');
-        $this->paymentLink = $paymentLink;
-        $this->paymentMethod = $paymentMethod;
-        $this->title = $title;
+        $this->customer = $customer;
+        $this->customer->loadMissing('agents', 'paymentCondition', 'priceList');
+        $this->loginEmail = $loginEmail ?: ($customer->user?->email ?? $customer->email);
         $this->companyName = Setting::where('key', 'mail_from_name')->value('value') ?? config('mail.from.name') ?? 'Calzaturificio 5b';
 
         if (request() && request()->getHost() && request()->getHost() !== 'localhost') {
@@ -44,15 +40,8 @@ class B2bOrderCopy extends Mailable
      */
     public function envelope(): Envelope
     {
-        $prefix = $this->title ?? 'Riepilogo Ordine B2B';
-        $subject = "{$prefix} #{$this->order->id}";
-        if (!empty($this->order->internal_reference)) {
-            $subject .= " (Rif: {$this->order->internal_reference})";
-        }
-        $subject .= " - {$this->companyName}";
-
         return new Envelope(
-            subject: $subject,
+            subject: 'Aggiornamento Dati e Profilo B2B - ' . $this->companyName,
         );
     }
 
@@ -62,7 +51,7 @@ class B2bOrderCopy extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order_copy',
+            view: 'emails.customer_updated',
         );
     }
 

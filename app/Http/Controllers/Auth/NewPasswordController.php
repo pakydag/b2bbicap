@@ -33,7 +33,25 @@ class NewPasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required',
+                'confirmed',
+                Rules\Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+            ],
+        ], [
+            'password.required' => 'Il campo nuova password è obbligatorio.',
+            'password.min' => 'La password deve contenere almeno :min caratteri.',
+            'password.letters' => 'La password deve contenere almeno una lettera.',
+            'password.mixed' => 'La password deve contenere sia lettere maiuscole che minuscole.',
+            'password.numbers' => 'La password deve contenere almeno un numero.',
+            'password.symbols' => 'La password deve contenere almeno un carattere speciale (!@#$%^&* ecc.).',
+            'password.confirmed' => 'La conferma della password non corrisponde.',
+            'email.required' => 'Il campo email è obbligatorio.',
+            'email.email' => 'Inserisci un indirizzo email valido.',
         ]);
 
         // Here we will attempt to reset the user's password. If it is successful we

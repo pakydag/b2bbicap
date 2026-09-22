@@ -32,13 +32,24 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Avvio non-bloccante della sincronizzazione B2B in background ad ogni accesso (Google Sheet + FTPS)
+        // Avvio non-bloccante della sincronizzazione Giacenze B2B in background ad ogni accesso (FTPS)
         try {
             $phpBinary = PHP_BINARY ?: 'php';
             $artisan = base_path('artisan');
-            exec("{$phpBinary} {$artisan} b2b:sync-all > /dev/null 2>&1 &");
+            exec("{$phpBinary} {$artisan} b2b:sync-giacenze --force > /dev/null 2>&1 &");
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning("[AuthLogin] Impossibile avviare il processo di sync background: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning("[AuthLogin] Impossibile avviare il sync giacenze in background: " . $e->getMessage());
+        }
+
+        // Ignora background/ajax endpoint eventualmente salvati in intended
+        $intended = session()->get('url.intended');
+        if ($intended && (
+            str_contains($intended, 'ping-sync') ||
+            str_contains($intended, 'sync') ||
+            str_contains($intended, 'api/') ||
+            str_ends_with($intended, '.json')
+        )) {
+            session()->forget('url.intended');
         }
 
         // Determina la fallback route in base al ruolo se non c'è un url intended vero e proprio

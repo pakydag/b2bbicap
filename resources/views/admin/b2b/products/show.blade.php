@@ -1,24 +1,22 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div class="flex items-center gap-3">
                 <a href="{{ route('admin.b2b.products.index') }}" class="text-gray-500 hover:text-gray-900 transition">
                     <span class="text-xl">←</span>
                 </a>
-                <h2 class="font-bold text-xl text-gray-800 leading-tight uppercase tracking-wide">
+                <h2 class="font-black text-xl text-gray-800 leading-tight uppercase tracking-tight">
                     Dettaglio Prodotto B2B: <span class="text-indigo-600 font-black">{{ $product->name }}</span>
                 </h2>
             </div>
-            <a href="{{ route('admin.b2b.products.index') }}" class="inline-flex items-center gap-1 px-4 py-2 bg-slate-900 text-white font-bold rounded-lg text-xs uppercase tracking-wider hover:bg-slate-800 transition shadow">
+            <a href="{{ route('admin.b2b.products.index') }}" class="inline-flex items-center gap-1 px-4 py-2 bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider hover:bg-yellow-400 hover:text-slate-950 transition shadow">
                 ← Torna all'Inventario
             </a>
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
-            <!-- Banner Informato: Dati Sincronizzati da File -->
+    <div class="space-y-6">
+        <!-- Banner Informato: Dati Sincronizzati da File -->
             <div class="bg-blue-50 border-2 border-blue-200 text-blue-900 p-4 rounded-2xl shadow-sm flex items-center gap-3">
                 <span class="text-2xl">ℹ️</span>
                 <div class="text-xs leading-relaxed font-medium">
@@ -228,8 +226,6 @@
                         @endif
                     </div>
                 </div>
-            </div>
-
         </div>
     </div>
 </x-app-layout>

@@ -39,19 +39,26 @@
                 </div>
                 <div class="divide-y divide-gray-50">
                     @forelse($recent_orders as $order)
-                        <a href="{{ route('agent.order_detail', $order) }}" class="px-8 py-5 flex justify-between items-center hover:bg-amber-50/50 transition cursor-pointer group">
-                            <div>
+                        <a href="{{ route('agent.order_detail', $order) }}" class="px-4 sm:px-6 py-4 flex justify-between items-center hover:bg-amber-50/50 transition cursor-pointer group gap-4 min-w-0">
+                            <div class="min-w-0">
                                 <div class="flex items-center gap-2">
-                                    <p class="text-base font-black text-gray-900 group-hover:text-indigo-600 transition">#{{ $order->id }} - {{ $order->customer->business_name }}</p>
+                                    <p class="text-sm sm:text-base font-black text-gray-900 group-hover:text-indigo-600 transition truncate">#{{ $order->id }} - {{ $order->customer->business_name }}</p>
                                     @if($order->is_modified)
-                                        <span class="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                                        <span class="shrink-0 text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
                                             ✏️ Modificato
                                         </span>
                                     @endif
                                 </div>
-                                <p class="text-xs text-gray-500 font-bold uppercase mt-0.5">{{ $order->created_at->format('d/m/Y H:i') }}</p>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <p class="text-xs text-gray-500 font-bold uppercase">{{ $order->created_at->format('d/m/Y H:i') }}</p>
+                                    @if($order->internal_reference)
+                                        <span class="text-[10px] bg-slate-100 text-slate-800 border border-slate-200 px-1.5 py-0.2 rounded font-mono font-bold">
+                                            🏷️ {{ $order->internal_reference }}
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
-                            <div class="text-right flex items-center gap-4">
+                            <div class="text-right flex items-center gap-2 sm:gap-4 shrink-0">
                                 <div>
                                     <p class="text-base font-black text-slate-900">€ {{ number_format($order->total_amount, 2, ',', '.') }}</p>
                                     @php

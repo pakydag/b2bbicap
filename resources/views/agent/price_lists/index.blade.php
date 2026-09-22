@@ -25,10 +25,10 @@
             @endif
 
             <!-- Tabella Listini Creati dall'Agente -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-gray-100 min-w-0">
                 <h3 class="text-base font-black text-gray-800 uppercase tracking-wider mb-4 border-b pb-3">Listini Personalizzati</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto w-full min-w-0">
+                    <table class="w-full text-left border-collapse min-w-[650px]">
                         <thead>
                             <tr class="border-b border-gray-100 text-[11px] font-black text-gray-400 uppercase tracking-widest">
                                 <th class="py-3 px-4">Nome Listino</th>
@@ -100,15 +100,15 @@
             </div>
 
             <!-- Abbinamento Aziende / Clienti al Listino -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div class="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-gray-100 min-w-0">
                 <h3 class="text-base font-black text-gray-800 uppercase tracking-wider mb-2">Abbinamento Listini alle Tue Aziende</h3>
                 <p class="text-xs text-gray-500 mb-6">Assegna un listino personalizzato a ciascuna azienda gestita. Se lasci l'opzione "Prezzi Standard", all'azienda verranno applicati i prezzi di listino senza sconti particolari.</p>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0">
                     @forelse($customers as $customer)
-                        <div class="border border-gray-100 rounded-2xl p-4 bg-gray-50/50 flex flex-col justify-between space-y-3">
-                            <div>
-                                <h4 class="font-bold text-slate-900 text-sm">{{ $customer->business_name }}</h4>
+                        <div class="border border-gray-100 rounded-2xl p-4 bg-gray-50/50 flex flex-col justify-between space-y-3 min-w-0">
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-slate-900 text-sm truncate" title="{{ $customer->business_name }}">{{ $customer->business_name }}</h4>
                                 <p class="text-xs text-gray-500">P.IVA: {{ $customer->vat_number ?: 'N/D' }}</p>
                             </div>
 
@@ -116,8 +116,8 @@
                                 @csrf
                                 <input type="hidden" name="b2b_customer_id" value="{{ $customer->id }}">
                                 <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Listino Applicato:</label>
-                                <div class="flex gap-2">
-                                    <select name="b2b_price_list_id" class="flex-1 text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                <div class="flex gap-2 min-w-0">
+                                    <select name="b2b_price_list_id" class="flex-1 min-w-0 text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 p-2 truncate">
                                         <option value="">Prezzi Standard (Nessun Listino)</option>
                                         @foreach($priceLists as $list)
                                             <option value="{{ $list->id }}" {{ $customer->b2b_price_list_id == $list->id ? 'selected' : '' }}>
@@ -125,7 +125,7 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    <button type="submit" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition">
+                                    <button type="submit" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shrink-0">
                                         Salva
                                     </button>
                                 </div>

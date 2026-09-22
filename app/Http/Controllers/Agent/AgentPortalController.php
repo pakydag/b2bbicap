@@ -155,22 +155,68 @@ class AgentPortalController extends Controller
         return view('agent.catalog', compact('products', 'authorizedBrands', 'filterOptions', 'customer'));
     }
 
+    public function selectCustomer(Request $request)
+    {
+        $user = auth()->user();
+        if ($user->role === 'customer') {
+            abort(403, 'Azione non consentita per i clienti.');
+        }
+
+        $customerId = $request->input('b2b_customer_id');
+
+        if (!empty($customerId)) {
+            $customerIds = $user->b2bCustomers()->pluck('b2b_customers.id');
+            if ($user->role === 'agent' && !$customerIds->contains($customerId)) {
+                abort(403, 'Cliente non assegnato a questo agente.');
+            }
+            session()->put('b2b_selected_customer_id', $customerId);
+            $customer = B2bCustomer::with('priceList')->find($customerId);
+        } else {
+            session()->forget('b2b_selected_customer_id');
+            $customer = null;
+        }
+
+        // Ricalcola i prezzi per l'intero carrello con il listino del cliente
+        $cart = session()->get('b2b_cart', []);
+        if (!empty($cart)) {
+            $cart = $this->recalculateCartPrices($cart, $customer);
+            session()->put('b2b_cart', $cart);
+            $this->persistCart($cart);
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'customer_id' => $customerId,
+                'customer_name' => $customer ? $customer->business_name : null,
+                'price_list_name' => $customer && $customer->b2b_price_list_id ? optional($customer->priceList)->name : null,
+                'cart_count' => count($cart),
+            ]);
+        }
+
+        $msg = $customer 
+            ? "Cliente attivo impostato: {$customer->business_name}. I prezzi del catalogo e del carrello sono stati aggiornati al suo listino."
+            : "Selezione cliente rimossa. Vengono mostrati i prezzi di listino base.";
+
+        return redirect()->back()->with('success', $msg);
+    }
+
     protected function getSelectedCustomer(?Request $request = null)
     {
         $user = auth()->user();
         if (!$user) return null;
 
         if ($user->role === 'customer') {
-            return $user->b2bCustomer;
+            return $user->b2bCustomer ? $user->b2bCustomer->loadMissing('priceList') : null;
         }
 
-        if ($user->role === 'agent') {
+        if ($user->role === 'agent' || $user->role === 'admin') {
             $customerId = ($request ? $request->input('b2b_customer_id') : null)
                 ?? session('b2b_selected_customer_id');
 
             if ($customerId) {
                 session()->put('b2b_selected_customer_id', $customerId);
-                return B2bCustomer::find($customerId);
+                return B2bCustomer::with('priceList')->find($customerId);
             }
         }
 
@@ -194,7 +240,26 @@ class AgentPortalController extends Controller
         $giacenzaData = $this->getGiacenzaData();
         $giacenzaMatch = $this->findGiacenzaMatch($product, $giacenzaData);
         
-        return view('agent.product', compact('product', 'giacenzaMatch', 'priceDetails', 'customer'));
+        $activeCustomer = $customer ?? ($user->role === 'customer' ? $user->b2bCustomer : null);
+        $assignedPriceList = null;
+        $specificTiers = collect();
+        $generalTiers = collect();
+
+        if ($activeCustomer && $activeCustomer->b2b_price_list_id) {
+            $assignedPriceList = \App\Models\B2bPriceList::find($activeCustomer->b2b_price_list_id);
+            if ($assignedPriceList) {
+                $specificTiers = \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
+                    ->where('b2b_product_id', $product->id)
+                    ->orderBy('min_quantity', 'asc')
+                    ->get();
+                $generalTiers = \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
+                    ->whereNull('b2b_product_id')
+                    ->orderBy('min_quantity', 'asc')
+                    ->get();
+            }
+        }
+
+        return view('agent.product', compact('product', 'giacenzaMatch', 'priceDetails', 'customer', 'assignedPriceList', 'specificTiers', 'generalTiers'));
     }
 
     public function productVariant(B2bProduct $product)
@@ -221,6 +286,15 @@ class AgentPortalController extends Controller
                     $details = $product->getPriceDetailsForCustomer($customer, $groupQuantity);
                     $cart[$index]['price'] = $details['unit_price'];
                     $cart[$index]['original_price'] = $details['original_price'];
+                    $cart[$index]['price_details'] = [
+                        'discount_type' => $details['discount_type'],
+                        'discount_value' => $details['discount_value'],
+                        'discount_2' => $details['discount_2'],
+                        'discount_3' => $details['discount_3'],
+                        'is_product_exception' => $details['is_product_exception'] ?? false,
+                        'price_list_name' => $details['price_list_name'] ?? null,
+                        'rule_summary' => $details['rule_summary'] ?? null,
+                    ];
                 }
             }
         }
@@ -236,7 +310,7 @@ class AgentPortalController extends Controller
         
         $updated = false;
         foreach ($cart as $index => $item) {
-            if (($item['price'] ?? 0) != ($newCart[$index]['price'] ?? 0)) {
+            if (($item['price'] ?? 0) != ($newCart[$index]['price'] ?? 0) || !isset($item['price_details'])) {
                 $updated = true;
                 break;
             }
@@ -273,7 +347,29 @@ class AgentPortalController extends Controller
         $customers = $user->role === 'customer' 
             ? collect() 
             : $user->b2bCustomers()->orderBy('business_name')->get();
-        return view('agent.cart', compact('cart', 'customers', 'customer'));
+
+        $activeCustomer = $customer ?? ($user->role === 'customer' ? $user->b2bCustomer : null);
+        $assignedPriceList = null;
+        $generalTiers = collect();
+        $productSpecificTiers = collect();
+
+        if ($activeCustomer && $activeCustomer->b2b_price_list_id) {
+            $assignedPriceList = \App\Models\B2bPriceList::find($activeCustomer->b2b_price_list_id);
+            if ($assignedPriceList) {
+                $generalTiers = \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
+                    ->whereNull('b2b_product_id')
+                    ->orderBy('min_quantity', 'asc')
+                    ->get();
+                $productSpecificTiers = \App\Models\B2bPriceListItem::with('product.brand')
+                    ->where('b2b_price_list_id', $assignedPriceList->id)
+                    ->whereNotNull('b2b_product_id')
+                    ->orderBy('b2b_product_id')
+                    ->orderBy('min_quantity', 'asc')
+                    ->get();
+            }
+        }
+
+        return view('agent.cart', compact('cart', 'customers', 'customer', 'assignedPriceList', 'generalTiers', 'productSpecificTiers'));
     }
 
     public function addToCart(Request $request)
@@ -584,8 +680,11 @@ class AgentPortalController extends Controller
         }
 
         $request->validate([
+            'internal_reference' => 'required|string|max:100',
             'notes' => 'nullable|string',
             'delivery_group' => 'required|string',
+        ], [
+            'internal_reference.required' => 'Il campo Riferimento Ordine Interno è obbligatorio prima dell\'invio.',
         ]);
 
         $cart = session()->get('b2b_cart', []);
@@ -640,6 +739,7 @@ class AgentPortalController extends Controller
         $order = B2bOrder::create([
             'agent_id' => $agentId,
             'b2b_customer_id' => $customerId,
+            'internal_reference' => $request->internal_reference,
             'status' => 'pending',
             'notes' => $request->notes,
             'total_amount' => 0,
@@ -679,6 +779,25 @@ class AgentPortalController extends Controller
 
         $order->update(['total_amount' => $total]);
         
+        // Invio notifica ricezione ordine a Cliente e Agente
+        try {
+            $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
+            $custEmail = $order->customer?->user?->email ?: $order->customer?->email;
+            $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
+            $agentEmail = $agent?->email;
+
+            if (!empty($custEmail)) {
+                \Illuminate\Support\Facades\Mail::to($custEmail)
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Ricezione Ordine B2B'));
+            }
+            if (!empty($agentEmail)) {
+                \Illuminate\Support\Facades\Mail::to($agentEmail)
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Nuovo Ordine B2B Registrato'));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("[OrderCreatedMail] Errore invio notifica ordine #{$order->id}: " . $e->getMessage());
+        }
+
         // Aggiorniamo la sessione con i restanti prodotti non inviati
         $cart = array_values($cart);
         
@@ -699,7 +818,9 @@ class AgentPortalController extends Controller
     public function orders()
     {
         $user = auth()->user();
-        if ($user->role === 'customer') {
+        if ($user->role === 'admin') {
+            $orders = B2bOrder::with('customer', 'agent')->latest()->get();
+        } elseif ($user->role === 'customer') {
             $orders = B2bOrder::where('b2b_customer_id', $user->b2b_customer_id)->with('customer')->latest()->get();
         } else {
             $customerIds = $user->b2bCustomers()->pluck('b2b_customers.id');
@@ -716,7 +837,7 @@ class AgentPortalController extends Controller
         $user = auth()->user();
         if ($user->role === 'customer') {
             if ($order->b2b_customer_id !== $user->b2b_customer_id) abort(403);
-        } else {
+        } elseif ($user->role === 'agent') {
             $customerIds = $user->b2bCustomers()->pluck('b2b_customers.id');
             if ($order->agent_id !== $user->id && !$customerIds->contains($order->b2b_customer_id)) {
                 abort(403);
@@ -731,13 +852,13 @@ class AgentPortalController extends Controller
         $user = auth()->user();
         if ($user->role === 'customer') {
             if ($order->b2b_customer_id !== $user->b2b_customer_id) abort(403);
-        } else {
+        } elseif ($user->role === 'agent') {
             $customerIds = $user->b2bCustomers()->pluck('b2b_customers.id');
             if ($order->agent_id !== $user->id && !$customerIds->contains($order->b2b_customer_id)) {
                 abort(403);
             }
         }
-        $order->load('agent', 'customer', 'items.product', 'items.variant');
+        $order->load(['agent', 'customer.priceList', 'customer.paymentCondition', 'items.product.brand', 'items.variant']);
         return view('admin.b2b.orders.pdf', compact('order'));
     }
 
@@ -823,7 +944,43 @@ class AgentPortalController extends Controller
             'status' => $isMod ? 'revision_pending' : $order->status,
         ]);
 
-        return redirect()->back()->with('success', 'Quantità e prezzi dell\'Ordine #' . $order->id . ' aggiornati con successo! Ordine posto in attesa di approvazione del cliente.');
+        // Invio notifica email di rettifica al cliente
+        $emailSent = false;
+        $sendEmail = $request->input('send_email_to_customer', '1') == '1';
+        $custEmail = null;
+
+        if ($isMod && $sendEmail) {
+            $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
+            $custEmail = $order->customer?->user?->email ?: $order->customer?->email;
+            $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
+            $agentEmail = $agent?->email;
+
+            if (!empty($custEmail)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($custEmail)
+                        ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Rettifica Ordine B2B'));
+                    $emailSent = true;
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("[OrderModificationMail] Errore invio email rettifica a {$custEmail}: " . $e->getMessage());
+                }
+            }
+
+            if (!empty($agentEmail)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($agentEmail)
+                        ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Rettifica Ordine B2B per Agente'));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("[OrderModificationMail] Errore invio email rettifica agente {$agentEmail}: " . $e->getMessage());
+                }
+            }
+        }
+
+        $msg = 'Quantità e prezzi dell\'Ordine #' . $order->id . ' aggiornati con successo! Ordine posto in attesa di approvazione del cliente.';
+        if ($emailSent && !empty($custEmail)) {
+            $msg .= ' Email di notifica rettifica inviata al cliente (' . $custEmail . ').';
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     public function acceptOrderModifications(B2bOrder $order)
@@ -834,6 +991,32 @@ class AgentPortalController extends Controller
         }
 
         $order->update(['status' => 'customer_approved']);
+
+        // Notifica cliente e agente
+        $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
+        $custEmail = $order->customer?->user?->email ?: $order->customer?->email ?: $user->email;
+        $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
+        $agentEmail = $agent?->email;
+
+        // 1. Notifica al cliente (conferma accettazione)
+        if (!empty($custEmail)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($custEmail)
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Modifiche Ordine B2B Accettate'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("[OrderAcceptMail] Errore notifica cliente {$custEmail}: " . $e->getMessage());
+            }
+        }
+
+        // 2. Notifica all'agente commerciale
+        if (!empty($agentEmail)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($agentEmail)
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Modifiche Ordine B2B Accettate dal Cliente'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("[OrderAcceptMail] Errore notifica agente {$agentEmail}: " . $e->getMessage());
+            }
+        }
 
         return redirect()->back()->with('success', 'Hai accettato le modifiche dell\'Ordine #' . $order->id . '. L\'ordine è in attesa di OK finale dall\'agente/amministrazione.');
     }
@@ -847,14 +1030,91 @@ class AgentPortalController extends Controller
 
         $order->update(['status' => 'customer_rejected']);
 
+        // Notifica cliente e agente
+        $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
+        $custEmail = $order->customer?->user?->email ?: $order->customer?->email ?: $user->email;
+        $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
+        $agentEmail = $agent?->email;
+
+        // 1. Notifica al cliente (conferma rifiuto)
+        if (!empty($custEmail)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($custEmail)
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Modifiche Ordine B2B Rifiutate'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("[OrderRejectMail] Errore notifica cliente {$custEmail}: " . $e->getMessage());
+            }
+        }
+
+        // 2. Notifica all'agente commerciale
+        if (!empty($agentEmail)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($agentEmail)
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Modifiche Ordine B2B Rifiutate dal Cliente'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("[OrderRejectMail] Errore notifica agente {$agentEmail}: " . $e->getMessage());
+            }
+        }
+
         return redirect()->back()->with('success', 'Hai rifiutato le modifiche dell\'Ordine #' . $order->id . '. L\'agente è stato notificato.');
     }
 
-    public function confirmOrder(B2bOrder $order)
+    public function cancelOrder(Request $request, B2bOrder $order)
     {
         $user = auth()->user();
         if ($user->role === 'customer') {
-            abort(403, 'I clienti non possono dare l\'OK finale agli ordini.');
+            abort(403, 'I clienti non possono annullare gli ordini.');
+        }
+
+        $customerIds = $user->b2bCustomers()->pluck('b2b_customers.id');
+        if ($user->role === 'agent' && $order->agent_id !== $user->id && !$customerIds->contains($order->b2b_customer_id)) {
+            abort(403, 'Non sei autorizzato ad annullare questo ordine.');
+        }
+
+        if ($order->status === 'confirmed') {
+            return redirect()->back()->with('error', 'Impossibile annullare l\'ordine #' . $order->id . ' in quanto è già stato confermato ed inviato alla sede.');
+        }
+
+        if ($order->status === 'cancelled') {
+            return redirect()->back()->with('warning', 'Questo ordine è già stato annullato.');
+        }
+
+        $order->update(['status' => 'cancelled']);
+
+        // Notifica email di annullamento a cliente ed agente
+        $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
+        $custEmail = $order->customer?->user?->email ?: $order->customer?->email;
+        $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
+        $agentEmail = $agent?->email;
+
+        // 1. Notifica cliente
+        if (!empty($custEmail)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($custEmail)
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Annullamento Ordine B2B'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("[OrderCancelMail] Errore notifica cliente {$custEmail}: " . $e->getMessage());
+            }
+        }
+
+        // 2. Notifica agente
+        if (!empty($agentEmail)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($agentEmail)
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Annullamento Ordine B2B per Agente'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("[OrderCancelMail] Errore notifica agente {$agentEmail}: " . $e->getMessage());
+            }
+        }
+
+        return redirect()->back()->with('success', 'Ordine #' . $order->id . ' annullato con successo. Le notifiche sono state inviate al cliente ed all\'agente.');
+    }
+
+    public function confirmOrder(Request $request, B2bOrder $order)
+    {
+        $user = auth()->user();
+        if ($user->role === 'customer') {
+            abort(403, 'I clienti non possono confermare gli ordini.');
         }
 
         $customerIds = $user->b2bCustomers()->pluck('b2b_customers.id');
@@ -866,7 +1126,7 @@ class AgentPortalController extends Controller
             return redirect()->back()->with('error', 'Questo ordine è già stato confermato.');
         }
 
-        // VERIFICA DISPONIBILITÀ DI MAGAZZINO REALI PRIMA DELL'OK FINALE
+        // VERIFICA DISPONIBILITÀ DI MAGAZZINO REALI PRIMA DELLA CONFERMA ORDINE
         $giacenzaData = $this->getGiacenzaData();
         $order->load('items.product', 'items.variant');
 
@@ -909,7 +1169,7 @@ class AgentPortalController extends Controller
         }
 
         if (!empty($insufficientItems)) {
-            $errorMessage = "Impossibile registrare l'OK finale per l'Ordine #" . $order->id . " a causa di giacenze di magazzino insufficienti: " . implode(" | ", $insufficientItems);
+            $errorMessage = "Impossibile confermare l'Ordine #" . $order->id . " a causa di giacenze di magazzino insufficienti: " . implode(" | ", $insufficientItems);
             return redirect()->back()->with('error', $errorMessage);
         }
 
@@ -918,9 +1178,40 @@ class AgentPortalController extends Controller
         // Genera ed invia il file CSV dell'ordine nella cartella Input su FTP
         $csvResult = $this->exportOrderToFtpCsv($order);
 
-        $msg = 'OK FINALE REGISTRATO! Giacenze verificate e Ordine #' . $order->id . ' confermato con successo!';
+        // Invio email di conferma al cliente ed all'agente
+        $emailSent = false;
+        if ($request->has('send_email_to_customer') || $request->input('send_email_to_customer') == '1') {
+            $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
+            $custEmail = $order->customer?->user?->email ?: $order->customer?->email;
+            $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
+            $agentEmail = $agent?->email;
+
+            if (!empty($custEmail)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($custEmail)
+                        ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Conferma Definitiva Ordine B2B'));
+                    $emailSent = true;
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("[OrderConfirmMail] Errore invio email cliente {$custEmail}: " . $e->getMessage());
+                }
+            }
+
+            if (!empty($agentEmail)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($agentEmail)
+                        ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Conferma Definitiva Ordine B2B per Agente'));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("[OrderConfirmMail] Errore invio email agente {$agentEmail}: " . $e->getMessage());
+                }
+            }
+        }
+
+        $msg = 'Ordine #' . $order->id . ' confermato con successo!';
         if ($csvResult['uploaded']) {
             $msg .= ' File ' . $csvResult['filename'] . ' trasmesso nella cartella Input dell\'FTP.';
+        }
+        if ($emailSent && !empty($custEmail)) {
+            $msg .= ' Email di conferma inviata al cliente (' . $custEmail . ').';
         }
 
         return redirect()->back()->with('success', $msg);
@@ -945,7 +1236,7 @@ class AgentPortalController extends Controller
         }
 
         // Intestazione con codice articolo dal file giacenze e codice cliente
-        fputcsv($file, ['CODICE_ARTICOLO', 'DESCRIZIONE', 'TAGLIA', 'QUANTITA', 'DATA_CONSEGNA', 'PREZZO_UNITARIO', 'CODICE_CLIENTE', 'CLIENTE', 'NUMERO_ORDINE'], ';', '"', "\\");
+        fputcsv($file, ['CODICE_ARTICOLO', 'DESCRIZIONE', 'TAGLIA', 'QUANTITA', 'DATA_CONSEGNA', 'PREZZO_UNITARIO', 'CODICE_CLIENTE', 'CLIENTE', 'NUMERO_ORDINE', 'RIFERIMENTO_ORDINE_INTERNO'], ';', '"', "\\");
         
         foreach ($order->items as $item) {
             $code = 'N/D';
@@ -960,8 +1251,9 @@ class AgentPortalController extends Controller
             $price = number_format($item->price, 2, '.', '');
             $customerCode = $order->customer ? ($order->customer->code ?? '') : '';
             $customerName = $order->customer ? $order->customer->business_name : 'N/D';
+            $internalRef = $order->internal_reference ?? '';
             
-            fputcsv($file, [$code, $name, $size, $qty, $deliveryDate, $price, $customerCode, $customerName, $order->id], ';', '"', "\\");
+            fputcsv($file, [$code, $name, $size, $qty, $deliveryDate, $price, $customerCode, $customerName, $order->id, $internalRef], ';', '"', "\\");
         }
         fclose($file);
 
@@ -1005,8 +1297,38 @@ class AgentPortalController extends Controller
         return view('agent.profile', ['user' => auth()->user()]);
     }
 
+    public function pingSync()
+    {
+        $lastSync = \Illuminate\Support\Facades\Cache::get('b2b_last_giacenze_sync_timestamp');
+        $needsSync = !$lastSync || abs(now()->diffInSeconds($lastSync)) >= 120;
+
+        if ($needsSync) {
+            try {
+                $phpBinary = PHP_BINARY ?: 'php';
+                $artisan = base_path('artisan');
+                exec("{$phpBinary} {$artisan} b2b:sync-giacenze > /dev/null 2>&1 &");
+            } catch (\Throwable $e) {}
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'synced' => $needsSync,
+            'last_sync' => $lastSync ? $lastSync->toIso8601String() : null
+        ]);
+    }
+
     public function getGiacenzaData()
     {
+        // Controllo e avvio automatico sync non-bloccante se sono passati più di 2 minuti
+        $lastSync = \Illuminate\Support\Facades\Cache::get('b2b_last_giacenze_sync_timestamp');
+        if (!$lastSync || abs(now()->diffInSeconds($lastSync)) >= 120) {
+            try {
+                $phpBinary = PHP_BINARY ?: 'php';
+                $artisan = base_path('artisan');
+                exec("{$phpBinary} {$artisan} b2b:sync-giacenze > /dev/null 2>&1 &");
+            } catch (\Throwable $e) {}
+        }
+
         $csvPath = base_path('Giacenza.csv');
         
         if (!file_exists($csvPath)) {

@@ -1,36 +1,43 @@
 <x-app-layout>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Modifica Condizione di Pagamento B2B</h2>
+    <x-slot name="header">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+                <h2 class="font-black text-xl text-gray-800 leading-tight uppercase tracking-tight">
+                    {{ __('Modifica Condizione di Pagamento') }}
+                </h2>
+                <p class="text-xs text-gray-500 mt-0.5 font-bold">Modifica termini e descrizione condizione</p>
             </div>
+            <a href="{{ route('admin.b2b.payment-conditions.index') }}" class="inline-flex items-center gap-1 px-4 py-2 bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider hover:bg-yellow-400 hover:text-slate-950 transition shadow">
+                ← Torna alle Condizioni
+            </a>
+        </div>
+    </x-slot>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg max-w-2xl">
-                <div class="p-6">
-                    <form action="{{ route('admin.b2b.payment-conditions.update', $paymentCondition) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Nome Condizione</label>
-                                <input type="text" name="name" value="{{ old('name', $paymentCondition->name) }}" required placeholder="es. Bonifico 30gg fine mese" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Descrizione (opzionale)</label>
-                                <textarea name="description" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('description', $paymentCondition->description) }}</textarea>
-                            </div>
-                        </div>
-
-                        <div class="mt-8 pt-6 border-t flex justify-end">
-                            <a href="{{ route('admin.b2b.payment-conditions.index') }}" class="mr-4 text-gray-600 hover:text-gray-900 px-4 py-2">Annulla</a>
-                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md shadow-sm">
-                                Aggiorna Condizione
-                            </button>
-                        </div>
-                    </form>
+    <div class="max-w-xl space-y-6">
+        <div class="bg-white shadow-sm rounded-2xl border border-gray-100 p-6">
+            <form action="{{ route('admin.b2b.payment-conditions.update', $paymentCondition) }}" method="POST" class="space-y-4">
+                @csrf
+                @method('PUT')
+                <div>
+                    <label for="name" class="block text-xs font-black text-gray-700 uppercase tracking-wider mb-1">Nome Condizione *</label>
+                    <input type="text" name="name" id="name" value="{{ old('name', $paymentCondition->name) }}" required class="block w-full border-gray-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-yellow-400 focus:border-yellow-400 shadow-sm @error('name') border-red-500 @enderror">
+                    @error('name')
+                        <p class="text-rose-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
                 </div>
-            </div>
+
+                <div>
+                    <label for="description" class="block text-xs font-black text-gray-700 uppercase tracking-wider mb-1">Descrizione interna (opzionale)</label>
+                    <textarea name="description" id="description" rows="3" class="block w-full border-gray-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-yellow-400 focus:border-yellow-400 shadow-sm">{{ old('description', $paymentCondition->description) }}</textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                    <a href="{{ route('admin.b2b.payment-conditions.index') }}" class="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-900 transition">Annulla</a>
+                    <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-black hover:bg-yellow-400 hover:text-slate-950 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow transition">
+                        Aggiorna Condizione
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </x-app-layout>

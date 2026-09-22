@@ -13,6 +13,21 @@ use Illuminate\Support\Facades\Route;
 
 // Rotte Pubbliche (Homepage)
 Route::get('/', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        if ($user->role === 'agent' || ($user->role === 'customer' && $user->b2b_customer_id !== null)) {
+            return redirect()->route('agent.dashboard');
+        }
+        if ($user->role === 'admin') {
+            if (!$user->is_super_admin && $user->can_manage_agents && !$user->can_manage_site) {
+                return redirect()->route('admin.b2b.dashboard');
+            }
+            return redirect()->route('dashboard');
+        }
+        if ($user->role === 'customer') {
+            return redirect()->route('public.account.dashboard');
+        }
+    }
     return redirect()->route('login');
 })->name('public.home');
 
@@ -26,6 +41,19 @@ Route::get('/lang/{locale}', function ($locale) {
 // Rotte Autenticate / Amministrazione
 
 Route::get('/dashboard', function () {
+    $user = auth()->user();
+    if ($user->role === 'agent' || ($user->role === 'customer' && $user->b2b_customer_id !== null)) {
+        return redirect()->route('agent.dashboard');
+    }
+    if ($user->role === 'admin') {
+        if (!$user->is_super_admin && $user->can_manage_agents && !$user->can_manage_site) {
+            return redirect()->route('admin.b2b.dashboard');
+        }
+        return view('dashboard');
+    }
+    if ($user->role === 'customer') {
+        return redirect()->route('public.account.dashboard');
+    }
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -221,6 +249,7 @@ Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')-
 // Portale Agente B2B
 Route::middleware(['auth', 'agent'])->prefix('agenti')->name('agent.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Agent\AgentPortalController::class, 'dashboard'])->name('dashboard');
+    Route::post('/seleziona-cliente', [\App\Http\Controllers\Agent\AgentPortalController::class, 'selectCustomer'])->name('select_customer');
     Route::get('/catalogo', [\App\Http\Controllers\Agent\AgentPortalController::class, 'catalog'])->name('catalog');
     Route::get('/prodotto/{product}', [\App\Http\Controllers\Agent\AgentPortalController::class, 'product'])->name('product');
     Route::get('/prodotto-variant/{product}', [\App\Http\Controllers\Agent\AgentPortalController::class, 'productVariant'])->name('product.variant');
@@ -236,8 +265,10 @@ Route::middleware(['auth', 'agent'])->prefix('agenti')->name('agent.')->group(fu
     Route::put('/ordini/{order}/items', [\App\Http\Controllers\Agent\AgentPortalController::class, 'updateOrderItems'])->name('orders.update_items');
     Route::post('/ordini/{order}/accept', [\App\Http\Controllers\Agent\AgentPortalController::class, 'acceptOrderModifications'])->name('orders.accept');
     Route::post('/ordini/{order}/reject', [\App\Http\Controllers\Agent\AgentPortalController::class, 'rejectOrderModifications'])->name('orders.reject');
+    Route::post('/ordini/{order}/cancel', [\App\Http\Controllers\Agent\AgentPortalController::class, 'cancelOrder'])->name('orders.cancel');
     Route::post('/ordini/{order}/confirm', [\App\Http\Controllers\Agent\AgentPortalController::class, 'confirmOrder'])->name('orders.confirm');
     Route::get('/profilo', [\App\Http\Controllers\Agent\AgentPortalController::class, 'profile'])->name('profile');
+    Route::get('/ping-sync', [\App\Http\Controllers\Agent\AgentPortalController::class, 'pingSync'])->name('ping_sync');
     
     // Gestione Listini Prezzi Agente
     Route::post('/price-lists/assign-customer', [\App\Http\Controllers\Agent\AgentPriceListController::class, 'assignCustomer'])->name('price-lists.assign_customer');

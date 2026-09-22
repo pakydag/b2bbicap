@@ -1,25 +1,41 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+    <div class="mb-6">
+        <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Reimpostazione Password</h2>
+        <p class="text-xs text-gray-600 font-medium leading-relaxed">
+            Hai dimenticato la password? Nessun problema. Inserisci il tuo indirizzo email e ti invieremo un link per reimpostarla e sceglierne una nuova.
+        </p>
     </div>
 
     <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('status'))
+        <div class="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-sm">
+            <span class="text-base">✓</span>
+            <span>{{ session('status') }}</span>
+        </div>
+    @endif
 
-    <form method="POST" action="{{ route('password.email') }}">
+    <form method="POST" action="{{ route('password.email') }}" class="space-y-4">
         @csrf
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <label for="email" class="block text-xs font-black uppercase text-gray-700 tracking-wider mb-1">Indirizzo E-mail</label>
+            <input id="email" class="block w-full border-gray-300 rounded-xl shadow-sm focus:border-yellow-400 focus:ring-yellow-400 text-sm font-semibold @error('email') border-red-500 @enderror" type="email" name="email" value="{{ old('email') }}" required autofocus placeholder="latuaemail@azienda.it" />
+            @error('email')
+                <p class="text-rose-600 text-xs mt-1.5 font-bold">{{ $message }}</p>
+            @enderror
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
+        <div class="pt-2">
+            <button type="submit" class="w-full inline-flex justify-center items-center px-6 py-3.5 bg-black hover:bg-yellow-400 hover:text-slate-950 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition duration-200">
+                Invia Link di Reimpostazione →
+            </button>
+        </div>
+
+        <div class="text-center pt-3 border-t border-gray-100 mt-4">
+            <a href="{{ route('login') }}" class="text-xs font-bold text-gray-500 hover:text-slate-900 transition">
+                ← Torna al Login
+            </a>
         </div>
     </form>
 </x-guest-layout>

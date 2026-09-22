@@ -48,6 +48,26 @@ class AppServiceProvider extends ServiceProvider
             // Ignora errori di boot se ad esempio il DB non è ancora migrato
         }
 
+        // Configurazione personalizzata dell'email di Reset Password
+        \Illuminate\Auth\Notifications\ResetPassword::toMailUsing(function ($notifiable, $token) {
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            $companyName = \App\Models\Setting::where('key', 'mail_from_name')->value('value') ?? config('mail.from.name') ?? 'Calzaturificio 5b';
+            $expireMinutes = config('auth.passwords.' . config('auth.defaults.passwords') . '.expire', 60);
+
+            return (new \Illuminate\Notifications\Messages\MailMessage)
+                ->subject('Reimpostazione Password - ' . $companyName)
+                ->view('emails.password_reset', [
+                    'user' => $notifiable,
+                    'url' => $url,
+                    'companyName' => $companyName,
+                    'count' => $expireMinutes,
+                ]);
+        });
+
         try {
             if (\Illuminate\Support\Facades\Schema::hasTable('sections')) {
                 \Illuminate\Support\Facades\View::composer(['public.partials.header', 'public.partials.footer'], function ($view) {
