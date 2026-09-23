@@ -345,9 +345,18 @@
             <!-- Note Ordine -->
             @if($order->notes)
                 <div class="card-box" style="margin-top: 20px; background: #fffbeb; border-color: #fde68a;">
-                    <h3 style="color: #92400e; margin-bottom: 6px;">📝 Note dell'Ordine</h3>
-                    <p style="margin: 0; font-size: 13px; color: #78350f; font-style: italic;">
+                    <h3 style="color: #92400e; margin-bottom: 6px;">📝 Note del Cliente</h3>
+                    <p style="margin: 0; font-size: 13px; color: #78350f; font-style: italic; white-space: pre-line;">
                         {{ $order->notes }}
+                    </p>
+                </div>
+            @endif
+
+            @if($order->admin_notes)
+                <div class="card-box" style="margin-top: 15px; background: #f0f9ff; border-color: #bae6fd;">
+                    <h3 style="color: #0369a1; margin-bottom: 6px;">🏢 Messaggio / Note Sede & Agente</h3>
+                    <p style="margin: 0; font-size: 13px; color: #0c4a6e; font-weight: 500; white-space: pre-line;">
+                        {{ $order->admin_notes }}
                     </p>
                 </div>
             @endif

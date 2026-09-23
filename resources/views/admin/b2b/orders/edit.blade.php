@@ -99,12 +99,36 @@
                             </div>
                         </div>
 
-                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6 text-gray-900">
-                                <h3 class="font-bold text-lg mb-4 border-b pb-2 uppercase text-indigo-900">Note Ordine</h3>
-                                <p class="text-sm text-gray-600 bg-gray-50 p-4 rounded-md border italic">
-                                    {{ $order->notes ?: 'Nessuna nota inserita dall\'agente.' }}
-                                </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Note Inserite dal Cliente -->
+                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                                <div class="p-6 text-gray-900">
+                                    <h3 class="font-bold text-sm mb-3 uppercase text-slate-800 flex items-center gap-2 border-b pb-2">
+                                        <span>📝 Note Inserite dal Cliente</span>
+                                    </h3>
+                                    @if($order->notes)
+                                        <p class="text-sm text-gray-700 bg-amber-50/60 p-4 rounded-xl border border-amber-200/80 italic leading-relaxed whitespace-pre-line">
+                                            {{ $order->notes }}
+                                        </p>
+                                    @else
+                                        <p class="text-sm text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-200 italic">
+                                            Nessuna nota inserita dal cliente al momento dell'ordine.
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Messaggio / Note Sede & Agente -->
+                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                                <div class="p-6 text-gray-900">
+                                    <div class="flex items-center justify-between border-b pb-2 mb-3">
+                                        <h3 class="font-bold text-sm uppercase text-indigo-900 flex items-center gap-2">
+                                            <span>🏢 Messaggio / Note Sede & Agente</span>
+                                        </h3>
+                                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Visibile a cliente, agente e PDF</span>
+                                    </div>
+                                    <textarea name="admin_notes" rows="4" {{ $isConfirmed ? 'disabled' : '' }} placeholder="Inserisci un messaggio o note della sede/agente per questo ordine..." class="w-full rounded-xl border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500 {{ $isConfirmed ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900' }}">{{ old('admin_notes', $order->admin_notes) }}</textarea>
+                                </div>
                             </div>
                         </div>
                     </div>

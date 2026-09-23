@@ -77,6 +77,8 @@ class B2bOrderController extends Controller
             'status' => 'required|in:pending,confirmed,cancelled,revision_pending,customer_approved,customer_rejected',
             'internal_reference' => 'nullable|string|max:100',
             'payment_method' => 'nullable|string',
+            'admin_notes' => 'nullable|string',
+            'notes' => 'nullable|string',
             'items' => 'nullable|array',
             'items.*.id' => 'required|exists:b2b_order_items,id',
             'items.*.quantity' => 'required|integer|min:0',
@@ -88,11 +90,21 @@ class B2bOrderController extends Controller
         $statusChanged = $newStatus !== $oldStatus;
         $itemsModified = false;
 
-        $order->update([
+        $updateData = [
             'status' => $newStatus,
             'internal_reference' => $request->internal_reference,
-            'payment_method' => $request->payment_method
-        ]);
+            'payment_method' => $request->payment_method,
+            'admin_notes' => $request->admin_notes,
+        ];
+        if ($request->has('notes')) {
+            $updateData['notes'] = $request->notes;
+        }
+
+        $oldAdminNotes = (string)($order->admin_notes ?? '');
+        $newAdminNotes = (string)($request->admin_notes ?? '');
+        $notesChanged = trim($oldAdminNotes) !== trim($newAdminNotes);
+
+        $order->update($updateData);
 
         if ($request->has('items')) {
             $total = 0;
@@ -111,9 +123,10 @@ class B2bOrderController extends Controller
                 }
             }
             $order->update(['total_amount' => $total]);
-            if ($itemsModified) {
-                $order->update(['is_modified' => true]);
-            }
+        }
+
+        if ($itemsModified || $notesChanged) {
+            $order->update(['is_modified' => true]);
         }
 
         // Genera ed invia il file CSV dell'ordine nella cartella Input su FTP SOLO se confermato
@@ -151,7 +164,7 @@ class B2bOrderController extends Controller
                     \Illuminate\Support\Facades\Mail::to($agentEmail)
                         ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Annullamento Ordine B2B per Agente'));
                 }
-            } elseif ($itemsModified && $newStatus !== 'confirmed' && $newStatus !== 'cancelled') {
+            } elseif (($itemsModified || $notesChanged) && $newStatus !== 'confirmed' && $newStatus !== 'cancelled') {
                 if (!empty($custEmail)) {
                     \Illuminate\Support\Facades\Mail::to($custEmail)
                         ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Rettifica Ordine B2B'));

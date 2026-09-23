@@ -503,10 +503,18 @@
 
         <!-- Totals Card -->
         <div class="flex flex-col sm:flex-row justify-between items-start gap-6 border-t border-gray-200 pt-6 page-break-inside-avoid">
-            <div class="w-full sm:max-w-sm text-xs text-gray-500">
+            <div class="w-full sm:max-w-sm text-xs text-gray-500 space-y-3">
                 @if($order->notes)
-                    <p class="font-bold uppercase text-gray-400 mb-1">Note Ordine:</p>
-                    <p class="italic bg-gray-50 p-3 rounded-xl border border-gray-200 text-gray-700">{{ $order->notes }}</p>
+                    <div>
+                        <p class="font-black uppercase text-gray-400 text-[10px] mb-1">📝 Note del Cliente:</p>
+                        <p class="italic bg-amber-50/50 p-3 rounded-xl border border-amber-200/80 text-gray-800 leading-relaxed whitespace-pre-line">{{ $order->notes }}</p>
+                    </div>
+                @endif
+                @if($order->admin_notes)
+                    <div>
+                        <p class="font-black uppercase text-indigo-700 text-[10px] mb-1">🏢 Note / Comunicazioni Sede & Agente:</p>
+                        <p class="font-medium bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 text-indigo-950 leading-relaxed whitespace-pre-line">{{ $order->admin_notes }}</p>
+                    </div>
                 @endif
             </div>
 

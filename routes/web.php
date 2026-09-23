@@ -263,6 +263,7 @@ Route::middleware(['auth', 'agent'])->prefix('agenti')->name('agent.')->group(fu
     Route::get('/ordini/{order}', [\App\Http\Controllers\Agent\AgentPortalController::class, 'orderDetail'])->name('order_detail');
     Route::get('/ordini/{order}/pdf', [\App\Http\Controllers\Agent\AgentPortalController::class, 'orderPdf'])->name('orders.pdf');
     Route::put('/ordini/{order}/items', [\App\Http\Controllers\Agent\AgentPortalController::class, 'updateOrderItems'])->name('orders.update_items');
+    Route::put('/ordini/{order}/notes', [\App\Http\Controllers\Agent\AgentPortalController::class, 'updateOrderNotes'])->name('orders.update_notes');
     Route::post('/ordini/{order}/accept', [\App\Http\Controllers\Agent\AgentPortalController::class, 'acceptOrderModifications'])->name('orders.accept');
     Route::post('/ordini/{order}/reject', [\App\Http\Controllers\Agent\AgentPortalController::class, 'rejectOrderModifications'])->name('orders.reject');
     Route::post('/ordini/{order}/cancel', [\App\Http\Controllers\Agent\AgentPortalController::class, 'cancelOrder'])->name('orders.cancel');

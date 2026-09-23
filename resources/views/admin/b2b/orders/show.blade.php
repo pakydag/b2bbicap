@@ -114,10 +114,24 @@
                 </div>
             </div>
 
-            @if($order->notes)
-                <div class="bg-white p-6 shadow sm:rounded-lg">
-                    <h3 class="font-bold text-gray-700 uppercase text-xs mb-2">Note Agente</h3>
-                    <p class="text-sm italic text-gray-600 bg-gray-50 p-3 rounded">{{ $order->notes }}</p>
+            @if($order->notes || $order->admin_notes)
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @if($order->notes)
+                        <div class="bg-white p-6 shadow sm:rounded-lg">
+                            <h3 class="font-bold text-gray-800 uppercase text-xs mb-2 flex items-center gap-2">
+                                <span>📝 Note del Cliente</span>
+                            </h3>
+                            <p class="text-sm italic text-gray-700 bg-amber-50/60 p-4 rounded-xl border border-amber-200/80 leading-relaxed whitespace-pre-line">{{ $order->notes }}</p>
+                        </div>
+                    @endif
+                    @if($order->admin_notes)
+                        <div class="bg-white p-6 shadow sm:rounded-lg">
+                            <h3 class="font-bold text-indigo-900 uppercase text-xs mb-2 flex items-center gap-2">
+                                <span>🏢 Messaggio / Note Sede & Agente</span>
+                            </h3>
+                            <p class="text-sm font-medium text-indigo-950 bg-indigo-50/60 p-4 rounded-xl border border-indigo-100 leading-relaxed whitespace-pre-line">{{ $order->admin_notes }}</p>
+                        </div>
+                    @endif
                 </div>
             @endif
         </div>

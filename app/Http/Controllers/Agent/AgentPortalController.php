@@ -862,6 +862,79 @@ class AgentPortalController extends Controller
         return view('admin.b2b.orders.pdf', compact('order'));
     }
 
+    public function updateOrderNotes(Request $request, B2bOrder $order)
+    {
+        $user = auth()->user();
+        if ($user->role === 'customer') {
+            abort(403, 'I clienti non possono modificare le note della sede o dell\'agente.');
+        }
+
+        $customerIds = $user->b2bCustomers()->pluck('b2b_customers.id');
+        if ($user->role === 'agent' && $order->agent_id !== $user->id && !$customerIds->contains($order->b2b_customer_id)) {
+            abort(403, 'Non sei autorizzato a modificare questo ordine.');
+        }
+
+        $request->validate([
+            'admin_notes' => 'nullable|string',
+        ]);
+
+        $oldNotes = (string)($order->admin_notes ?? '');
+        $newNotes = (string)($request->admin_notes ?? '');
+        $notesChanged = trim($oldNotes) !== trim($newNotes);
+
+        $orderUpdates = [
+            'admin_notes' => $request->admin_notes,
+        ];
+
+        if ($notesChanged && $order->status !== 'confirmed' && $order->status !== 'cancelled') {
+            $orderUpdates['is_modified'] = true;
+            $orderUpdates['status'] = 'revision_pending';
+        }
+
+        $order->update($orderUpdates);
+
+        // Invio email notifica al cliente ed all'agente
+        $sendEmail = $request->input('send_email_to_customer', '1') == '1';
+        $emailSent = false;
+        $custEmail = null;
+
+        if ($notesChanged && $sendEmail && $order->status !== 'cancelled') {
+            $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
+            $custEmail = $order->customer?->user?->email ?: $order->customer?->email;
+            $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
+            $agentEmail = $agent?->email;
+
+            if (!empty($custEmail)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($custEmail)
+                        ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Rettifica Ordine B2B'));
+                    $emailSent = true;
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("[OrderNotesMail] Errore invio email rettifica a {$custEmail}: " . $e->getMessage());
+                }
+            }
+
+            if (!empty($agentEmail)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($agentEmail)
+                        ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Rettifica Ordine B2B per Agente'));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("[OrderNotesMail] Errore invio email rettifica agente {$agentEmail}: " . $e->getMessage());
+                }
+            }
+        }
+
+        $msg = 'Messaggio / Note della sede salvate con successo per l\'Ordine #' . $order->id . '.';
+        if ($notesChanged && $order->status !== 'confirmed' && $order->status !== 'cancelled') {
+            $msg .= ' Ordine posto in attesa di presa visione del cliente.';
+        }
+        if ($emailSent && !empty($custEmail)) {
+            $msg .= ' Email di notifica inviata al cliente (' . $custEmail . ').';
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
+
     public function updateOrderItems(Request $request, B2bOrder $order)
     {
         $user = auth()->user();
@@ -879,52 +952,55 @@ class AgentPortalController extends Controller
         }
 
         $request->validate([
-            'items' => 'required|array',
+            'items' => 'nullable|array',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
+            'admin_notes' => 'nullable|string',
         ]);
 
         $order->load('customer');
         $orderModified = false;
 
-        foreach ($request->items as $itemId => $itemData) {
-            $orderItem = \App\Models\B2bOrderItem::where('b2b_order_id', $order->id)->where('id', $itemId)->first();
-            if ($orderItem) {
-                $origQty = $orderItem->original_quantity ?? $orderItem->quantity;
-                $origPrice = $orderItem->original_price ?? $orderItem->price;
+        if ($request->has('items') && is_array($request->items)) {
+            foreach ($request->items as $itemId => $itemData) {
+                $orderItem = \App\Models\B2bOrderItem::where('b2b_order_id', $order->id)->where('id', $itemId)->first();
+                if ($orderItem) {
+                    $origQty = $orderItem->original_quantity ?? $orderItem->quantity;
+                    $origPrice = $orderItem->original_price ?? $orderItem->price;
 
-                $newQty = (int)$itemData['quantity'];
-                $inputPrice = floatval($itemData['price']);
-                $oldQty = (int)$orderItem->quantity;
-                $oldPrice = (float)$orderItem->price;
+                    $newQty = (int)$itemData['quantity'];
+                    $inputPrice = floatval($itemData['price']);
+                    $oldQty = (int)$orderItem->quantity;
+                    $oldPrice = (float)$orderItem->price;
 
-                $finalPrice = $inputPrice;
+                    $finalPrice = $inputPrice;
 
-                // Se la quantità è cambiata, ricalcola il prezzo da listino se l'agente non ha inserito un prezzo manuale personalizzato
-                if ($newQty !== $oldQty) {
-                    $product = B2bProduct::find($orderItem->b2b_product_id);
-                    if ($product && $order->customer) {
-                        $expectedOldPrice = $product->getPriceDetailsForCustomer($order->customer, $oldQty)['unit_price'];
-                        $expectedNewPrice = $product->getPriceDetailsForCustomer($order->customer, $newQty)['unit_price'];
+                    // Se la quantità è cambiata, ricalcola il prezzo da listino se l'agente non ha inserito un prezzo manuale personalizzato
+                    if ($newQty !== $oldQty) {
+                        $product = B2bProduct::find($orderItem->b2b_product_id);
+                        if ($product && $order->customer) {
+                            $expectedOldPrice = $product->getPriceDetailsForCustomer($order->customer, $oldQty)['unit_price'];
+                            $expectedNewPrice = $product->getPriceDetailsForCustomer($order->customer, $newQty)['unit_price'];
 
-                        if (abs($inputPrice - $oldPrice) < 0.001 || abs($inputPrice - $expectedOldPrice) < 0.001) {
-                            $finalPrice = $expectedNewPrice;
+                            if (abs($inputPrice - $oldPrice) < 0.001 || abs($inputPrice - $expectedOldPrice) < 0.001) {
+                                $finalPrice = $expectedNewPrice;
+                            }
                         }
                     }
-                }
 
-                $itemIsModified = ($newQty !== (int)$origQty) || (abs($finalPrice - (float)$origPrice) >= 0.01);
-                if ($itemIsModified) {
-                    $orderModified = true;
-                }
+                    $itemIsModified = ($newQty !== (int)$origQty) || (abs($finalPrice - (float)$origPrice) >= 0.01);
+                    if ($itemIsModified) {
+                        $orderModified = true;
+                    }
 
-                $orderItem->update([
-                    'original_quantity' => $origQty,
-                    'original_price' => $origPrice,
-                    'quantity' => $newQty,
-                    'price' => $finalPrice,
-                    'is_modified' => $itemIsModified,
-                ]);
+                    $orderItem->update([
+                        'original_quantity' => $origQty,
+                        'original_price' => $origPrice,
+                        'quantity' => $newQty,
+                        'price' => $finalPrice,
+                        'is_modified' => $itemIsModified,
+                    ]);
+                }
             }
         }
 
@@ -936,13 +1012,21 @@ class AgentPortalController extends Controller
         $totalAmount = \App\Models\B2bOrderItem::where('b2b_order_id', $order->id)->get()->sum(fn($i) => $i->quantity * $i->price);
         $hasAnyModifiedItem = \App\Models\B2bOrderItem::where('b2b_order_id', $order->id)->where('is_modified', true)->exists();
 
-        $isMod = $orderModified || $hasAnyModifiedItem;
+        $oldNotes = (string)($order->admin_notes ?? '');
+        $newNotes = $request->has('admin_notes') ? (string)($request->admin_notes ?? '') : $oldNotes;
+        $notesChanged = trim($oldNotes) !== trim($newNotes);
 
-        $order->update([
+        $isMod = $orderModified || $hasAnyModifiedItem || $notesChanged;
+
+        $orderUpdates = [
             'total_amount' => $totalAmount,
             'is_modified' => $isMod,
             'status' => $isMod ? 'revision_pending' : $order->status,
-        ]);
+        ];
+        if ($request->has('admin_notes')) {
+            $orderUpdates['admin_notes'] = $request->admin_notes;
+        }
+        $order->update($orderUpdates);
 
         // Invio notifica email di rettifica al cliente
         $emailSent = false;
@@ -975,7 +1059,7 @@ class AgentPortalController extends Controller
             }
         }
 
-        $msg = 'Quantità e prezzi dell\'Ordine #' . $order->id . ' aggiornati con successo! Ordine posto in attesa di approvazione del cliente.';
+        $msg = 'Modifiche dell\'Ordine #' . $order->id . ' salvate con successo! Ordine posto in attesa di approvazione del cliente.';
         if ($emailSent && !empty($custEmail)) {
             $msg .= ' Email di notifica rettifica inviata al cliente (' . $custEmail . ').';
         }
