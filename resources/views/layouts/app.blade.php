@@ -86,7 +86,7 @@
             }
         </style>
     </head>
-    <body class="font-sans antialiased overflow-hidden">
+    <body class="font-sans antialiased overflow-hidden" x-data="{ showWipeModal: false }">
         <div class="flex flex-col h-screen bg-gray-50">
             
             <!-- Top Header Bar Nero Completo -->

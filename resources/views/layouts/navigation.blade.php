@@ -137,6 +137,10 @@
                         <span class="mr-3 text-base">🏷️</span>
                         <span>Gestione Linee</span>
                     </a>
+                    <button type="button" @click="showWipeModal = true" class="w-full text-left text-rose-600 hover:bg-rose-50 hover:text-rose-700 font-bold rounded-xl group flex items-center px-3 py-2.5 text-sm transition-all duration-200 cursor-pointer">
+                        <span class="mr-3 text-base">🗑️</span>
+                        <span>Svuota</span>
+                    </button>
                 </div>
             </div>
             @endif
@@ -255,6 +259,7 @@
                     <a href="{{ route('admin.b2b.agents.index') }}" class="{{ request()->routeIs('admin.b2b.agents.*') ? $mobileActive : $mobileInactive }}">👤 Agenti</a>
                     <a href="{{ route('admin.b2b.customers.index') }}" class="{{ request()->routeIs('admin.b2b.customers.*') ? $mobileActive : $mobileInactive }}">🏢 Clienti B2B</a>
                     <a href="{{ route('admin.b2b.products.index') }}" class="{{ request()->routeIs('admin.b2b.products.*') ? $mobileActive : $mobileInactive }}">📦 Inventario Prodotti</a>
+                    <button type="button" @click="showWipeModal = true; open = false;" class="w-full text-left block px-4 py-2.5 rounded-lg text-sm font-black text-rose-400 hover:text-white hover:bg-rose-950/30 cursor-pointer">🗑️ Svuota</button>
                 </div>
                 @endif
 
@@ -288,3 +293,117 @@
         </nav>
     </div>
 </div>
+
+<!-- Modale di Conferma Svuotamento B2B -->
+<div x-show="showWipeModal" 
+     x-cloak
+     class="fixed inset-0 z-50 overflow-y-auto" 
+     style="display: none;"
+     aria-labelledby="modal-title" 
+     role="dialog" 
+     aria-modal="true">
+    <!-- Backdrop Blur & Scuro -->
+    <div x-show="showWipeModal"
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity" 
+         @click="showWipeModal = false"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+        <div x-show="showWipeModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             @click.away="showWipeModal = false"
+             class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-gray-200">
+            
+            <!-- Header Modal con stile BICAP -->
+            <div class="bg-black px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500 text-xl font-bold">
+                        🗑️
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black uppercase tracking-wider text-white" id="modal-title">
+                            Svuota Dati B2B
+                        </h3>
+                        <p class="text-[11px] font-bold text-rose-400 uppercase tracking-wide">
+                            Attenzione: Operazione Irreversibile
+                        </p>
+                    </div>
+                </div>
+                <button type="button" @click="showWipeModal = false" class="text-zinc-400 hover:text-white text-lg font-bold p-1 rounded-lg hover:bg-zinc-800 transition">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Body Modal -->
+            <div class="p-6 space-y-4">
+                <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4">
+                    <p class="text-xs font-black text-rose-900 uppercase tracking-wide mb-1">
+                        Sei sicuro di voler procedere con lo svuotamento?
+                    </p>
+                    <p class="text-xs text-rose-800 leading-relaxed font-medium">
+                        Questa funzione cancellerà definitivamente i dati operativi B2B ed eseguirà le seguenti azioni:
+                    </p>
+                </div>
+
+                <div class="space-y-3 bg-gray-50 rounded-2xl p-4 border border-gray-100 text-xs">
+                    <div class="flex items-start gap-3">
+                        <span class="text-base">👤</span>
+                        <div>
+                            <p class="font-black text-gray-900 uppercase text-[11px]">Cancellazione Agenti Abilitati</p>
+                            <p class="text-gray-600 font-medium">Tutti gli account agenti registrati, relative associazioni alle linee e listini personalizzati verranno eliminati.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 border-t border-gray-200/60 pt-3">
+                        <span class="text-base">📝</span>
+                        <div>
+                            <p class="font-black text-gray-900 uppercase text-[11px]">Cancellazione Ordini Ricevuti</p>
+                            <p class="text-gray-600 font-medium">Tutti gli ordini B2B ricevuti e relative righe d'ordine verranno cancellati dal database.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 border-t border-gray-200/60 pt-3">
+                        <span class="text-base">🏢</span>
+                        <div>
+                            <p class="font-black text-gray-900 uppercase text-[11px]">Disabilitazione Accesso Aziende</p>
+                            <p class="text-gray-600 font-medium">Tutti gli account di accesso al portale per le aziende clienti verranno rimossi (le anagrafiche clienti restano intatte).</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 border-t border-gray-200/60 pt-3">
+                        <span class="text-base">🔗</span>
+                        <div>
+                            <p class="font-black text-gray-900 uppercase text-[11px]">Disattivazione Agenti di Riferimento</p>
+                            <p class="text-gray-600 font-medium">Tutte le assegnazioni di agenti di riferimento collegate alle aziende clienti verranno dissociate.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Azioni -->
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <button type="button" 
+                        @click="showWipeModal = false" 
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-gray-300 bg-white text-xs font-black uppercase text-gray-700 hover:bg-gray-100 transition">
+                    Annulla
+                </button>
+                <form method="POST" action="{{ route('admin.b2b.wipe') }}" class="w-full sm:w-auto inline">
+                    @csrf
+                    <button type="submit" 
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider transition shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2">
+                        <span>🗑️</span>
+                        <span>Conferma e Svuota</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

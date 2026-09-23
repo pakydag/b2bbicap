@@ -243,6 +243,7 @@ Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')-
         Route::resource('orders', \App\Http\Controllers\Admin\B2b\B2bOrderController::class);
         Route::post('orders/{order}/send-copy', [\App\Http\Controllers\Admin\B2b\B2bOrderController::class, 'sendOrderCopy'])->name('orders.send_copy');
         Route::get('dashboard', [\App\Http\Controllers\Admin\B2b\B2bDashboardController::class, 'index'])->name('dashboard');
+        Route::post('wipe', [\App\Http\Controllers\Admin\B2b\B2bDashboardController::class, 'wipeData'])->name('wipe');
     });
 });
 

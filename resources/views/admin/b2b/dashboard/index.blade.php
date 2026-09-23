@@ -6,6 +6,20 @@
     </x-slot>
 
     <div class="space-y-6">
+        @if(session('success'))
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm">
+                <span class="text-base">✅</span>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm">
+                <span class="text-base">❌</span>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
         <!-- Stats -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-white p-5 shadow-sm rounded-2xl border border-gray-100 overflow-hidden border-b-4 border-indigo-500">
