@@ -9,9 +9,17 @@
                     Dettaglio Prodotto B2B: <span class="text-indigo-600 font-black">{{ $product->name }}</span>
                 </h2>
             </div>
-            <a href="{{ route('admin.b2b.products.index') }}" class="inline-flex items-center gap-1 px-4 py-2 bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider hover:bg-yellow-400 hover:text-slate-950 transition shadow">
-                ← Torna all'Inventario
-            </a>
+            <div class="flex items-center gap-2">
+                @if(!empty($lastGiacenzeSync))
+                    <span class="text-xs font-bold text-indigo-900 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-full uppercase flex items-center gap-1.5 shadow-sm" title="Data e ora dell'ultimo scaricamento e sincronizzazione del file Giacenza.csv">
+                        <span>🕒</span> Sync: <strong class="text-indigo-950">{{ $lastGiacenzeSync->format('d/m/Y H:i') }}</strong>
+                        <span class="text-[10px] text-indigo-600 font-normal">({{ $lastGiacenzeSync->diffForHumans() }})</span>
+                    </span>
+                @endif
+                <a href="{{ route('admin.b2b.products.index') }}" class="inline-flex items-center gap-1 px-4 py-2 bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider hover:bg-yellow-400 hover:text-slate-950 transition shadow">
+                    ← Torna all'Inventario
+                </a>
+            </div>
         </div>
     </x-slot>
 

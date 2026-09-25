@@ -10,6 +10,12 @@
                 {{ __('Inventario Prodotti B2B') }}
             </h2>
             <div class="flex flex-wrap items-center gap-2">
+                @if(!empty($lastGiacenzeSync))
+                    <span class="text-xs font-bold text-indigo-900 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full uppercase flex items-center gap-1.5 shadow-sm" title="Data e ora dell'ultimo scaricamento e sincronizzazione del file Giacenza.csv">
+                        <span>🕒</span> Ultimo Sync: <strong class="text-indigo-950">{{ $lastGiacenzeSync->format('d/m/Y H:i') }}</strong>
+                        <span class="text-[10px] text-indigo-600 font-normal">({{ $lastGiacenzeSync->diffForHumans() }})</span>
+                    </span>
+                @endif
                 <span class="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full uppercase">
                     Totale: {{ $totalCount }}
                 </span>
@@ -58,9 +64,19 @@
                         </span>
                         <h3 class="text-base font-black text-gray-900 uppercase tracking-tight">Prodotti da Google Sheet</h3>
                     </div>
-                    <p class="text-xs text-gray-500 mb-3 leading-relaxed">
+                    <p class="text-xs text-gray-500 mb-2 leading-relaxed">
                         Importa o aggiorna l'inventario prodotti B2B dal foglio Google. Vengono letti solo i prodotti <strong>"pronta consegna"</strong> in Colonna C.
                     </p>
+                    @if(!empty($lastProductsImport))
+                        <div class="mb-3 bg-emerald-50/70 border border-emerald-200 rounded-xl px-3 py-2 text-xs flex items-center gap-2 text-emerald-900 font-medium">
+                            <span class="text-base">🕒</span>
+                            <div>
+                                <span>Ultima importazione:</span>
+                                <strong class="font-black text-emerald-950 ml-1">{{ $lastProductsImport->format('d/m/Y H:i:s') }}</strong>
+                                <span class="text-[11px] text-emerald-700 ml-1">({{ $lastProductsImport->diffForHumans() }})</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
                 <form action="{{ route('admin.b2b.products.import') }}" method="POST" class="flex flex-col gap-3 mt-2">
                     @csrf
@@ -87,9 +103,19 @@
                         </span>
                         <h3 class="text-base font-black text-gray-900 uppercase tracking-tight">Giacenze FTPS (Giacenza.csv)</h3>
                     </div>
-                    <p class="text-xs text-gray-500 mb-3 leading-relaxed">
+                    <p class="text-xs text-gray-500 mb-2 leading-relaxed">
                         Scarica l'ultimo file <strong>Giacenza.csv</strong> da FTPS (<code>51.75.145.169 / Output</code>) per aggiornare giacenze e date di consegna.
                     </p>
+                    @if(!empty($lastGiacenzeSync))
+                        <div class="mb-3 bg-blue-50/70 border border-blue-200 rounded-xl px-3 py-2 text-xs flex items-center gap-2 text-blue-900 font-medium">
+                            <span class="text-base">🕒</span>
+                            <div>
+                                <span>Ultimo aggiornamento file:</span>
+                                <strong class="font-black text-blue-950 ml-1">{{ $lastGiacenzeSync->format('d/m/Y H:i:s') }}</strong>
+                                <span class="text-[11px] text-blue-700 ml-1">({{ $lastGiacenzeSync->diffForHumans() }})</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
                 <form action="{{ route('admin.b2b.products.sync_giacenze') }}" method="POST" class="mt-2">
                     @csrf

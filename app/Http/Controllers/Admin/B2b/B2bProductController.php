@@ -41,7 +41,20 @@ class B2bProductController extends Controller
             $product->giacenza_match = $agentController->findGiacenzaMatch($product, $giacenzaData);
         }
 
-        return view('admin.b2b.products.index', compact('products', 'search', 'selectedBrand'));
+        // Recupera timestamp ultimo aggiornamento giacenze e importazione
+        $giacenzaFile = base_path('Giacenza.csv');
+        $lastGiacenzeSync = null;
+        if (file_exists($giacenzaFile)) {
+            $lastGiacenzeSync = \Carbon\Carbon::createFromTimestamp(filemtime($giacenzaFile));
+        }
+        $cacheGiacenzeSync = \Illuminate\Support\Facades\Cache::get('b2b_last_giacenze_sync_timestamp');
+        if ($cacheGiacenzeSync && (!$lastGiacenzeSync || $cacheGiacenzeSync->gt($lastGiacenzeSync))) {
+            $lastGiacenzeSync = $cacheGiacenzeSync;
+        }
+
+        $lastProductsImport = \Illuminate\Support\Facades\Cache::get('b2b_last_products_import_timestamp');
+
+        return view('admin.b2b.products.index', compact('products', 'search', 'selectedBrand', 'lastGiacenzeSync', 'lastProductsImport'));
     }
 
     public function create()
@@ -96,7 +109,17 @@ class B2bProductController extends Controller
         $giacenzaData = $agentController->getGiacenzaData();
         $giacenzaMatch = $agentController->findGiacenzaMatch($product, $giacenzaData);
 
-        return view('admin.b2b.products.show', compact('product', 'giacenzaMatch'));
+        $giacenzaFile = base_path('Giacenza.csv');
+        $lastGiacenzeSync = null;
+        if (file_exists($giacenzaFile)) {
+            $lastGiacenzeSync = \Carbon\Carbon::createFromTimestamp(filemtime($giacenzaFile));
+        }
+        $cacheGiacenzeSync = \Illuminate\Support\Facades\Cache::get('b2b_last_giacenze_sync_timestamp');
+        if ($cacheGiacenzeSync && (!$lastGiacenzeSync || $cacheGiacenzeSync->gt($lastGiacenzeSync))) {
+            $lastGiacenzeSync = $cacheGiacenzeSync;
+        }
+
+        return view('admin.b2b.products.show', compact('product', 'giacenzaMatch', 'lastGiacenzeSync'));
     }
 
     /**
@@ -253,6 +276,8 @@ class B2bProductController extends Controller
         try {
             \Illuminate\Support\Facades\Artisan::call('b2b:sync-giacenze', ['--force' => true]);
         } catch (\Throwable $e) {}
+
+        \Illuminate\Support\Facades\Cache::put('b2b_last_products_import_timestamp', now(), 86400 * 30);
 
         return redirect()->route('admin.b2b.products.index')
             ->with('success', "Importazione completata con successo! Importati/aggiornati {$importedCount} prodotti in pronta consegna. Prezzi e giacenze allineati con il gestionale.");
