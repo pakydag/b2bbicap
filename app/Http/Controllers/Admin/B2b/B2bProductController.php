@@ -33,6 +33,14 @@ class B2bProductController extends Controller
         
         $selectedBrand = !empty($brandId) ? \App\Models\B2bBrand::find($brandId) : null;
         $products = $query->orderBy('name')->get();
+
+        $agentController = app(\App\Http\Controllers\Agent\AgentPortalController::class);
+        $giacenzaData = $agentController->getGiacenzaData();
+
+        foreach ($products as $product) {
+            $product->giacenza_match = $agentController->findGiacenzaMatch($product, $giacenzaData);
+        }
+
         return view('admin.b2b.products.index', compact('products', 'search', 'selectedBrand'));
     }
 
@@ -200,11 +208,8 @@ class B2bProductController extends Controller
                 $characteristics[$key] = trim($value);
             }
 
-            // Price parsing
-            $priceStr = trim($data['PREZZO CON IVA'] ?? '0');
-            $price = floatval(str_replace(',', '.', $priceStr));
-
-            // Create or update B2bProduct
+            // Create or update B2bProduct: il prezzo iniziale viene impostato a 0.
+            // Verrà aggiornato esclusivamente se presente nel file delle giacenze (Giacenza.csv).
             $product = \App\Models\B2bProduct::updateOrCreate(
                 ['code' => $codice],
                 [
@@ -212,7 +217,7 @@ class B2bProductController extends Controller
                     'b2b_brand_id' => $brand->id,
                     'description' => $data['descrizione-articolo-it'] ?? '',
                     'image' => $data['FOTO-PRINCIPALE-PRODOTTO-WEB'] ?? null,
-                    'price' => $price,
+                    'price' => 0,
                     'has_stock' => true,
                     'is_active' => true,
                     'characteristics' => $characteristics
@@ -244,8 +249,13 @@ class B2bProductController extends Controller
 
         fclose($stream);
 
+        // Aggiorna subito prezzi e giacenze per i prodotti presenti nel file Giacenza.csv (se non presente resta 0)
+        try {
+            \Illuminate\Support\Facades\Artisan::call('b2b:sync-giacenze', ['--force' => true]);
+        } catch (\Throwable $e) {}
+
         return redirect()->route('admin.b2b.products.index')
-            ->with('success', "Importazione completata con successo! Importati/aggiornati {$importedCount} prodotti in pronta consegna.");
+            ->with('success', "Importazione completata con successo! Importati/aggiornati {$importedCount} prodotti in pronta consegna. Prezzi e giacenze allineati con il gestionale.");
     }
 
     /**
@@ -254,10 +264,10 @@ class B2bProductController extends Controller
     public function syncGiacenze(Request $request)
     {
         try {
-            $exitCode = \Illuminate\Support\Facades\Artisan::call('b2b:sync-giacenze');
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('b2b:sync-giacenze', ['--force' => true]);
             if ($exitCode === 0) {
                 return redirect()->route('admin.b2b.products.index')
-                    ->with('success', 'File delle giacenze (Giacenza.csv) sincronizzato ed aggiornato con successo dal server FTPS!');
+                    ->with('success', 'File delle giacenze (Giacenza.csv) sincronizzato ed aggiornato con successo dal server FTPS! Giacenze e prezzi di listino aggiornati.');
             }
             return redirect()->route('admin.b2b.products.index')
                 ->with('error', 'Errore durante la sincronizzazione delle giacenze dal server FTPS. Verifica i log di sistema.');

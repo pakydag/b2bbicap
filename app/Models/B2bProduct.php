@@ -12,6 +12,35 @@ class B2bProduct extends Model
         'characteristics' => 'array',
     ];
 
+    public static function normalizeCode(?string $code): string
+    {
+        if (empty($code)) {
+            return '';
+        }
+        $clean = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $code));
+        $prefixes = ['MAGEX', 'MAG', 'EXP', 'SAL', 'SCA', 'SCH', 'SCJ', 'SCP', 'SC'];
+        foreach ($prefixes as $prefix) {
+            if (str_starts_with($clean, $prefix)) {
+                $clean = substr($clean, strlen($prefix));
+                break;
+            }
+        }
+        return $clean;
+    }
+
+    public static function getPhpCliBinary(): string
+    {
+        if (defined('PHP_BINARY') && !str_contains(PHP_BINARY, 'fpm') && file_exists(PHP_BINARY)) {
+            return PHP_BINARY;
+        }
+        foreach (['/usr/bin/php', '/usr/bin/php8.3', '/usr/bin/php8.4', '/usr/local/bin/php'] as $candidate) {
+            if (file_exists($candidate) && is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+        return 'php';
+    }
+
     public function getImageUrlAttribute(): string
     {
         if (empty($this->image)) {

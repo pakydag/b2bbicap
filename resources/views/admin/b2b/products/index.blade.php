@@ -1,12 +1,27 @@
 <x-app-layout>
     <x-slot name="header">
+        @php
+            $totalCount = $products->count();
+            $syncCount = $products->filter(fn($p) => !empty($p->giacenza_match))->count();
+            $notSyncCount = $totalCount - $syncCount;
+        @endphp
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <h2 class="font-black text-xl text-gray-800 leading-tight uppercase tracking-tight">
                 {{ __('Inventario Prodotti B2B') }}
             </h2>
-            <span class="text-xs font-bold text-gray-500 uppercase">
-                Totale Prodotti: {{ $products->count() }}
-            </span>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full uppercase">
+                    Totale: {{ $totalCount }}
+                </span>
+                <span class="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full uppercase flex items-center gap-1">
+                    🟢 Sincronizzati: {{ $syncCount }}
+                </span>
+                @if($notSyncCount > 0)
+                    <span class="text-xs font-bold text-rose-800 bg-rose-100 border border-rose-300 px-3 py-1 rounded-full uppercase flex items-center gap-1 animate-pulse">
+                        ⚠️ Non Sincronizzati: {{ $notSyncCount }}
+                    </span>
+                @endif
+            </div>
         </div>
     </x-slot>
 
@@ -126,7 +141,24 @@
             <!-- Vista Mobile (< sm) a riga orizzontale compatta con tasto a DESTRA -->
             <div class="sm:hidden divide-y divide-gray-100">
                 @forelse($products as $product)
-                    @php $totalStock = $product->variants->sum('stock'); @endphp
+                    @php
+                        $gMatch = $product->giacenza_match ?? null;
+                        if ($gMatch) {
+                            $curStock = $gMatch['current_stock'] ?? [];
+                            $futStock = $gMatch['future_stock'] ?? [];
+                            $totPronta = 0;
+                            foreach ($curStock as $qty) {
+                                if ($qty > 0) $totPronta += $qty;
+                            }
+                            $totArrivo = 0;
+                            foreach ($futStock as $sizes) {
+                                $totArrivo += array_sum($sizes);
+                            }
+                        } else {
+                            $totPronta = $product->variants->sum('quantity');
+                            $totArrivo = 0;
+                        }
+                    @endphp
                     <div class="p-3.5 flex items-center justify-between gap-3 hover:bg-yellow-50/40 transition">
                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <a href="{{ route('admin.b2b.products.show', $product) }}" class="shrink-0">
@@ -135,9 +167,14 @@
                                 </div>
                             </a>
                             <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-1.5 mb-0.5">
+                                <div class="flex flex-wrap items-center gap-1.5 mb-0.5">
                                     <span class="font-mono text-[10px] font-black text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{{ $product->code ?? '-' }}</span>
                                     <span class="text-[9px] font-bold uppercase text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded truncate max-w-[80px]">{{ $product->brand->name ?? '' }}</span>
+                                    @if($gMatch)
+                                        <span class="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">🟢 Sync</span>
+                                    @else
+                                        <span class="text-[9px] font-black uppercase text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full animate-pulse">⚠️ No Sync</span>
+                                    @endif
                                 </div>
                                 <a href="{{ route('admin.b2b.products.show', $product) }}" class="block font-black text-xs text-slate-900 truncate hover:text-amber-600 transition">
                                     {{ $product->name }}
@@ -146,7 +183,10 @@
                                     <span class="font-black text-slate-900">€ {{ number_format($product->price, 2, ',', '.') }}</span>
                                     <span class="text-gray-300">•</span>
                                     @if($product->has_stock)
-                                        <span class="font-bold text-indigo-700">{{ $totalStock }} pz</span>
+                                        <span class="font-bold text-emerald-700">🟢 {{ $totPronta }} pz</span>
+                                        @if($totArrivo > 0)
+                                            <span class="text-[10px] font-bold text-amber-700">+{{ $totArrivo }} arr.</span>
+                                        @endif
                                     @else
                                         <span class="text-amber-700 font-bold text-[10px]">No Mag.</span>
                                     @endif
@@ -176,12 +216,31 @@
                             <th class="px-4 py-3">Prodotto & Modello</th>
                             <th class="px-3 py-3 whitespace-nowrap">Linea</th>
                             <th class="px-3 py-3 whitespace-nowrap text-right">Prezzo</th>
+                            <th class="px-3 py-3 whitespace-nowrap text-center">Stato Giacenze</th>
                             <th class="px-3 py-3 whitespace-nowrap text-center">Giacenza</th>
                             <th class="px-4 py-3 whitespace-nowrap text-right">Azioni</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-xs">
                         @forelse($products as $product)
+                            @php
+                                $gMatch = $product->giacenza_match ?? null;
+                                if ($gMatch) {
+                                    $curStock = $gMatch['current_stock'] ?? [];
+                                    $futStock = $gMatch['future_stock'] ?? [];
+                                    $totPronta = 0;
+                                    foreach ($curStock as $qty) {
+                                        if ($qty > 0) $totPronta += $qty;
+                                    }
+                                    $totArrivo = 0;
+                                    foreach ($futStock as $sizes) {
+                                        $totArrivo += array_sum($sizes);
+                                    }
+                                } else {
+                                    $totPronta = $product->variants->sum('quantity');
+                                    $totArrivo = 0;
+                                }
+                            @endphp
                             <tr class="hover:bg-yellow-50/40 transition">
                                 <td class="px-3 py-2.5 text-center">
                                     <a href="{{ route('admin.b2b.products.show', $product) }}" class="inline-block">
@@ -206,10 +265,29 @@
                                     € {{ number_format($product->price, 2, ',', '.') }}
                                 </td>
                                 <td class="px-3 py-2.5 whitespace-nowrap text-center">
+                                    @if($gMatch)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black rounded-full uppercase tracking-wider">
+                                            <span>🟢</span> Sincronizzato
+                                        </span>
+                                        <div class="text-[9px] font-mono text-gray-400 mt-0.5" title="Codice gestionale abbinato: {{ $gMatch['raw_code'] ?? '' }}">
+                                            {{ $gMatch['raw_code'] ?? '' }}
+                                        </div>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black rounded-full uppercase tracking-wider animate-pulse">
+                                            <span>⚠️</span> Non Sincronizzato
+                                        </span>
+                                        <div class="text-[9px] text-rose-500 font-semibold mt-0.5">
+                                            Manca in Giacenza.csv
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-3 py-2.5 whitespace-nowrap text-center">
                                     @if($product->has_stock)
-                                        @php $totalStock = $product->variants->sum('stock'); @endphp
-                                        <div class="font-black text-indigo-700">Tot: {{ $totalStock }} pz</div>
-                                        <div class="text-[10px] text-gray-400 font-semibold">{{ $product->variants->count() }} varianti</div>
+                                        <div class="font-black text-emerald-700 text-xs">🟢 Pronta: {{ $totPronta }} pz</div>
+                                        @if($totArrivo > 0)
+                                            <div class="text-[10px] text-amber-700 font-bold mt-0.5">🚚 In arrivo: +{{ $totArrivo }}</div>
+                                        @endif
+                                        <div class="text-[10px] text-gray-400 font-semibold mt-0.5">{{ $product->variants->count() }} varianti</div>
                                     @else
                                         <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 font-bold rounded text-[10px]">Senza Magazzino</span>
                                     @endif
@@ -222,7 +300,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-gray-400 font-bold">
+                                <td colspan="8" class="px-4 py-8 text-center text-gray-400 font-bold">
                                     {{ !empty($search) ? 'Nessun prodotto corrisponde alla ricerca.' : 'Nessun prodotto in inventario.' }}
                                 </td>
                             </tr>

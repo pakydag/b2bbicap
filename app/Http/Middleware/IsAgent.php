@@ -15,7 +15,7 @@ class IsAgent
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && (auth()->user()->role === 'agent' || (auth()->user()->role === 'customer' && auth()->user()->b2b_customer_id !== null))) {
+        if (auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->role === 'agent' || (auth()->user()->role === 'customer' && auth()->user()->b2b_customer_id !== null))) {
             
             if (!session()->has('b2b_cart_loaded')) {
                 $dbCart = \App\Models\B2bCart::where('user_id', auth()->id())->first();

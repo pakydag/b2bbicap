@@ -181,9 +181,7 @@ class SyncB2bAll extends Command
                 $characteristics[$key] = trim($value);
             }
 
-            $priceStr = trim($data['PREZZO CON IVA'] ?? '0');
-            $price = floatval(str_replace(',', '.', $priceStr));
-
+            // Create or update B2bProduct: prezzo iniziale impostato a 0
             $product = B2bProduct::updateOrCreate(
                 ['code' => $codice],
                 [
@@ -191,7 +189,7 @@ class SyncB2bAll extends Command
                     'b2b_brand_id' => $brand->id,
                     'description' => $data['descrizione-articolo-it'] ?? '',
                     'image' => $data['FOTO-PRINCIPALE-PRODOTTO-WEB'] ?? null,
-                    'price' => $price,
+                    'price' => 0,
                     'has_stock' => true,
                     'is_active' => true,
                     'characteristics' => $characteristics
@@ -299,39 +297,45 @@ class SyncB2bAll extends Command
         $file = fopen($csvPath, 'r');
         $headers = fgetcsv($file, 0, ';', '"', '\\');
 
-        $prices = [];
+        $csvEntries = [];
         while (($row = fgetcsv($file, 0, ';', '"', '\\')) !== false) {
             if (count($row) < 6) continue;
             $code = trim($row[0]);
+            $name = trim($row[1]);
             $priceStr = trim($row[5] ?? '');
 
             if (empty($code) || empty($priceStr)) continue;
 
-            $price = floatval(str_replace(',', '.', $priceStr));
-            if ($price > 0 && !isset($prices[$code])) {
-                $prices[$code] = $price;
+            $priceFloat = (float)str_replace(',', '.', $priceStr);
+            if ($priceFloat > 0 && !isset($csvEntries[$code])) {
+                $csvEntries[$code] = [
+                    'raw_code' => $code,
+                    'norm_code' => \App\Models\B2bProduct::normalizeCode($code),
+                    'name' => $name,
+                    'price' => $priceFloat
+                ];
             }
         }
         fclose($file);
 
+        $agentController = app(\App\Http\Controllers\Agent\AgentPortalController::class);
+        $products = B2bProduct::all();
         $updatedPricesCount = 0;
-        foreach ($prices as $code => $price) {
-            $cleanCode = preg_replace('/[^a-zA-Z0-9]/', '', $code);
-            $cleanCode = str_starts_with($cleanCode, 'EXP') ? substr($cleanCode, 3) : $cleanCode;
 
-            $products = B2bProduct::where('code', $code)
-                ->orWhere('code', 'LIKE', '%' . $cleanCode . '%')
-                ->get();
-
-            foreach ($products as $p) {
-                if (abs((float)$p->price - $price) > 0.001) {
-                    $p->update(['price' => $price]);
+        foreach ($products as $product) {
+            $match = $agentController->findGiacenzaMatch($product, $csvEntries);
+            if ($match && !empty($match['price'])) {
+                $newPrice = (float)$match['price'];
+                if (abs((float)$product->price - $newPrice) > 0.001) {
+                    $product->price = $newPrice;
+                    $product->save();
                     $updatedPricesCount++;
                 }
             }
         }
 
         $this->info("Prezzi aggiornati per {$updatedPricesCount} prodotti.");
+        Log::info("[SyncB2bAll] Prezzi aggiornati per {$updatedPricesCount} prodotti.");
     }
 
     /**

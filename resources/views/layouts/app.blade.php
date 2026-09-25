@@ -147,5 +147,16 @@
         </div>
 
         @stack('scripts')
+        <script>
+            // Sincronizzazione automatica in background delle giacenze ogni 2 minuti
+            setInterval(() => {
+                fetch("{{ route('agent.ping_sync') }}", {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).catch(() => {});
+            }, 120000);
+        </script>
     </body>
 </html>

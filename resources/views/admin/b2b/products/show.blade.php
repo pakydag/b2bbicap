@@ -38,26 +38,54 @@
                         </span>
 
                         <h3 class="text-2xl font-black text-slate-900 tracking-tight uppercase mb-1">{{ $product->name }}</h3>
-                        <p class="text-xs font-mono font-bold text-gray-500 mb-4">COD. {{ $product->code }}</p>
+                        <p class="text-xs font-mono font-bold text-gray-500 mb-3">COD. {{ $product->code }}</p>
+
+                        @if(!empty($giacenzaMatch))
+                            <div class="mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-black rounded-full uppercase tracking-wider">
+                                    <span>🟢</span> Giacenza Sincronizzata
+                                </span>
+                                @if(!empty($giacenzaMatch['raw_code']))
+                                    <p class="text-[10px] font-mono text-gray-400 mt-1">Codice Gestionale: <strong class="text-gray-600">{{ $giacenzaMatch['raw_code'] }}</strong></p>
+                                @endif
+                            </div>
+                        @else
+                            <div class="mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-black rounded-full uppercase tracking-wider animate-pulse">
+                                    <span>⚠️</span> Non Sincronizzato (Manca in Giacenza.csv)
+                                </span>
+                            </div>
+                        @endif
 
 @php
     $currentStock = $giacenzaMatch['current_stock'] ?? [];
     $futureStockGrouped = $giacenzaMatch['future_stock'] ?? [];
     
-    $totPronta = array_sum($currentStock);
+    $totProntaDisponibile = 0;
+    $totProntaImpegnata = 0;
+    foreach ($currentStock as $s => $q) {
+        if ($q > 0) {
+            $totProntaDisponibile += $q;
+        } else {
+            $totProntaImpegnata += abs($q);
+        }
+    }
+    
+    $totProntaNetto = array_sum($currentStock);
     $totArrivo = 0;
     foreach ($futureStockGrouped as $d => $sizesArr) {
         $totArrivo += array_sum($sizesArr);
     }
     
     if (empty($giacenzaMatch)) {
-        $totPronta = $product->variants->sum('stock');
+        $totProntaDisponibile = $product->variants->sum('stock');
+        $totProntaNetto = $totProntaDisponibile;
         foreach ($product->variants as $v) {
             $currentStock[$v->size] = $v->stock;
         }
     }
 
-    $totGiacenzaGlobale = $totPronta + $totArrivo;
+    $totGiacenzaGlobale = $totProntaNetto + $totArrivo;
 
     $allSizes = $product->variants->pluck('size')->toArray();
     $allSizes = array_unique(array_merge($allSizes, array_keys($currentStock)));
@@ -75,7 +103,10 @@
                             </div>
                             <div class="bg-emerald-50/70 p-2.5 rounded-2xl border border-emerald-100 text-center">
                                 <span class="block text-[9px] font-bold text-emerald-800 uppercase">Pronta Consegna</span>
-                                <span class="text-sm font-black text-emerald-700">🟢 {{ $totPronta }}</span>
+                                <span class="text-sm font-black text-emerald-700">🟢 {{ $totProntaDisponibile }}</span>
+                                @if($totProntaImpegnata > 0)
+                                    <span class="block text-[9px] font-bold text-rose-600 mt-0.5" title="Quantità impegnata su ordini pregressi">-{{ $totProntaImpegnata }} imp.</span>
+                                @endif
                             </div>
                             <div class="bg-amber-50/70 p-2.5 rounded-2xl border border-amber-100 text-center">
                                 <span class="block text-[9px] font-bold text-amber-800 uppercase">In Arrivo</span>
@@ -108,15 +139,20 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-black px-3 py-1 rounded-full uppercase flex items-center gap-1">
-                                    <span>🟢 Pronta Consegna:</span> <strong>{{ $totPronta }}</strong>
+                                    <span>🟢 Pronta Consegna:</span> <strong>{{ $totProntaDisponibile }}</strong>
                                 </span>
+                                @if($totProntaImpegnata > 0)
+                                    <span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2 py-1 rounded-full uppercase" title="Totale impegnato su ordini">
+                                        ⚠️ Impegnati: -{{ $totProntaImpegnata }}
+                                    </span>
+                                @endif
                                 @if($totArrivo > 0)
                                     <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-3 py-1 rounded-full uppercase flex items-center gap-1">
                                         <span>🚚 In Arrivo:</span> <strong>{{ $totArrivo }}</strong>
                                     </span>
                                 @endif
-                                <span class="bg-slate-900 text-white text-xs font-black px-3 py-1 rounded-full uppercase">
-                                    Totale: {{ $totGiacenzaGlobale }}
+                                <span class="bg-slate-900 text-white text-xs font-black px-3 py-1 rounded-full uppercase" title="Disponibilità netta globale (Pronta consegna + Arrivi - Impegnati)">
+                                    Netto: {{ $totGiacenzaGlobale }}
                                 </span>
                             </div>
                         </div>
@@ -137,9 +173,13 @@
                                     <span class="block text-xs font-black text-slate-900 uppercase">Tg. {{ $size }}</span>
                                     
                                     <div class="my-1 space-y-0.5">
-                                        <div class="text-xs font-black {{ $pQty > 0 ? 'text-emerald-700' : 'text-gray-400' }}">
+                                        <div class="text-xs font-black {{ $pQty > 0 ? 'text-emerald-700' : ($pQty < 0 ? 'text-rose-600' : 'text-gray-400') }}">
                                             @if($pQty > 0)
                                                 🟢 {{ $pQty }}
+                                            @elseif($pQty < 0)
+                                                <span class="text-rose-600 font-bold" title="Disponibili: 0 | Impegnati su ordini: {{ abs($pQty) }}">
+                                                    0 <span class="text-[10px] text-rose-500 font-semibold">({{ $pQty }})</span>
+                                                </span>
                                             @else
                                                 <span class="text-gray-300">0</span>
                                             @endif

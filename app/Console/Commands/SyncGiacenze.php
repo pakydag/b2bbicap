@@ -137,57 +137,42 @@ class SyncGiacenze extends Command
         if (!file_exists($csvPath)) return;
 
         $file = fopen($csvPath, 'r');
-        $headers = fgetcsv($file, 0, ';');
+        $headers = fgetcsv($file, 0, ';', '"', '\\');
         
-        $prices = [];
-        while (($row = fgetcsv($file, 0, ';')) !== false) {
-            if (count($row) < 6) continue; // Ensure price column exists
+        $csvEntries = [];
+        while (($row = fgetcsv($file, 0, ';', '"', '\\')) !== false) {
+            if (count($row) < 6) continue;
             $code = trim($row[0]);
-            $price = trim($row[5] ?? '');
+            $name = trim($row[1]);
+            $priceStr = trim($row[5] ?? '');
             
-            if (empty($code) || $price === '') continue;
+            if (empty($code) || $priceStr === '') continue;
             
-            $normCode = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $code));
-            if (str_starts_with($normCode, 'EXP')) {
-                $normCode = substr($normCode, 3);
-            }
-            
-            $priceFloat = (float)str_replace(',', '.', $price);
-            
-            if ($priceFloat > 0) {
-                $prices[$normCode] = $priceFloat;
+            $priceFloat = (float)str_replace(',', '.', $priceStr);
+            if ($priceFloat > 0 && !isset($csvEntries[$code])) {
+                $csvEntries[$code] = [
+                    'raw_code' => $code,
+                    'norm_code' => \App\Models\B2bProduct::normalizeCode($code),
+                    'name' => $name,
+                    'price' => $priceFloat
+                ];
             }
         }
         fclose($file);
 
+        $agentController = app(\App\Http\Controllers\Agent\AgentPortalController::class);
         $products = \App\Models\B2bProduct::all();
         $updatedCount = 0;
+
         foreach ($products as $product) {
-            $dbCode = trim($product->code);
-            if (empty($dbCode)) continue;
-            
-            $dbNorm = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $dbCode));
-            if (str_starts_with($dbNorm, 'EXP')) {
-                $dbNorm = substr($dbNorm, 3);
-            }
-            
-            // Prova match esatto
-            $matchPrice = $prices[$dbNorm] ?? null;
-            
-            // Se non c'è match esatto, prova col findGiacenzaMatch logic (simile)
-            if ($matchPrice === null) {
-                foreach ($prices as $csvNormCode => $csvPrice) {
-                    if (str_starts_with($csvNormCode, $dbNorm) || str_starts_with($dbNorm, $csvNormCode)) {
-                        $matchPrice = $csvPrice;
-                        break;
-                    }
+            $match = $agentController->findGiacenzaMatch($product, $csvEntries);
+            if ($match && !empty($match['price'])) {
+                $newPrice = (float)$match['price'];
+                if (abs((float)$product->price - $newPrice) > 0.001) {
+                    $product->price = $newPrice;
+                    $product->save();
+                    $updatedCount++;
                 }
-            }
-            
-            if ($matchPrice !== null && $product->price != $matchPrice) {
-                $product->price = $matchPrice;
-                $product->save();
-                $updatedCount++;
             }
         }
         

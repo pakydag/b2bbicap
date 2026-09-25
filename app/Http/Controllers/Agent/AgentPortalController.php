@@ -1388,7 +1388,7 @@ class AgentPortalController extends Controller
 
         if ($needsSync) {
             try {
-                $phpBinary = PHP_BINARY ?: 'php';
+                $phpBinary = \App\Models\B2bProduct::getPhpCliBinary();
                 $artisan = base_path('artisan');
                 exec("{$phpBinary} {$artisan} b2b:sync-giacenze > /dev/null 2>&1 &");
             } catch (\Throwable $e) {}
@@ -1407,7 +1407,7 @@ class AgentPortalController extends Controller
         $lastSync = \Illuminate\Support\Facades\Cache::get('b2b_last_giacenze_sync_timestamp');
         if (!$lastSync || abs(now()->diffInSeconds($lastSync)) >= 120) {
             try {
-                $phpBinary = PHP_BINARY ?: 'php';
+                $phpBinary = \App\Models\B2bProduct::getPhpCliBinary();
                 $artisan = base_path('artisan');
                 exec("{$phpBinary} {$artisan} b2b:sync-giacenze > /dev/null 2>&1 &");
             } catch (\Throwable $e) {}
@@ -1428,17 +1428,21 @@ class AgentPortalController extends Controller
             $code = trim($row[0]);
             $name = trim($row[1]);
             $size = trim($row[2]);
-            $qty = floatval($row[3]);
+            $qty = floatval(str_replace(',', '.', $row[3]));
             $consegna = trim($row[4] ?? '');
+            $priceStr = trim($row[5] ?? '');
+            $priceFloat = (float)str_replace(',', '.', $priceStr);
             
             if (empty($code)) continue;
             
             $normCode = $this->normalizeCode($code);
             
-            if (!isset($data[$normCode])) {
-                $data[$normCode] = [
+            if (!isset($data[$code])) {
+                $data[$code] = [
                     'raw_code' => $code,
+                    'norm_code' => $normCode,
                     'name' => $name,
+                    'price' => $priceFloat,
                     'current_stock' => [], // sizes with no consegna
                     'future_stock' => [],  // date => [ size => qty ]
                     'total_qty' => 0
@@ -1446,17 +1450,17 @@ class AgentPortalController extends Controller
             }
             
             if (empty($consegna)) {
-                if (!isset($data[$normCode]['current_stock'][$size])) {
-                    $data[$normCode]['current_stock'][$size] = 0;
+                if (!isset($data[$code]['current_stock'][$size])) {
+                    $data[$code]['current_stock'][$size] = 0;
                 }
-                $data[$normCode]['current_stock'][$size] += $qty;
+                $data[$code]['current_stock'][$size] += $qty;
             } else {
-                if (!isset($data[$normCode]['future_stock'][$consegna][$size])) {
-                    $data[$normCode]['future_stock'][$consegna][$size] = 0;
+                if (!isset($data[$code]['future_stock'][$consegna][$size])) {
+                    $data[$code]['future_stock'][$consegna][$size] = 0;
                 }
-                $data[$normCode]['future_stock'][$consegna][$size] += $qty;
+                $data[$code]['future_stock'][$consegna][$size] += $qty;
             }
-            $data[$normCode]['total_qty'] += $qty;
+            $data[$code]['total_qty'] += $qty;
         }
         fclose($file);
         return $data;
@@ -1464,40 +1468,60 @@ class AgentPortalController extends Controller
 
     public function normalizeCode($code)
     {
-        $code = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $code));
-        if (str_starts_with($code, 'EXP')) {
-            $code = substr($code, 3);
-        }
-        return $code;
+        return \App\Models\B2bProduct::normalizeCode($code ?? '');
     }
 
     public function findGiacenzaMatch($product, $giacenzaData)
     {
-        $dbCode = trim($product->code);
-        if (empty($dbCode)) {
+        $dbCode = trim($product->code ?? '');
+        if (empty($dbCode) || empty($giacenzaData)) {
             return null;
         }
+
         $dbNorm = $this->normalizeCode($dbCode);
-        
-        if (isset($giacenzaData[$dbNorm])) {
-            return $giacenzaData[$dbNorm];
-        }
-        
-        foreach ($giacenzaData as $normCode => $data) {
-            if (str_starts_with($normCode, $dbNorm) || str_starts_with($dbNorm, $normCode)) {
+        $cleanDbCode = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $dbCode));
+        $cleanDbName = strtoupper(trim($product->name ?? ''));
+
+        // 1. Check if CSV NomeArticolo contains BOTH product name and code
+        foreach ($giacenzaData as $code => $data) {
+            $csvNameClean = strtoupper($data['name'] ?? '');
+            $csvNorm = $data['norm_code'] ?? '';
+            if (!empty($cleanDbName) && str_contains($csvNameClean, $cleanDbName) && (str_contains($csvNameClean, $cleanDbCode) || str_contains($csvNorm, $dbNorm))) {
                 return $data;
             }
         }
-        
-        $cleanedDbName = strtolower(trim(str_replace(['LOW', 'MID', 'ESD'], '', $product->name)));
-        if (strlen($cleanedDbName) > 3) {
-            foreach ($giacenzaData as $normCode => $data) {
-                if (str_contains(strtolower($data['name']), $cleanedDbName)) {
-                    return $data;
-                }
+
+        // 2. Check if CSV NomeArticolo contains exact product name (e.g. "ARCADE LOW", "EASY BROWN")
+        foreach ($giacenzaData as $code => $data) {
+            $csvNameClean = strtoupper($data['name'] ?? '');
+            if (!empty($cleanDbName) && str_contains($csvNameClean, $cleanDbName)) {
+                return $data;
             }
         }
-        
+
+        // 3. Exact normalized code match
+        foreach ($giacenzaData as $code => $data) {
+            if (($data['norm_code'] ?? '') === $dbNorm) {
+                return $data;
+            }
+        }
+
+        // 4. Starts with or Contains code
+        foreach ($giacenzaData as $code => $data) {
+            $csvNorm = $data['norm_code'] ?? '';
+            if (str_starts_with($csvNorm, $dbNorm) || str_starts_with($dbNorm, $csvNorm) || str_contains($csvNorm, $dbNorm)) {
+                return $data;
+            }
+        }
+
+        // 5. Code inside CSV name
+        foreach ($giacenzaData as $code => $data) {
+            $csvNameClean = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $data['name'] ?? ''));
+            if (str_contains($csvNameClean, $cleanDbCode)) {
+                return $data;
+            }
+        }
+
         return null;
     }
 
