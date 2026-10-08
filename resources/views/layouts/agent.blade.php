@@ -6,14 +6,16 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @php
-        $favicon = \App\Models\Setting::where('key', 'site_favicon')->value('value');
+        $favicon = \App\Models\Setting::where('key', 'site_favicon')->value('value') ?: 'favicon.ico';
+        $seoTitle = \App\Models\Setting::where('key', 'home_seo_title')->value('value') ?: 'BICAP B2B Portal';
+        $seoDesc = \App\Models\Setting::where('key', 'home_seo_description')->value('value') ?: "Portale B2B & Agenti Ufficiale BICAP Absolutely Safe";
     @endphp
 
-    @if($favicon)
-        <link rel="icon" type="image/x-icon" href="{{ asset($favicon) }}">
-    @endif
+    <link rel="icon" type="image/x-icon" href="{{ asset($favicon) }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
-    <title>Portale Agente - {{ config('app.name', 'Laravel') }}</title>
+    <title>{{ $isEn ?? false ? 'B2B Portal - BICAP' : 'Portale B2B - BICAP' }}</title>
+    <meta name="description" content="{{ $seoDesc }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

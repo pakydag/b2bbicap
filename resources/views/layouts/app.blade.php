@@ -6,14 +6,13 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         @php
-            $favicon = \App\Models\Setting::where('key', 'site_favicon')->value('value');
+            $favicon = \App\Models\Setting::where('key', 'site_favicon')->value('value') ?: 'favicon.ico';
         @endphp
 
-        @if($favicon)
-            <link rel="icon" type="image/x-icon" href="{{ asset($favicon) }}">
-        @endif
+        <link rel="icon" type="image/x-icon" href="{{ asset($favicon) }}">
+        <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>Admin - {{ config('app.name', 'BICAP') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

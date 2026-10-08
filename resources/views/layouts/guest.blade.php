@@ -6,16 +6,34 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         @php
-            $favicon = \App\Models\Setting::where('key', 'site_favicon')->value('value');
+            $favicon = \App\Models\Setting::where('key', 'site_favicon')->value('value') ?: 'favicon.ico';
             $logo = \App\Models\Setting::where('key', 'site_logo')->value('value');
+            $seoTitle = \App\Models\Setting::where('key', 'home_seo_title')->value('value') ?: 'BICAP Official: Calzature di sicurezza Made in Italy | Portale B2B';
+            $seoDesc = \App\Models\Setting::where('key', 'home_seo_description')->value('value') ?: "Le calzature BICAP sono l'espressione del Made in Italy: un insieme armonico di esperienza, innovazione, passione e qualità delle materie prime utilizzate.";
+            $seoImg = \App\Models\Setting::where('key', 'home_seo_image')->value('value') ?: '/storage/seo/bicap-og-image.jpg';
             $isEn = app()->getLocale() === 'en';
         @endphp
 
-        @if($favicon)
-            <link rel="icon" type="image/x-icon" href="{{ asset($favicon) }}">
-        @endif
+        <link rel="icon" type="image/x-icon" href="{{ asset($favicon) }}">
+        <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
-        <title>{{ config('app.name', 'BICAP B2B') }}</title>
+        <title>{{ $seoTitle }}</title>
+        <meta name="description" content="{{ $seoDesc }}">
+        <meta name="keywords" content="calzature di sicurezza, calzature da lavoro, safety shoes, antinfortunistica, made in italy, workwear, bicap, calzaturificio 5bi, absolutely safe">
+        <meta name="author" content="Calzaturificio 5BI s.r.l. - BICAP">
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:title" content="{{ $seoTitle }}">
+        <meta property="og:description" content="{{ $seoDesc }}">
+        <meta property="og:image" content="{{ asset($seoImg) }}">
+
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $seoTitle }}">
+        <meta name="twitter:description" content="{{ $seoDesc }}">
+        <meta name="twitter:image" content="{{ asset($seoImg) }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
