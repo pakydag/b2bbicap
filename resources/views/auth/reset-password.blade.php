@@ -1,25 +1,33 @@
 <x-guest-layout>
-    <div class="mb-5">
-        <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight mb-1">Crea Nuova Password</h2>
-        <p class="text-xs text-gray-500 font-medium">Imposta una nuova password sicura per accedere al tuo account.</p>
+    @php
+        $isEn = app()->getLocale() === 'en';
+    @endphp
+
+    <div class="mb-5 text-center">
+        <h2 class="text-base sm:text-lg font-black text-white uppercase tracking-tight mb-1">
+            {{ $isEn ? 'Create New Password' : 'Crea Nuova Password' }}
+        </h2>
+        <p class="text-xs text-zinc-400 font-medium">
+            {{ $isEn ? 'Set a new secure password to access your account.' : 'Imposta una nuova password sicura per accedere al tuo account.' }}
+        </p>
     </div>
 
     <!-- Generatore Rapido di Password -->
-    <div class="mb-5 p-3.5 bg-amber-50/90 border border-amber-200 rounded-2xl">
+    <div class="mb-5 p-3.5 bg-zinc-950/70 border border-yellow-400/30 rounded-2xl">
         <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-black text-amber-950 uppercase tracking-wide">💡 Password Sicura</span>
-            <button type="button" onclick="generateSecurePassword()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black hover:bg-yellow-400 hover:text-slate-950 text-white font-black text-[11px] uppercase tracking-wider rounded-lg shadow transition">
+            <span class="text-xs font-black text-yellow-400 uppercase tracking-wide">💡 Password Sicura</span>
+            <button type="button" onclick="generateSecurePassword()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black text-[11px] uppercase tracking-wider rounded-xl shadow transition cursor-pointer">
                 ⚡ Genera Automatica
             </button>
         </div>
-        <div id="generated-password-box" class="mt-2.5 pt-2.5 border-t border-amber-200/80 hidden">
-            <div class="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-amber-300">
-                <span id="generated-password-text" class="font-mono text-xs font-bold text-slate-900 select-all"></span>
-                <button type="button" onclick="copyGeneratedPassword()" id="btn-copy-pass" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-900 px-2 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 transition">
+        <div id="generated-password-box" class="mt-2.5 pt-2.5 border-t border-zinc-800 hidden">
+            <div class="flex items-center justify-between bg-zinc-900 px-3 py-2 rounded-xl border border-zinc-700">
+                <span id="generated-password-text" class="font-mono text-xs font-bold text-yellow-300 select-all"></span>
+                <button type="button" onclick="copyGeneratedPassword()" id="btn-copy-pass" class="text-[11px] font-bold text-zinc-300 hover:text-white px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer">
                     📋 Copia
                 </button>
             </div>
-            <p class="text-[10px] text-amber-800 font-bold mt-1">✓ Password generata e inserita automaticamente nei campi sottostanti.</p>
+            <p class="text-[10px] text-zinc-400 font-bold mt-1">✓ Password generata e inserita automaticamente nei campi sottostanti.</p>
         </div>
     </div>
 
@@ -31,73 +39,91 @@
 
         <!-- Email Address -->
         <div>
-            <label for="email" class="block text-xs font-black uppercase text-gray-700 tracking-wider mb-1">Indirizzo E-mail</label>
-            <input id="email" class="block w-full border-gray-300 rounded-xl shadow-sm bg-gray-50 text-slate-600 focus:border-yellow-400 focus:ring-yellow-400 text-sm font-semibold @error('email') border-red-500 @enderror" type="email" name="email" value="{{ old('email', $request->email) }}" required autofocus autocomplete="username" readonly />
+            <label for="email" class="block text-xs font-bold uppercase text-zinc-300 tracking-wider mb-1.5">
+                {{ $isEn ? 'Email Address' : 'Indirizzo E-mail' }}
+            </label>
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-500 text-sm pointer-events-none">
+                    ✉️
+                </span>
+                <input id="email" class="w-full bg-zinc-950/40 border border-zinc-800 rounded-2xl pl-10 pr-4 py-3 text-sm font-semibold text-zinc-400 focus:outline-none cursor-not-allowed shadow-inner" type="email" name="email" value="{{ old('email', $request->email) }}" required autofocus autocomplete="username" readonly />
+            </div>
             @error('email')
-                <p class="text-rose-600 text-xs mt-1.5 font-bold">{{ $message }}</p>
+                <p class="text-rose-400 text-xs mt-1.5 font-bold">{{ $message }}</p>
             @enderror
         </div>
 
         <!-- Password -->
         <div>
-            <div class="flex items-center justify-between mb-1">
-                <label for="password" class="block text-xs font-black uppercase text-gray-700 tracking-wider">Nuova Password</label>
-                <button type="button" onclick="togglePasswordVisibility('password')" class="text-[11px] font-bold text-gray-500 hover:text-black">Mostra/Nascondi</button>
+            <div class="flex items-center justify-between mb-1.5">
+                <label for="password" class="block text-xs font-bold uppercase text-zinc-300 tracking-wider">
+                    {{ $isEn ? 'New Password' : 'Nuova Password' }}
+                </label>
+                <button type="button" onclick="togglePasswordVisibility('password')" class="text-[11px] font-bold text-yellow-400 hover:text-yellow-300 cursor-pointer">Mostra/Nascondi</button>
             </div>
             <div class="relative">
-                <input id="password" class="block w-full border-gray-300 rounded-xl shadow-sm focus:border-yellow-400 focus:ring-yellow-400 text-sm font-semibold pr-10 @error('password') border-red-500 @enderror" type="password" name="password" required autocomplete="new-password" placeholder="Inserisci nuova password" oninput="checkPasswordCriteria()" />
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-400 text-sm pointer-events-none">
+                    🔒
+                </span>
+                <input id="password" class="w-full bg-zinc-950/70 border border-zinc-700/80 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition shadow-inner @error('password') border-red-500 @enderror" type="password" name="password" required autocomplete="new-password" placeholder="Inserisci nuova password" oninput="checkPasswordCriteria()" />
             </div>
             @error('password')
-                <p class="text-rose-600 text-xs mt-1.5 font-bold">{{ $message }}</p>
+                <p class="text-rose-400 text-xs mt-1.5 font-bold">{{ $message }}</p>
             @enderror
         </div>
 
         <!-- Confirm Password -->
         <div>
-            <div class="flex items-center justify-between mb-1">
-                <label for="password_confirmation" class="block text-xs font-black uppercase text-gray-700 tracking-wider">Conferma Nuova Password</label>
-                <button type="button" onclick="togglePasswordVisibility('password_confirmation')" class="text-[11px] font-bold text-gray-500 hover:text-black">Mostra/Nascondi</button>
+            <div class="flex items-center justify-between mb-1.5">
+                <label for="password_confirmation" class="block text-xs font-bold uppercase text-zinc-300 tracking-wider">
+                    {{ $isEn ? 'Confirm New Password' : 'Conferma Nuova Password' }}
+                </label>
+                <button type="button" onclick="togglePasswordVisibility('password_confirmation')" class="text-[11px] font-bold text-yellow-400 hover:text-yellow-300 cursor-pointer">Mostra/Nascondi</button>
             </div>
             <div class="relative">
-                <input id="password_confirmation" class="block w-full border-gray-300 rounded-xl shadow-sm focus:border-yellow-400 focus:ring-yellow-400 text-sm font-semibold pr-10 @error('password_confirmation') border-red-500 @enderror" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Ripeti la nuova password" oninput="checkPasswordCriteria()" />
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-400 text-sm pointer-events-none">
+                    🔒
+                </span>
+                <input id="password_confirmation" class="w-full bg-zinc-950/70 border border-zinc-700/80 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition shadow-inner @error('password_confirmation') border-red-500 @enderror" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Ripeti la nuova password" oninput="checkPasswordCriteria()" />
             </div>
             @error('password_confirmation')
-                <p class="text-rose-600 text-xs mt-1.5 font-bold">{{ $message }}</p>
+                <p class="text-rose-400 text-xs mt-1.5 font-bold">{{ $message }}</p>
             @enderror
         </div>
 
         <!-- Criteri di Sicurezza Password -->
-        <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-1.5">
-            <p class="font-black text-gray-700 uppercase tracking-wider text-[10px] mb-1">Criteri di Sicurezza Richiesti:</p>
-            <div id="crit-length" class="flex items-center gap-2 text-gray-500 font-semibold">
+        <div class="p-3.5 bg-zinc-950/50 rounded-2xl border border-zinc-800 text-xs space-y-1.5">
+            <p class="font-black text-zinc-400 uppercase tracking-wider text-[10px] mb-1">Criteri di Sicurezza:</p>
+            <div id="crit-length" class="flex items-center gap-2 text-zinc-500 font-semibold">
                 <span class="crit-icon">○</span> <span>Almeno 8 caratteri</span>
             </div>
-            <div id="crit-upper" class="flex items-center gap-2 text-gray-500 font-semibold">
+            <div id="crit-upper" class="flex items-center gap-2 text-zinc-500 font-semibold">
                 <span class="crit-icon">○</span> <span>Almeno una lettera maiuscola (A-Z)</span>
             </div>
-            <div id="crit-lower" class="flex items-center gap-2 text-gray-500 font-semibold">
+            <div id="crit-lower" class="flex items-center gap-2 text-zinc-500 font-semibold">
                 <span class="crit-icon">○</span> <span>Almeno una lettera minuscola (a-z)</span>
             </div>
-            <div id="crit-number" class="flex items-center gap-2 text-gray-500 font-semibold">
+            <div id="crit-number" class="flex items-center gap-2 text-zinc-500 font-semibold">
                 <span class="crit-icon">○</span> <span>Almeno un numero (0-9)</span>
             </div>
-            <div id="crit-special" class="flex items-center gap-2 text-gray-500 font-semibold">
+            <div id="crit-special" class="flex items-center gap-2 text-zinc-500 font-semibold">
                 <span class="crit-icon">○</span> <span>Almeno un carattere speciale (!@#$%^&*...)</span>
             </div>
-            <div id="crit-match" class="flex items-center gap-2 text-gray-500 font-semibold">
+            <div id="crit-match" class="flex items-center gap-2 text-zinc-500 font-semibold">
                 <span class="crit-icon">○</span> <span>Le due password corrispondono</span>
             </div>
         </div>
 
         <div class="pt-2">
-            <button type="submit" class="w-full inline-flex justify-center items-center px-6 py-3.5 bg-black hover:bg-yellow-400 hover:text-slate-950 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition duration-200">
-                Salva Nuova Password →
+            <button type="submit" class="w-full bg-yellow-400 hover:bg-yellow-300 active:scale-[0.99] text-slate-950 font-black uppercase tracking-wider text-xs py-3.5 px-6 rounded-2xl shadow-lg shadow-yellow-400/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <span>{{ $isEn ? 'Save New Password' : 'Salva Nuova Password' }}</span>
+                <span class="text-sm font-bold">→</span>
             </button>
         </div>
 
-        <div class="text-center pt-3 border-t border-gray-100 mt-4">
-            <a href="{{ route('login') }}" class="text-xs font-bold text-gray-500 hover:text-slate-900 transition">
-                ← Torna al Login
+        <div class="text-center pt-3 border-t border-zinc-800/80 mt-4">
+            <a href="{{ route('login') }}" class="text-xs font-bold text-zinc-400 hover:text-yellow-400 transition">
+                ← {{ $isEn ? 'Back to Login' : 'Torna al Login' }}
             </a>
         </div>
     </form>
@@ -149,10 +175,10 @@
             navigator.clipboard.writeText(text).then(() => {
                 const btn = document.getElementById('btn-copy-pass');
                 btn.innerText = '✓ Copiato!';
-                btn.className = 'text-[11px] font-bold text-emerald-700 px-2 py-0.5 rounded bg-emerald-50';
+                btn.className = 'text-[11px] font-bold text-yellow-400 px-2 py-0.5 rounded bg-zinc-800';
                 setTimeout(() => {
                     btn.innerText = '📋 Copia';
-                    btn.className = 'text-[11px] font-bold text-indigo-600 hover:text-indigo-900 px-2 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 transition';
+                    btn.className = 'text-[11px] font-bold text-zinc-300 hover:text-white px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer';
                 }, 2000);
             });
         }
@@ -171,10 +197,10 @@
             if (!el) return;
             const icon = el.querySelector('.crit-icon');
             if (isValid) {
-                el.className = 'flex items-center gap-2 text-emerald-700 font-bold transition';
+                el.className = 'flex items-center gap-2 text-emerald-400 font-bold transition';
                 icon.innerText = '✓';
             } else {
-                el.className = 'flex items-center gap-2 text-gray-500 font-semibold transition';
+                el.className = 'flex items-center gap-2 text-zinc-500 font-semibold transition';
                 icon.innerText = '○';
             }
         }

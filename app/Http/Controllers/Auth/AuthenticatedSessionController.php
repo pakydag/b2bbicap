@@ -28,16 +28,36 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Salva l'eventuale lingua selezionata nella schermata di login prima della rigenerazione
+        $preLoginLocale = session('locale');
+
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        // Imposta la lingua predefinita dell'utente in sessione
+        // Gestione Lingua per Ruolo
         $user = $request->user();
         if ($user) {
-            $userLocale = $user->locale ?: ($user->b2bCustomer?->locale ?: 'it');
-            session(['locale' => $userLocale]);
-            \Illuminate\Support\Facades\App::setLocale($userLocale);
+            if ($user->role === 'admin' || $user->role === 'agent') {
+                // Amministrazione e Agenti: sempre e solo in Italiano
+                session(['locale' => 'it']);
+                \Illuminate\Support\Facades\App::setLocale('it');
+                if ($user->locale !== 'it') {
+                    $user->update(['locale' => 'it']);
+                }
+            } else {
+                // Clienti (Customer):
+                // Se hanno selezionato inglese al login O se il loro profilo/cliente è impostato in inglese
+                $customerLocale = $user->b2bCustomer?->locale ?: $user->locale;
+                $chosenLocale = in_array($preLoginLocale, ['it', 'en']) ? $preLoginLocale : ($customerLocale ?: 'it');
+                
+                session(['locale' => $chosenLocale]);
+                \Illuminate\Support\Facades\App::setLocale($chosenLocale);
+                $user->update(['locale' => $chosenLocale]);
+                if ($user->b2bCustomer && $user->b2bCustomer->locale !== $chosenLocale) {
+                    $user->b2bCustomer->update(['locale' => $chosenLocale]);
+                }
+            }
         }
 
         // Avvio non-bloccante della sincronizzazione Giacenze B2B in background ad ogni accesso (FTPS)

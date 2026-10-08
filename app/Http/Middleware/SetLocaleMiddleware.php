@@ -16,7 +16,11 @@ class SetLocaleMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->has('lang') && in_array($request->query('lang'), ['it', 'en'])) {
+        // Agenti e Amministrazione sono ESCLUSIVAMENTE in lingua Italiana
+        if ($request->user() && ($request->user()->role === 'admin' || $request->user()->role === 'agent')) {
+            $locale = 'it';
+            session(['locale' => 'it']);
+        } elseif ($request->has('lang') && in_array($request->query('lang'), ['it', 'en'])) {
             $locale = $request->query('lang');
             session(['locale' => $locale]);
             if ($request->user()) {

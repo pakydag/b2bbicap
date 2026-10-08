@@ -215,7 +215,8 @@
                 @endif
 
                 <div class="flex items-center gap-1.5 sm:gap-3">
-                    <!-- Switcher Lingua (IT / EN) -->
+                    @if(Auth::user()->role === 'customer')
+                    <!-- Switcher Lingua (IT / EN) solo per clienti -->
                     <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl p-0.5 shadow-sm shrink-0">
                         <a href="{{ route('set-locale', 'it') }}" class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-black uppercase rounded-lg transition {{ app()->getLocale() === 'it' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-zinc-400 hover:text-white' }}" title="Lingua Italiana">
                             🇮🇹<span class="hidden xs:inline ml-1">IT</span>
@@ -224,6 +225,7 @@
                             🇬🇧<span class="hidden xs:inline ml-1">EN</span>
                         </a>
                     </div>
+                    @endif
 
                     <!-- Carrello Rapido Mobile -->
                     <a href="{{ route('agent.cart') }}" class="md:hidden relative p-1.5 text-yellow-400 font-black text-xs flex items-center bg-zinc-900 border border-zinc-800 rounded-xl">
