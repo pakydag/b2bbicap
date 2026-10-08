@@ -86,53 +86,62 @@
             }
         </style>
     </head>
-    <body class="font-sans antialiased overflow-hidden" x-data="{ showWipeModal: false }">
-        <div class="flex flex-col h-screen bg-gray-50">
+    <body class="font-sans antialiased bg-gray-50 text-gray-900" x-data="{ showWipeModal: false, mobileNavOpen: false }">
+        <div class="flex flex-col h-screen overflow-hidden bg-gray-50">
             
-            <!-- Top Header Bar Nero Completo -->
-            <header class="bg-black text-white border-b border-zinc-900 h-16 flex items-center justify-between px-6 shrink-0 z-30 shadow-md">
-                <a href="{{ route('admin.b2b.dashboard') }}" class="flex items-center gap-3 hover:opacity-90 transition">
-                    @php
-                        $logo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?? '';
-                    @endphp
-                    @if(!empty($logo))
-                        <img src="{{ asset($logo) }}" class="h-8 w-auto object-contain" alt="Logo">
-                    @else
-                        <x-application-logo class="block h-8 w-auto fill-current text-yellow-400" />
-                    @endif
-                    <span class="text-xs font-black uppercase tracking-widest text-zinc-400 border-l border-zinc-800 pl-3">
-                        BICAP ADMIN PORTAL
-                    </span>
-                </a>
+            <!-- Top Header Bar Nero Completo Responsive -->
+            <header class="bg-black text-white border-b border-zinc-900 h-16 flex items-center justify-between px-3 sm:px-6 shrink-0 z-30 shadow-md">
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <!-- Hamburger button for mobile menu -->
+                    <button @click="mobileNavOpen = !mobileNavOpen" type="button" class="md:hidden text-zinc-400 hover:text-yellow-400 p-2 rounded-xl bg-zinc-900 border border-zinc-800 focus:outline-none cursor-pointer transition" aria-label="Toggle navigation">
+                        <svg class="h-5 w-5" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
 
-                <div class="flex items-center gap-4">
-                    <span class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-1.5 rounded-xl font-bold uppercase flex items-center gap-2">
+                    <a href="{{ route('admin.b2b.dashboard') }}" class="flex items-center gap-2 sm:gap-3 hover:opacity-90 transition shrink-0">
+                        @php
+                            $logo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?? '';
+                        @endphp
+                        @if(!empty($logo))
+                            <img src="{{ asset($logo) }}" class="h-7 sm:h-8 w-auto object-contain" alt="Logo">
+                        @else
+                            <x-application-logo class="block h-7 sm:h-8 w-auto fill-current text-yellow-400" />
+                        @endif
+                        <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-zinc-400 border-l border-zinc-800 pl-2 sm:pl-3 hidden xs:inline">
+                            BICAP ADMIN
+                        </span>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-1.5 rounded-xl font-bold uppercase hidden lg:flex items-center gap-1.5">
                         👤 {{ Auth::user()->name }}
                     </span>
                     
-                    <a href="{{ Auth::user()->role === 'admin' ? route('admin.b2b.dashboard') : route('agent.dashboard') }}" class="text-xs font-black text-yellow-400 hover:text-slate-950 bg-zinc-900 hover:bg-yellow-400 border border-zinc-800 hover:border-yellow-400 px-3.5 py-1.5 rounded-xl transition duration-300 uppercase shadow-sm">
-                        🌐 Portale Agente / B2B
+                    <a href="{{ Auth::user()->role === 'admin' ? route('admin.b2b.dashboard') : route('agent.dashboard') }}" class="text-[10px] sm:text-xs font-black text-yellow-400 hover:text-slate-950 bg-zinc-900 hover:bg-yellow-400 border border-zinc-800 hover:border-yellow-400 px-2.5 sm:px-3.5 py-1.5 rounded-xl transition duration-300 uppercase shadow-sm whitespace-nowrap">
+                        🌐 <span class="hidden sm:inline">Portale </span>B2B
                     </a>
 
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
-                        <button type="submit" class="text-xs font-black text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-900/50 px-3 py-1.5 rounded-xl transition duration-200 uppercase">
-                            🚪 Esci
+                        <button type="submit" class="text-[10px] sm:text-xs font-black text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-900/50 px-2.5 sm:px-3 py-1.5 rounded-xl transition duration-200 uppercase whitespace-nowrap cursor-pointer">
+                            🚪 <span class="hidden sm:inline">Esci</span>
                         </button>
                     </form>
                 </div>
             </header>
 
-            <div class="flex flex-1 overflow-hidden min-w-0">
-                <!-- Sidebar Navigation -->
+            <div class="flex flex-1 overflow-hidden min-w-0 relative">
+                <!-- Sidebar Navigation (Desktop static + Mobile Slide Drawer) -->
                 @include('layouts.navigation')
 
                 <!-- Main Content Area -->
                 <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
                     <!-- Page Heading (Title bar per le singole viste) -->
                     @isset($header)
-                        <div class="bg-white shadow-sm border-b border-gray-100">
-                            <div class="max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+                        <div class="bg-white shadow-sm border-b border-gray-100 shrink-0">
+                            <div class="max-w-7xl px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
                                 {{ $header }}
                             </div>
                         </div>

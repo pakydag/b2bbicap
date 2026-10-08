@@ -197,96 +197,117 @@
     </nav>
 </aside>
 
-<!-- Mobile Menu Header -->
-<div class="md:hidden flex items-center justify-between bg-black px-4 py-3 border-b border-zinc-900 w-full" x-data="{ open: false }">
-    <a href="{{ route('dashboard') }}" class="text-white font-bold tracking-wider flex items-center gap-2">
-        <x-application-logo class="block h-8 w-auto fill-current text-yellow-400 inline-block" />
-        <span class="text-xs uppercase font-black tracking-widest text-zinc-400">BICAP Admin</span>
-    </a>
-    <button @click="open = !open" type="button" class="text-slate-400 hover:text-white focus:outline-none focus:text-white">
-        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-    </button>
+<!-- Mobile Drawer Sidebar (Slide-over Overlay) -->
+<div x-show="mobileNavOpen" 
+     x-cloak 
+     class="md:hidden fixed inset-0 z-50 flex" 
+     style="display: none;">
+    <!-- Backdrop Blur & Dark -->
+    <div x-show="mobileNavOpen"
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/80 backdrop-blur-xs transition-opacity" 
+         @click="mobileNavOpen = false"></div>
     
-    <!-- Mobile Dropdown -->
-    <div x-show="open" @click.away="open = false" class="absolute top-14 left-0 w-full bg-black border-b border-zinc-900 shadow-xl z-50 overflow-y-auto max-h-[80vh]" style="display: none;">
-        <nav class="px-3 py-4 space-y-1.5">
+    <!-- Drawer Panel -->
+    <div x-show="mobileNavOpen"
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="-translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="-translate-x-full"
+         class="relative flex-1 flex flex-col max-w-xs w-full bg-black text-white shadow-2xl z-10 border-r border-zinc-800">
+        
+        <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 shrink-0">
+            <div class="flex items-center gap-2">
+                <x-application-logo class="block h-7 w-auto fill-current text-yellow-400" />
+                <span class="text-xs uppercase font-black tracking-widest text-zinc-300">Menu Admin</span>
+            </div>
+            <button @click="mobileNavOpen = false" type="button" class="text-zinc-400 hover:text-white p-1 rounded-lg text-2xl leading-none cursor-pointer">&times;</button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1.5">
             @if(Auth::check() && Auth::user()->role === 'admin')
                 @php 
                     $user = Auth::user(); 
-                    $mobileActive = 'block px-4 py-2.5 rounded-lg text-sm font-black bg-yellow-400 text-slate-950';
-                    $mobileInactive = 'block px-4 py-2.5 rounded-lg text-sm font-bold text-slate-300 hover:text-white hover:bg-zinc-900/60';
+                    $mobileActive = 'block px-4 py-2.5 rounded-xl text-xs font-black bg-yellow-400 text-slate-950 shadow-md shadow-yellow-400/20';
+                    $mobileInactive = 'block px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-zinc-900/80 transition';
                 @endphp
                 
                 @if($shop_enabled && ($user->is_super_admin || $user->can_manage_shop))
-                <div class="mb-4">
-                    <p class="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Shop</p>
-                    <a href="{{ route('admin.shop.categorie.index') }}" class="{{ request()->routeIs('admin.shop.categorie.*') ? $mobileActive : $mobileInactive }}">📁 Categorie</a>
-                    <a href="{{ route('admin.shop.collezioni.index') }}" class="{{ request()->routeIs('admin.shop.collezioni.*') ? $mobileActive : $mobileInactive }}">📂 Collezioni</a>
-                    <a href="{{ route('admin.shop.marche.index') }}" class="{{ request()->routeIs('admin.shop.marche.*') ? $mobileActive : $mobileInactive }}">🏷️ Marche</a>
-                    <a href="{{ route('admin.shop.prodotti.index') }}" class="{{ request()->routeIs('admin.shop.prodotti.*') ? $mobileActive : $mobileInactive }}">📦 Prodotti & Inventario</a>
-                    <a href="{{ route('admin.shop.ordini.index') }}" class="{{ request()->routeIs('admin.shop.ordini.*') ? $mobileActive : $mobileInactive }}">🛒 Gestione Ordini</a>
-                    <a href="{{ route('admin.shop.configuration') }}" class="{{ request()->routeIs('admin.shop.configuration') ? $mobileActive : $mobileInactive }}">⚙️ Configurazione Shop</a>
-                    <a href="{{ route('admin.shop.shipping_costs.index') }}" class="{{ request()->routeIs('admin.shop.shipping_costs.index') ? $mobileActive : $mobileInactive }}">🚚 Spese di Spedizione</a>
+                <div class="mb-3">
+                    <p class="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Shop</p>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.shop.categorie.index') }}" class="{{ request()->routeIs('admin.shop.categorie.*') ? $mobileActive : $mobileInactive }}">📁 Categorie</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.shop.collezioni.index') }}" class="{{ request()->routeIs('admin.shop.collezioni.*') ? $mobileActive : $mobileInactive }}">📂 Collezioni</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.shop.marche.index') }}" class="{{ request()->routeIs('admin.shop.marche.*') ? $mobileActive : $mobileInactive }}">🏷️ Marche</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.shop.prodotti.index') }}" class="{{ request()->routeIs('admin.shop.prodotti.*') ? $mobileActive : $mobileInactive }}">📦 Prodotti & Inventario</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.shop.ordini.index') }}" class="{{ request()->routeIs('admin.shop.ordini.*') ? $mobileActive : $mobileInactive }}">🛒 Gestione Ordini</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.shop.configuration') }}" class="{{ request()->routeIs('admin.shop.configuration') ? $mobileActive : $mobileInactive }}">⚙️ Configurazione Shop</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.shop.shipping_costs.index') }}" class="{{ request()->routeIs('admin.shop.shipping_costs.index') ? $mobileActive : $mobileInactive }}">🚚 Spese di Spedizione</a>
                 </div>
                 @endif
 
                 @if($booking_enabled && ($user->is_super_admin || $user->can_manage_booking))
-                <div class="mb-4 border-t border-zinc-800 pt-3">
-                    <p class="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Booking</p>
-                    <a href="{{ route('admin.booking.structures.index') }}" class="{{ request()->routeIs('admin.booking.structures.*') ? $mobileActive : $mobileInactive }}">🏨 Strutture</a>
-                    <a href="{{ route('admin.booking.bookings.index') }}" class="{{ request()->routeIs('admin.booking.bookings.*') ? $mobileActive : $mobileInactive }}">🧾 Prenotazioni</a>
-                    <a href="{{ route('admin.booking.calendar') }}" class="{{ request()->routeIs('admin.booking.calendar') ? $mobileActive : $mobileInactive }}">🗓️ Calendario</a>
+                <div class="mb-3 border-t border-zinc-800/80 pt-3">
+                    <p class="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Booking</p>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.booking.structures.index') }}" class="{{ request()->routeIs('admin.booking.structures.*') ? $mobileActive : $mobileInactive }}">🏨 Strutture</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.booking.bookings.index') }}" class="{{ request()->routeIs('admin.booking.bookings.*') ? $mobileActive : $mobileInactive }}">🧾 Prenotazioni</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.booking.calendar') }}" class="{{ request()->routeIs('admin.booking.calendar') ? $mobileActive : $mobileInactive }}">🗓️ Calendario</a>
                 </div>
                 @endif
 
                 @if($user->is_super_admin || $user->can_manage_voip)
-                <div class="mb-4 border-t border-zinc-800 pt-3">
-                    <p class="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Voip & AI</p>
-                    <a href="{{ route('admin.vapi.index') }}" class="{{ request()->routeIs('admin.vapi.index') ? $mobileActive : $mobileInactive }}">🤖 Agente AI</a>
-                    <a href="{{ route('admin.departments.index') }}" class="{{ request()->routeIs('admin.departments.*') ? $mobileActive : $mobileInactive }}">🏢 Gestione Reparti</a>
-                    <a href="{{ route('admin.vapi.tickets.index') }}" class="{{ request()->routeIs('admin.vapi.tickets.*') ? $mobileActive : $mobileInactive }}">🎫 Ticket Ricevuti</a>
-                    <a href="{{ route('admin.vapi.sms.index') }}" class="{{ request()->routeIs('admin.vapi.sms.*') ? $mobileActive : $mobileInactive }}">💬 SMS Ricevuti</a>
+                <div class="mb-3 border-t border-zinc-800/80 pt-3">
+                    <p class="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Voip & AI</p>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.vapi.index') }}" class="{{ request()->routeIs('admin.vapi.index') ? $mobileActive : $mobileInactive }}">🤖 Agente AI</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.departments.index') }}" class="{{ request()->routeIs('admin.departments.*') ? $mobileActive : $mobileInactive }}">🏢 Gestione Reparti</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.vapi.tickets.index') }}" class="{{ request()->routeIs('admin.vapi.tickets.*') ? $mobileActive : $mobileInactive }}">🎫 Ticket Ricevuti</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.vapi.sms.index') }}" class="{{ request()->routeIs('admin.vapi.sms.*') ? $mobileActive : $mobileInactive }}">💬 SMS Ricevuti</a>
                 </div>
                 @endif
 
                 @if($user->is_super_admin || $user->can_manage_agents)
-                <div class="mb-4 border-t border-zinc-800 pt-3">
-                    <p class="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Agenti & B2B</p>
-                    <a href="{{ route('admin.b2b.dashboard') }}" class="{{ request()->routeIs('admin.b2b.dashboard') ? $mobileActive : $mobileInactive }}">📊 Dashboard B2B</a>
-                    <a href="{{ route('admin.b2b.orders.index') }}" class="{{ request()->routeIs('admin.b2b.orders.*') ? $mobileActive : $mobileInactive }}">📝 Ordini Ricevuti</a>
-                    <a href="{{ route('admin.b2b.agents.index') }}" class="{{ request()->routeIs('admin.b2b.agents.*') ? $mobileActive : $mobileInactive }}">👤 Agenti</a>
-                    <a href="{{ route('admin.b2b.customers.index') }}" class="{{ request()->routeIs('admin.b2b.customers.*') ? $mobileActive : $mobileInactive }}">🏢 Clienti B2B</a>
-                    <a href="{{ route('admin.b2b.products.index') }}" class="{{ request()->routeIs('admin.b2b.products.*') ? $mobileActive : $mobileInactive }}">📦 Inventario Prodotti</a>
-                    <button type="button" @click="showWipeModal = true; open = false;" class="w-full text-left block px-4 py-2.5 rounded-lg text-sm font-black text-rose-400 hover:text-white hover:bg-rose-950/30 cursor-pointer">🗑️ Svuota</button>
+                <div class="mb-3 border-t border-zinc-800/80 pt-3">
+                    <p class="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Agenti & B2B</p>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.b2b.dashboard') }}" class="{{ request()->routeIs('admin.b2b.dashboard') ? $mobileActive : $mobileInactive }}">📊 Dashboard B2B</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.b2b.orders.index') }}" class="{{ request()->routeIs('admin.b2b.orders.*') ? $mobileActive : $mobileInactive }}">📝 Ordini Ricevuti</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.b2b.agents.index') }}" class="{{ request()->routeIs('admin.b2b.agents.*') ? $mobileActive : $mobileInactive }}">👤 Agenti</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.b2b.customers.index') }}" class="{{ request()->routeIs('admin.b2b.customers.*') ? $mobileActive : $mobileInactive }}">🏢 Clienti B2B</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.b2b.products.index') }}" class="{{ request()->routeIs('admin.b2b.products.*') ? $mobileActive : $mobileInactive }}">📦 Inventario Prodotti</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.b2b.brands.index') }}" class="{{ request()->routeIs('admin.b2b.brands.*') ? $mobileActive : $mobileInactive }}">🏷️ Gestione Linee</a>
+                    <button type="button" @click="showWipeModal = true; mobileNavOpen = false;" class="w-full text-left block px-4 py-2.5 rounded-xl text-xs font-black text-rose-400 hover:text-white hover:bg-rose-950/40 cursor-pointer">🗑️ Svuota</button>
                 </div>
                 @endif
 
                 @if($user->is_super_admin)
-                <div class="mb-4 border-t border-zinc-800 pt-3">
-                    <p class="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Sito</p>
-                    <a href="{{ route('admin.articoli.index') }}" class="{{ request()->routeIs('admin.articoli.*') ? $mobileActive : $mobileInactive }}">📰 Articoli</a>
-                    <a href="{{ route('admin.home.edit') }}" class="{{ request()->routeIs('admin.home.*') ? $mobileActive : $mobileInactive }}">✏️ Home Page Editor</a>
-                    <a href="{{ route('admin.sezioni.index') }}" class="{{ request()->routeIs('admin.sezioni.*') ? $mobileActive : $mobileInactive }}">🧩 Sezioni Sito</a>
-                    <a href="{{ route('admin.global-widgets.index') }}" class="{{ request()->routeIs('admin.global-widgets.*') ? $mobileActive : $mobileInactive }}">⚙️ Widget Globali</a>
-                    <a href="{{ route('admin.contatti.index') }}" class="{{ request()->routeIs('admin.contatti.*') ? $mobileActive : $mobileInactive }}">📧 Form Contatti</a>
+                <div class="mb-3 border-t border-zinc-800/80 pt-3">
+                    <p class="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Sito</p>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.articoli.index') }}" class="{{ request()->routeIs('admin.articoli.*') ? $mobileActive : $mobileInactive }}">📰 Articoli</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.home.edit') }}" class="{{ request()->routeIs('admin.home.*') ? $mobileActive : $mobileInactive }}">✏️ Home Page Editor</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.sezioni.index') }}" class="{{ request()->routeIs('admin.sezioni.*') ? $mobileActive : $mobileInactive }}">🧩 Sezioni Sito</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.global-widgets.index') }}" class="{{ request()->routeIs('admin.global-widgets.*') ? $mobileActive : $mobileInactive }}">⚙️ Widget Globali</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.contatti.index') }}" class="{{ request()->routeIs('admin.contatti.*') ? $mobileActive : $mobileInactive }}">📧 Form Contatti</a>
                 </div>
                 @endif
 
-                <div class="border-t border-zinc-800 pt-3">
+                <div class="border-t border-zinc-800/80 pt-3">
                     @if($user->is_super_admin)
-                    <a href="{{ route('admin.filemanager') }}" class="{{ request()->routeIs('admin.filemanager') ? $mobileActive : $mobileInactive }}">📁 File Manager</a>
-                    <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? $mobileActive : $mobileInactive }}">👥 Amministratori</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.filemanager') }}" class="{{ request()->routeIs('admin.filemanager') ? $mobileActive : $mobileInactive }}">📁 File Manager</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? $mobileActive : $mobileInactive }}">👥 Amministratori</a>
                     @endif
 
-                    <a href="{{ route('admin.settings.edit') }}" class="{{ request()->routeIs('admin.settings.*') ? $mobileActive : $mobileInactive }}">⚙️ Configurazione</a>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.settings.edit') }}" class="{{ request()->routeIs('admin.settings.*') ? $mobileActive : $mobileInactive }}">⚙️ Configurazione</a>
                 </div>
                 
-                <div class="border-t border-zinc-800 pt-3">
+                <div class="border-t border-zinc-800/80 pt-3">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="w-full text-left block px-4 py-2.5 rounded-lg text-sm font-black text-rose-400 hover:text-white hover:bg-rose-950/30">🚪 Esci</button>
+                        <button type="submit" class="w-full text-left block px-4 py-2.5 rounded-xl text-xs font-black text-rose-400 hover:text-white hover:bg-rose-950/40 cursor-pointer">🚪 Esci</button>
                     </form>
                 </div>
             @endif

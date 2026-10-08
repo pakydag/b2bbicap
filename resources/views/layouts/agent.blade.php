@@ -33,33 +33,40 @@
         }
     </style>
 </head>
-    <body class="font-sans antialiased overflow-hidden bg-gray-50">
-        <div class="flex flex-col h-screen" x-data="{ sidebarOpen: localStorage.getItem('b2b_sidebar_open') === 'true' }">
+    <body class="font-sans antialiased overflow-hidden bg-gray-50 text-gray-900" x-data="{ sidebarOpen: localStorage.getItem('b2b_sidebar_open') === 'true', mobileSidebarOpen: false }">
+        <div class="flex flex-col h-screen overflow-hidden">
             
-            <!-- Top Header Bar Nero Completo -->
-            <header class="bg-black text-white border-b border-zinc-900 h-16 flex items-center justify-between px-6 shrink-0 z-30 shadow-md">
-                <a href="{{ route('agent.dashboard') }}" class="flex items-center gap-3 hover:opacity-90 transition shrink-0">
-                    @php
-                        $logo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?? '';
-                    @endphp
-                    @if(!empty($logo))
-                        <img src="{{ asset($logo) }}" class="h-8 w-auto object-contain" alt="Logo">
-                    @else
-                        <h1 class="text-xl font-bold tracking-tight uppercase text-yellow-400">B2B Portal</h1>
-                    @endif
-                    @php
-                        $isEn = app()->getLocale() === 'en';
-                    @endphp
-                    <span class="text-xs font-black uppercase tracking-widest text-zinc-400 border-l border-zinc-800 pl-3 hidden sm:inline">
-                        @if(Auth::user()->role === 'customer')
-                            {{ $isEn ? 'Customer Portal' : 'Area Clienti' }}
-                        @elseif(Auth::user()->role === 'admin')
-                            {{ $isEn ? 'Admin Portal' : 'Area Amministrazione' }}
+            <!-- Top Header Bar Nero Completo Responsive -->
+            <header class="bg-black text-white border-b border-zinc-900 h-16 flex items-center justify-between px-3 sm:px-6 shrink-0 z-30 shadow-md">
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <!-- Hamburger button for mobile menu -->
+                    <button @click="mobileSidebarOpen = !mobileSidebarOpen" type="button" class="md:hidden text-zinc-400 hover:text-yellow-400 p-2 rounded-xl bg-zinc-900 border border-zinc-800 focus:outline-none cursor-pointer transition" aria-label="Toggle navigation">
+                        <svg class="h-5 w-5" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+
+                    <a href="{{ route('agent.dashboard') }}" class="flex items-center gap-2 sm:gap-3 hover:opacity-90 transition shrink-0">
+                        @php
+                            $logo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?? '';
+                            $isEn = app()->getLocale() === 'en';
+                        @endphp
+                        @if(!empty($logo))
+                            <img src="{{ asset($logo) }}" class="h-7 sm:h-8 w-auto object-contain" alt="Logo">
                         @else
-                            {{ $isEn ? 'Agent Portal' : 'Area Agenti' }}
+                            <h1 class="text-base sm:text-xl font-bold tracking-tight uppercase text-yellow-400">B2B Portal</h1>
                         @endif
-                    </span>
-                </a>
+                        <span class="text-xs font-black uppercase tracking-widest text-zinc-400 border-l border-zinc-800 pl-3 hidden lg:inline">
+                            @if(Auth::user()->role === 'customer')
+                                {{ $isEn ? 'Customer Portal' : 'Area Clienti' }}
+                            @elseif(Auth::user()->role === 'admin')
+                                {{ $isEn ? 'Admin Portal' : 'Area Amministrazione' }}
+                            @else
+                                {{ $isEn ? 'Agent Portal' : 'Area Agenti' }}
+                            @endif
+                        </span>
+                    </a>
+                </div>
 
                 <!-- Selettore Cliente Attivo per Agenti / Admin -->
                 @if(Auth::user()->role === 'agent' || Auth::user()->role === 'admin')
@@ -95,20 +102,20 @@
                                     c.priceList.toLowerCase().includes(s)
                                 );
                             }
-                        }" class="flex items-center">
+                        }" class="flex items-center max-w-[45%] sm:max-w-none">
 
                         @if($currentCustomer)
                             <!-- Badge Cliente Attivo -->
-                            <div class="flex items-center gap-2 bg-zinc-900 border border-yellow-400/70 rounded-2xl px-3 py-1.5 shadow-sm">
-                                <span class="text-sm">👤</span>
-                                <div class="text-left leading-tight">
+                            <div class="flex items-center gap-1.5 sm:gap-2 bg-zinc-900 border border-yellow-400/70 rounded-xl sm:rounded-2xl px-2 sm:px-3 py-1 sm:py-1.5 shadow-sm min-w-0">
+                                <span class="text-xs sm:text-sm shrink-0">👤</span>
+                                <div class="text-left leading-tight min-w-0">
                                     <div class="flex items-center gap-1.5">
                                         <span class="text-[9px] text-zinc-400 font-bold uppercase hidden md:inline">Ordinando per:</span>
-                                        <span class="text-xs font-black text-yellow-400 uppercase tracking-tight truncate max-w-[120px] sm:max-w-[180px] lg:max-w-[240px]" title="{{ $currentCustomer->business_name }}">
+                                        <span class="text-[11px] sm:text-xs font-black text-yellow-400 uppercase tracking-tight truncate max-w-[80px] xs:max-w-[120px] sm:max-w-[180px] lg:max-w-[240px]" title="{{ $currentCustomer->business_name }}">
                                             {{ $currentCustomer->business_name }}
                                         </span>
                                     </div>
-                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                    <div class="hidden sm:flex items-center gap-1.5 mt-0.5">
                                         @if($currentCustomer->priceList)
                                             <span class="text-[9px] font-black uppercase tracking-wider bg-yellow-400/20 text-yellow-300 border border-yellow-400/40 px-1.5 py-0.2 rounded">
                                                 🏷️ {{ $currentCustomer->priceList->name }}
@@ -121,11 +128,12 @@
                                     </div>
                                 </div>
 
-                                <button type="button" @click="openCustModal = true" class="ml-1 text-[10px] font-black uppercase text-slate-950 bg-yellow-400 hover:bg-yellow-300 px-2.5 py-1 rounded-xl transition shadow cursor-pointer">
-                                    Cambia
+                                <button type="button" @click="openCustModal = true" class="ml-1 text-[9px] sm:text-[10px] font-black uppercase text-slate-950 bg-yellow-400 hover:bg-yellow-300 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl transition shadow cursor-pointer shrink-0">
+                                    <span class="hidden sm:inline">Cambia</span>
+                                    <span class="sm:hidden">↻</span>
                                 </button>
 
-                                <form action="{{ route('agent.select_customer') }}" method="POST" class="inline">
+                                <form action="{{ route('agent.select_customer') }}" method="POST" class="hidden sm:inline">
                                     @csrf
                                     <input type="hidden" name="b2b_customer_id" value="">
                                     <button type="submit" title="Rimuovi cliente attivo (torna a listino base)" class="text-zinc-500 hover:text-rose-400 p-1 text-xs leading-none transition cursor-pointer">
@@ -135,10 +143,10 @@
                             </div>
                         @else
                             <!-- Nessun Cliente Selezionato -->
-                            <button type="button" @click="openCustModal = true" class="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-yellow-400 rounded-2xl px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold text-zinc-300 hover:text-yellow-400 transition cursor-pointer shadow-sm group">
-                                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                                <span class="font-black uppercase tracking-wider text-[10px] sm:text-[11px]">👤 Seleziona Cliente</span>
-                                <span class="text-[10px] text-zinc-500 group-hover:text-yellow-400">▼</span>
+                            <button type="button" @click="openCustModal = true" class="flex items-center gap-1.5 sm:gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-yellow-400 rounded-xl sm:rounded-2xl px-2 sm:px-3.5 py-1 sm:py-2 text-xs font-bold text-zinc-300 hover:text-yellow-400 transition cursor-pointer shadow-sm group">
+                                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                                <span class="font-black uppercase tracking-wider text-[9px] sm:text-[11px] truncate max-w-[90px] sm:max-w-none">👤 <span class="hidden xs:inline">Seleziona </span>Cliente</span>
+                                <span class="text-[9px] sm:text-[10px] text-zinc-500 group-hover:text-yellow-400">▼</span>
                             </button>
                         @endif
 
@@ -206,41 +214,49 @@
                     </div>
                 @endif
 
-                <div class="flex items-center gap-3 sm:gap-4">
+                <div class="flex items-center gap-1.5 sm:gap-3">
                     <!-- Switcher Lingua (IT / EN) -->
-                    <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl p-0.5 shadow-sm">
-                        <a href="{{ route('set-locale', 'it') }}" class="px-2 py-1 text-[11px] font-black uppercase rounded-lg transition {{ app()->getLocale() === 'it' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-zinc-400 hover:text-white' }}" title="Lingua Italiana">
-                            🇮🇹 IT
+                    <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl p-0.5 shadow-sm shrink-0">
+                        <a href="{{ route('set-locale', 'it') }}" class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-black uppercase rounded-lg transition {{ app()->getLocale() === 'it' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-zinc-400 hover:text-white' }}" title="Lingua Italiana">
+                            🇮🇹<span class="hidden xs:inline ml-1">IT</span>
                         </a>
-                        <a href="{{ route('set-locale', 'en') }}" class="px-2 py-1 text-[11px] font-black uppercase rounded-lg transition {{ app()->getLocale() === 'en' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-zinc-400 hover:text-white' }}" title="English Language">
-                            🇬🇧 EN
+                        <a href="{{ route('set-locale', 'en') }}" class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-black uppercase rounded-lg transition {{ app()->getLocale() === 'en' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-zinc-400 hover:text-white' }}" title="English Language">
+                            🇬🇧<span class="hidden xs:inline ml-1">EN</span>
                         </a>
                     </div>
+
+                    <!-- Carrello Rapido Mobile -->
+                    <a href="{{ route('agent.cart') }}" class="md:hidden relative p-1.5 text-yellow-400 font-black text-xs flex items-center bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <span class="text-sm">🛒</span>
+                        @if(count(session('b2b_cart', [])) > 0)
+                            <span class="bg-rose-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-black ml-1">{{ count(session('b2b_cart')) }}</span>
+                        @endif
+                    </a>
 
                     <span class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-1.5 rounded-xl font-bold uppercase hidden lg:flex items-center gap-2">
                         👤 {{ Auth::user()->name }}
                     </span>
                     
-                    <a href="{{ route('agent.profile') }}" class="text-xs font-black text-yellow-400 hover:text-slate-950 bg-zinc-900 hover:bg-yellow-400 border border-zinc-800 hover:border-yellow-400 px-3.5 py-1.5 rounded-xl transition duration-300 uppercase shadow-sm hidden md:block">
+                    <a href="{{ route('agent.profile') }}" class="text-xs font-black text-yellow-400 hover:text-slate-950 bg-zinc-900 hover:bg-yellow-400 border border-zinc-800 hover:border-yellow-400 px-3 py-1.5 rounded-xl transition duration-300 uppercase shadow-sm hidden md:block">
                         {{ $isEn ? 'Profile' : 'Profilo' }}
                     </a>
 
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                    <form method="POST" action="{{ route('logout') }}" class="hidden sm:inline">
                         @csrf
-                        <button type="submit" class="text-xs font-black text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-900/50 px-3 py-1.5 rounded-xl transition duration-200 uppercase">
+                        <button type="submit" class="text-xs font-black text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-900/50 px-2.5 sm:px-3 py-1.5 rounded-xl transition duration-200 uppercase whitespace-nowrap cursor-pointer">
                             🚪 {{ $isEn ? 'Logout' : 'Esci' }}
                         </button>
                     </form>
                 </div>
             </header>
 
-            <div class="flex flex-1 overflow-hidden min-w-0">
+            <div class="flex flex-1 overflow-hidden min-w-0 relative">
                 
-                <!-- Sidebar Chiara -->
+                <!-- Sidebar Desktop Chiara -->
                 <aside class="flex-shrink-0 bg-white text-gray-800 hidden md:flex flex-col h-full border-r border-gray-100 shadow-sm transition-all duration-300" :class="sidebarOpen ? 'w-64' : 'w-20'">
                     
                     <div class="flex items-center justify-end p-4 h-14 shrink-0 border-b border-gray-50">
-                        <button type="button" @click="sidebarOpen = !sidebarOpen; localStorage.setItem('b2b_sidebar_open', sidebarOpen)" class="text-gray-400 hover:text-gray-900 p-1.5 hover:bg-gray-100 rounded-lg transition duration-200" title="{{ $isEn ? 'Toggle Menu' : 'Espandi/Comprimi Menu' }}">
+                        <button type="button" @click="sidebarOpen = !sidebarOpen; localStorage.setItem('b2b_sidebar_open', sidebarOpen)" class="text-gray-400 hover:text-gray-900 p-1.5 hover:bg-gray-100 rounded-lg transition duration-200 cursor-pointer" title="{{ $isEn ? 'Toggle Menu' : 'Espandi/Comprimi Menu' }}">
                             <span x-text="sidebarOpen ? '◀' : '▶'"></span>
                         </button>
                     </div>
@@ -279,55 +295,105 @@
                     </nav>
                 </aside>
 
-                <!-- Mobile Header -->
-                <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-                    <header class="md:hidden bg-black text-white px-4 py-3 flex justify-between items-center shadow-lg shrink-0 relative z-40" x-data="{ mobileNav: false }">
-                        <div class="flex items-center gap-2">
-                            <span class="font-black text-yellow-400 text-sm tracking-wider">B2B PORTAL</span>
-                            <span class="text-[10px] font-bold text-zinc-400 uppercase bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
-                                {{ Auth::user()->role === 'customer' ? ($isEn ? 'Customer' : 'Cliente') : (Auth::user()->role === 'admin' ? 'Admin' : ($isEn ? 'Agent' : 'Agente')) }}
-                            </span>
+                <!-- Mobile Slide-over Drawer for Agent Portal -->
+                <div x-show="mobileSidebarOpen" 
+                     x-cloak 
+                     class="md:hidden fixed inset-0 z-50 flex" 
+                     style="display: none;">
+                    <!-- Backdrop Blur & Dark -->
+                    <div x-show="mobileSidebarOpen"
+                         x-transition:enter="ease-out duration-300"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="ease-in duration-200"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="fixed inset-0 bg-black/80 backdrop-blur-xs transition-opacity" 
+                         @click="mobileSidebarOpen = false"></div>
+                    
+                    <!-- Drawer Panel -->
+                    <div x-show="mobileSidebarOpen"
+                         x-transition:enter="ease-out duration-300"
+                         x-transition:enter-start="-translate-x-full"
+                         x-transition:enter-end="translate-x-0"
+                         x-transition:leave="ease-in duration-200"
+                         x-transition:leave-start="translate-x-0"
+                         x-transition:leave-end="-translate-x-full"
+                         class="relative flex-1 flex flex-col max-w-xs w-full bg-black text-white shadow-2xl z-10 border-r border-zinc-800">
+                        
+                        <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 shrink-0">
+                            <div class="flex items-center gap-2">
+                                @if(!empty($logo))
+                                    <img src="{{ asset($logo) }}" class="h-7 w-auto object-contain" alt="Logo">
+                                @else
+                                    <span class="font-black text-yellow-400 text-sm tracking-wider">B2B PORTAL</span>
+                                @endif
+                                <span class="text-[9px] font-bold text-zinc-400 uppercase bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                                    {{ Auth::user()->role === 'customer' ? ($isEn ? 'Customer' : 'Cliente') : (Auth::user()->role === 'admin' ? 'Admin' : ($isEn ? 'Agent' : 'Agente')) }}
+                                </span>
+                            </div>
+                            <button @click="mobileSidebarOpen = false" type="button" class="text-zinc-400 hover:text-white p-1 rounded-lg text-2xl leading-none cursor-pointer">&times;</button>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('agent.cart') }}" class="relative p-1.5 text-yellow-400 font-black text-xs flex items-center gap-1">
-                                <span>🛒</span>
+
+                        <!-- User Info Card in Drawer -->
+                        <div class="px-4 py-3 bg-zinc-900/60 border-b border-zinc-800">
+                            <p class="text-xs font-black text-yellow-400 uppercase">{{ Auth::user()->name }}</p>
+                            <p class="text-[10px] text-zinc-400 truncate">{{ Auth::user()->email }}</p>
+                        </div>
+
+                        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1.5">
+                            @php 
+                                $mActive = 'block px-4 py-2.5 rounded-xl text-xs font-black bg-yellow-400 text-slate-950 shadow-md shadow-yellow-400/20';
+                                $mInactive = 'block px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-zinc-900/80 transition';
+                            @endphp
+
+                            <a @click="mobileSidebarOpen = false" href="{{ route('agent.dashboard') }}" class="{{ request()->routeIs('agent.dashboard') ? $mActive : $mInactive }}">
+                                📊 Dashboard
+                            </a>
+                            <a @click="mobileSidebarOpen = false" href="{{ route('agent.catalog') }}" class="{{ request()->routeIs('agent.catalog') || request()->routeIs('agent.product') ? $mActive : $mInactive }}">
+                                📦 {{ $isEn ? 'Product Catalog' : 'Catalogo Prodotti' }}
+                            </a>
+                            <a @click="mobileSidebarOpen = false" href="{{ route('agent.cart') }}" class="{{ request()->routeIs('agent.cart') ? $mActive : $mInactive }} flex items-center justify-between">
+                                <span>🛒 {{ $isEn ? 'Shopping Cart' : 'Carrello' }}</span>
                                 @if(count(session('b2b_cart', [])) > 0)
-                                    <span class="bg-rose-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-black">{{ count(session('b2b_cart')) }}</span>
+                                    <span class="bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ count(session('b2b_cart')) }}</span>
                                 @endif
                             </a>
-                            <button @click="mobileNav = !mobileNav" type="button" class="px-2.5 py-1.5 border border-yellow-400 rounded-lg text-yellow-400 font-black text-xs uppercase flex items-center gap-1">
-                                <span>☰</span>
-                                <span>Menu</span>
-                            </button>
-                        </div>
-                        
-                        <!-- Mobile Dropdown -->
-                        <div x-show="mobileNav" @click.away="mobileNav = false" x-transition class="absolute top-full left-0 right-0 bg-black border-b border-zinc-800 p-4 space-y-2 shadow-2xl z-50" style="display: none;">
-                            <div class="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
-                                <span class="text-xs font-bold text-zinc-400">{{ $isEn ? 'Language:' : 'Lingua:' }}</span>
-                                <div class="flex items-center gap-1">
-                                    <a href="{{ route('set-locale', 'it') }}" class="px-2.5 py-1 text-xs font-bold rounded {{ app()->getLocale() === 'it' ? 'bg-yellow-400 text-black' : 'text-zinc-400 bg-zinc-900' }}">🇮🇹 IT</a>
-                                    <a href="{{ route('set-locale', 'en') }}" class="px-2.5 py-1 text-xs font-bold rounded {{ app()->getLocale() === 'en' ? 'bg-yellow-400 text-black' : 'text-zinc-400 bg-zinc-900' }}">🇬🇧 EN</a>
-                                </div>
-                            </div>
-                            <a href="{{ route('agent.dashboard') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.dashboard') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">📊 Dashboard</a>
-                            <a href="{{ route('agent.catalog') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.catalog') || request()->routeIs('agent.product') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">📦 {{ $isEn ? 'Product Catalog' : 'Catalogo Prodotti' }}</a>
-                            <a href="{{ route('agent.cart') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.cart') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">🛒 {{ $isEn ? 'Shopping Cart' : 'Carrello' }} ({{ count(session('b2b_cart', [])) }})</a>
-                            <a href="{{ route('agent.orders') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.orders') || request()->routeIs('agent.order_detail') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">📝 {{ $isEn ? 'My Orders' : 'Ordini Inviati' }}</a>
+                            <a @click="mobileSidebarOpen = false" href="{{ route('agent.orders') }}" class="{{ request()->routeIs('agent.orders') || request()->routeIs('agent.order_detail') ? $mActive : $mInactive }}">
+                                📝 {{ $isEn ? 'My Orders' : 'Ordini Inviati' }}
+                            </a>
                             @if(Auth::user()->role === 'agent' || Auth::user()->role === 'admin')
-                                <a href="{{ route('agent.price-lists.index') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.price-lists.*') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">🏷️ {{ $isEn ? 'Price Lists' : 'Listini Prezzi' }}</a>
+                                <a @click="mobileSidebarOpen = false" href="{{ route('agent.price-lists.index') }}" class="{{ request()->routeIs('agent.price-lists.*') ? $mActive : $mInactive }}">
+                                    🏷️ {{ $isEn ? 'Price Lists' : 'Listini Prezzi' }}
+                                </a>
                             @endif
                             @if(Auth::user()->role === 'admin')
-                                <a href="{{ route('admin.b2b.orders.index') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider text-amber-300 bg-zinc-900 border border-amber-500/30">⚙️ Pannello Admin B2B</a>
+                                <a @click="mobileSidebarOpen = false" href="{{ route('admin.b2b.dashboard') }}" class="block px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-amber-300 bg-zinc-900 border border-amber-500/40">
+                                    ⚙️ Pannello Admin B2B
+                                </a>
                             @endif
-                            <a href="{{ route('agent.profile') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-white">👤 {{ $isEn ? 'Profile' : 'Profilo' }}</a>
-                        </div>
-                    </header>
+                            <a @click="mobileSidebarOpen = false" href="{{ route('agent.profile') }}" class="{{ request()->routeIs('agent.profile') ? $mActive : $mInactive }}">
+                                👤 {{ $isEn ? 'Profile' : 'Profilo' }}
+                            </a>
 
+                            <div class="border-t border-zinc-800/80 pt-3 mt-3">
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left block px-4 py-2.5 rounded-xl text-xs font-black text-rose-400 hover:text-white hover:bg-rose-950/40 cursor-pointer">
+                                        🚪 {{ $isEn ? 'Logout' : 'Esci' }}
+                                    </button>
+                                </form>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
                     <!-- Desktop Sub-header -->
                     @isset($header)
                         <div class="bg-white shadow-sm border-b border-gray-100 shrink-0">
-                            <div class="max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+                            <div class="max-w-7xl px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
                                 {{ $header }}
                             </div>
                         </div>
@@ -336,12 +402,12 @@
                     <!-- Main Content Area -->
                     <main class="flex-1 overflow-y-auto overflow-x-auto min-w-0 bg-gray-50 p-3 sm:p-4 md:p-6 lg:p-8">
                         @if(session('success'))
-                            <div class="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl shadow-sm font-bold text-sm">
+                            <div class="mb-4 sm:mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl shadow-sm font-bold text-xs sm:text-sm">
                                 {{ session('success') }}
                             </div>
                         @endif
                         @if(session('error'))
-                            <div class="mb-6 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl shadow-sm font-bold text-sm">
+                            <div class="mb-4 sm:mb-6 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl shadow-sm font-bold text-xs sm:text-sm">
                                 {{ session('error') }}
                             </div>
                         @endif
@@ -349,7 +415,7 @@
                         {{ $slot }}
                     </main>
                     
-                    <footer class="bg-white border-t border-gray-200 p-4 text-center text-xs font-bold text-gray-400 shrink-0">
+                    <footer class="bg-white border-t border-gray-200 p-3 sm:p-4 text-center text-xs font-bold text-gray-400 shrink-0">
                         &copy; {{ date('Y') }} {{ config('app.name') }} B2B Portal. Tutti i diritti riservati.
                     </footer>
                 </div>
