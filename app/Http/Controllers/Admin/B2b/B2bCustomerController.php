@@ -158,6 +158,7 @@ class B2bCustomerController extends Controller
             'phone' => 'nullable|string|max:50',
             'payment_condition_id' => 'nullable|exists:b2b_payment_conditions,id',
             'b2b_price_list_id' => 'nullable|exists:b2b_price_lists,id',
+            'locale' => 'nullable|in:it,en',
             'b2b_email' => 'nullable|email|max:255|unique:users,email,' . ($customer->user?->id ?? 'NULL'),
             'send_email_notification' => 'nullable',
             'agent_ids' => 'nullable|array',
@@ -186,10 +187,15 @@ class B2bCustomerController extends Controller
             'b2b_email.unique' => 'Questo indirizzo email è già utilizzato da un altro account.',
         ]);
 
-        $customer->update($request->only([
-            'code', 'business_name', 'vat_number', 'contact_name', 
-            'contact_surname', 'phone', 'email', 'payment_condition_id', 'b2b_price_list_id'
-        ]));
+        $selectedLocale = $request->input('locale', 'it') ?: 'it';
+
+        $customer->update(array_merge(
+            $request->only([
+                'code', 'business_name', 'vat_number', 'contact_name', 
+                'contact_surname', 'phone', 'email', 'payment_condition_id', 'b2b_price_list_id'
+            ]),
+            ['locale' => $selectedLocale]
+        ));
 
         if ($request->has('agent_ids')) {
             $customer->agents()->sync($request->input('agent_ids', []));
@@ -201,6 +207,7 @@ class B2bCustomerController extends Controller
                 $userData = [
                     'email' => $request->b2b_email,
                     'name' => $customer->business_name,
+                    'locale' => $selectedLocale,
                 ];
                 if ($request->filled('b2b_password')) {
                     $userData['password'] = bcrypt($request->b2b_password);
@@ -212,9 +219,12 @@ class B2bCustomerController extends Controller
                     'email' => $request->b2b_email,
                     'password' => bcrypt($request->b2b_password ?? 'Bicap2026!'),
                     'role' => 'customer',
+                    'locale' => $selectedLocale,
                     'b2b_customer_id' => $customer->id,
                 ]);
             }
+        } elseif ($customer->user) {
+            $customer->user->update(['locale' => $selectedLocale]);
         }
 
         $recipientEmail = $request->b2b_email ?: ($customer->user?->email ?: $customer->email);

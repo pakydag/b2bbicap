@@ -219,10 +219,17 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="shrink-0">
+                        <div class="shrink-0 flex items-center gap-1.5">
                             <a href="{{ route('admin.b2b.products.show', $product) }}" class="inline-flex items-center gap-1 px-3 py-2 bg-slate-900 hover:bg-yellow-400 hover:text-slate-950 text-white font-black rounded-xl text-[11px] uppercase tracking-wider shadow transition">
                                 <span>👁️ DETTAGLIO</span>
                             </a>
+                            <form action="{{ route('admin.b2b.products.destroy', $product) }}" method="POST" onsubmit="return confirm('Sei sicuro di voler eliminare questo prodotto ({{ addslashes($product->name) }}) dall\'inventario B2B?');" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="p-2 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl text-xs font-black transition border border-red-200 hover:border-red-600 shadow-sm cursor-pointer" title="Elimina Prodotto">
+                                    🗑️
+                                </button>
+                            </form>
                         </div>
                     </div>
                 @empty
@@ -319,9 +326,19 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-right">
-                                    <a href="{{ route('admin.b2b.products.show', $product) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-yellow-400 hover:text-slate-950 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow transition">
-                                        <span>👁️ DETTAGLIO</span>
-                                    </a>
+                                    <div class="inline-flex items-center justify-end gap-1.5">
+                                        <a href="{{ route('admin.b2b.products.show', $product) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-yellow-400 hover:text-slate-950 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow transition">
+                                            <span>👁️ DETTAGLIO</span>
+                                        </a>
+                                        <form action="{{ route('admin.b2b.products.destroy', $product) }}" method="POST" onsubmit="return confirm('Sei sicuro di voler eliminare il prodotto \'{{ addslashes($product->name) }}\' (Cod. {{ $product->code }}) dall\'inventario B2B?');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl text-xs font-black transition border border-red-200 hover:border-red-600 shadow-sm cursor-pointer" title="Elimina Prodotto">
+                                                <span>🗑️</span>
+                                                <span class="hidden md:inline">ELIMINA</span>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

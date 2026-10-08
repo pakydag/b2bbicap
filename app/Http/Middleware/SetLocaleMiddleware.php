@@ -16,7 +16,27 @@ class SetLocaleMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = session('locale', 'it');
+        if ($request->has('lang') && in_array($request->query('lang'), ['it', 'en'])) {
+            $locale = $request->query('lang');
+            session(['locale' => $locale]);
+            if ($request->user()) {
+                $request->user()->update(['locale' => $locale]);
+                if ($request->user()->b2bCustomer) {
+                    $request->user()->b2bCustomer->update(['locale' => $locale]);
+                }
+            }
+        } elseif (session()->has('locale')) {
+            $locale = session('locale');
+        } elseif ($request->user() && !empty($request->user()->locale)) {
+            $locale = $request->user()->locale;
+            session(['locale' => $locale]);
+        } elseif ($request->user() && $request->user()->b2bCustomer && !empty($request->user()->b2bCustomer->locale)) {
+            $locale = $request->user()->b2bCustomer->locale;
+            session(['locale' => $locale]);
+        } else {
+            $locale = config('app.locale', 'it');
+        }
+
         App::setLocale($locale);
 
         return $next($request);

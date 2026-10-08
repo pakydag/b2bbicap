@@ -1,4 +1,5 @@
 @php
+    $isEn = request('locale') ? request('locale') === 'en' : (($order->customer?->locale ?: ($order->customer?->user?->locale ?: app()->getLocale())) === 'en');
     $siteLogo = \App\Models\Setting::where('key', 'site_logo')->value('value');
     $logoFile = storage_path('app/public/logo-bicap.png');
     if (!file_exists($logoFile) && $siteLogo) {
@@ -12,11 +13,11 @@
         : ($siteLogo ? asset($siteLogo) : asset('storage/logo-bicap.png'));
 @endphp
 <!DOCTYPE html>
-<html lang="it">
+<html lang="{{ $isEn ? 'en' : 'it' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $order->status === 'confirmed' ? "Conferma d'Ordine" : "Proposta d'Ordine (In Attesa)" }} #{{ $order->id }} - BICAP</title>
+    <title>{{ $order->status === 'confirmed' ? ($isEn ? "Order Confirmation" : "Conferma d'Ordine") : ($isEn ? "Order Summary (Pending)" : "Proposta d'Ordine (In Attesa)") }} #{{ $order->id }} - BICAP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media print {
@@ -36,20 +37,22 @@
             <span class="text-xl">📄</span>
             <div>
                 <h1 class="font-black text-sm uppercase tracking-wider text-yellow-400">
-                    Anteprima Stampa Ordine #{{ $order->id }}
+                    {{ $isEn ? 'Order Print Preview' : 'Anteprima Stampa Ordine' }} #{{ $order->id }}
                     @if($order->status !== 'confirmed')
-                        <span class="text-amber-300 text-xs font-bold lowercase">({{ $order->status_label }} - Non Confermato)</span>
+                        <span class="text-amber-300 text-xs font-bold lowercase">({{ $order->status_label }} - {{ $isEn ? 'Not Confirmed' : 'Non Confermato' }})</span>
                     @endif
                 </h1>
-                <p class="text-xs text-gray-300">Puoi stampare il documento o salvarlo direttamente in PDF dal browser con le condizioni di listino applicate.</p>
+                <p class="text-xs text-gray-300">
+                    {{ $isEn ? 'You can print this document or save it directly as a PDF from your browser with applied price list terms.' : 'Puoi stampare il documento o salvarlo direttamente in PDF dal browser con le condizioni di listino applicate.' }}
+                </p>
             </div>
         </div>
         <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
             <button onclick="window.print()" class="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black uppercase text-xs px-6 py-2.5 rounded-xl shadow-lg transition duration-200 cursor-pointer flex items-center gap-2">
-                <span>🖨️ STAMPA / SALVA IN PDF</span>
+                <span>🖨️ {{ $isEn ? 'PRINT / SAVE AS PDF' : 'STAMPA / SALVA IN PDF' }}</span>
             </button>
             <button onclick="window.history.back()" class="bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition cursor-pointer">
-                Chiudi
+                {{ $isEn ? 'Close' : 'Chiudi' }}
             </button>
         </div>
     </div>
@@ -66,67 +69,70 @@
                     </div>
                     <span class="font-black tracking-widest text-xs uppercase text-zinc-400 border-l border-gray-300 pl-3">B2B PORTAL</span>
                 </div>
-                <p class="text-xs text-gray-500 font-medium mt-3">Calzaturificio 5Bi S.r.l. - Calzature di Sicurezza</p>
-                <p class="text-[10px] text-gray-400">Zona Industriale Via Trani - Barletta (BT) Italia - www.bicap.it</p>
+                <p class="text-xs text-gray-500 font-medium mt-3">Calzaturificio 5Bi S.r.l. - {{ $isEn ? 'Safety Footwear' : 'Calzature di Sicurezza' }}</p>
+                <p class="text-[10px] text-gray-400">Zona Industriale Via Trani - Barletta (BT) Italy - www.bicap.it</p>
             </div>
             <div class="text-left sm:text-right">
                 @if($order->status === 'confirmed')
                     <span class="inline-block px-3.5 py-1.5 bg-emerald-600 text-white font-black text-xs uppercase tracking-wider rounded-lg mb-2 shadow-xs">
-                        ✓ CONFERMA D'ORDINE B2B
+                        ✓ {{ $isEn ? 'B2B ORDER CONFIRMATION' : "CONFERMA D'ORDINE B2B" }}
                     </span>
                 @elseif($order->status === 'revision_pending')
                     <span class="inline-block px-3.5 py-1.5 bg-amber-500 text-white font-black text-xs uppercase tracking-wider rounded-lg mb-2 shadow-xs">
-                        ✏️ RETTIFICA ORDINE — IN ATTESA CLIENTE
+                        ✏️ {{ $isEn ? 'ORDER REVISION — AWAITING CUSTOMER' : 'RETTIFICA ORDINE — IN ATTESA CLIENTE' }}
                     </span>
                 @elseif($order->status === 'customer_approved')
                     <span class="inline-block px-3.5 py-1.5 bg-blue-600 text-white font-black text-xs uppercase tracking-wider rounded-lg mb-2 shadow-xs">
-                        ✓ APPROVATO DA CLIENTE — IN ATTESA OK FINALE
+                        ✓ {{ $isEn ? 'APPROVED BY CUSTOMER — PENDING FINAL OK' : 'APPROVATO DA CLIENTE — IN ATTESA OK FINALE' }}
                     </span>
                 @elseif($order->status === 'customer_rejected')
                     <span class="inline-block px-3.5 py-1.5 bg-rose-600 text-white font-black text-xs uppercase tracking-wider rounded-lg mb-2 shadow-xs">
-                        ✕ MODIFICHE RIFIUTATE DAL CLIENTE
+                        ✕ {{ $isEn ? 'CHANGES REJECTED BY CUSTOMER' : 'MODIFICHE RIFIUTATE DAL CLIENTE' }}
                     </span>
                 @elseif($order->status === 'cancelled')
                     <span class="inline-block px-3.5 py-1.5 bg-rose-600 text-white font-black text-xs uppercase tracking-wider rounded-lg mb-2 shadow-xs">
-                        ✕ ORDINE ANNULLATO
+                        ✕ {{ $isEn ? 'ORDER CANCELLED' : 'ORDINE ANNULLATO' }}
                     </span>
                 @else
                     <span class="inline-block px-3.5 py-1.5 bg-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-lg mb-2 shadow-xs border border-yellow-300">
-                        ⏳ PROPOSTA D'ORDINE — IN ATTESA CONFERMA AGENTE
+                        ⏳ {{ $isEn ? 'ORDER PROPOSAL — PENDING CONFIRMATION' : "PROPOSTA D'ORDINE — IN ATTESA CONFERMA" }}
                     </span>
                 @endif
                 <h2 class="text-3xl font-black text-slate-900">#{{ $order->id }}</h2>
                 @if($order->internal_reference)
-                    <p class="text-xs text-indigo-700 font-black mt-1">Rif. Ordine Interno: <span class="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-mono text-slate-900">{{ $order->internal_reference }}</span></p>
+                    <p class="text-xs text-indigo-700 font-black mt-1">
+                        {{ $isEn ? 'Internal Ref:' : 'Rif. Ordine Interno:' }}
+                        <span class="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-mono text-slate-900">{{ $order->internal_reference }}</span>
+                    </p>
                 @endif
-                <p class="text-xs text-gray-500 font-bold mt-1">Data: <span class="text-slate-900">{{ $order->created_at->format('d/m/Y H:i') }}</span></p>
+                <p class="text-xs text-gray-500 font-bold mt-1">{{ $isEn ? 'Date:' : 'Data:' }} <span class="text-slate-900">{{ $order->created_at->format('d/m/Y H:i') }}</span></p>
                 <p class="text-xs text-gray-500 font-bold mt-0.5">
-                    Stato: 
+                    {{ $isEn ? 'Status:' : 'Stato:' }} 
                     @if($order->status === 'confirmed')
-                        <span class="uppercase text-emerald-700 font-black">✓ CONFERMATO</span>
+                        <span class="uppercase text-emerald-700 font-black">✓ {{ $isEn ? 'CONFIRMED' : 'CONFERMATO' }}</span>
                     @elseif($order->status === 'customer_approved')
-                        <span class="uppercase text-blue-700 font-black">✓ APPROVATO DA CLIENTE (ATTESA CONFERMA FINALE)</span>
+                        <span class="uppercase text-blue-700 font-black">✓ {{ $isEn ? 'APPROVED BY CUSTOMER' : 'APPROVATO DA CLIENTE' }}</span>
                     @elseif($order->status === 'revision_pending')
-                        <span class="uppercase text-amber-700 font-black">⏳ IN ATTESA DI APPROVAZIONE CLIENTE</span>
+                        <span class="uppercase text-amber-700 font-black">⏳ {{ $isEn ? 'AWAITING CUSTOMER APPROVAL' : 'IN ATTESA DI APPROVAZIONE CLIENTE' }}</span>
                     @elseif($order->status === 'customer_rejected' || $order->status === 'cancelled')
                         <span class="uppercase text-rose-700 font-black">✕ {{ strtoupper($order->status_label) }}</span>
                     @else
-                        <span class="uppercase text-amber-600 font-black">⏳ IN ATTESA DI CONFERMA DALL'AGENTE</span>
+                        <span class="uppercase text-amber-600 font-black">⏳ {{ $isEn ? 'PENDING CONFIRMATION' : "IN ATTESA DI CONFERMA" }}</span>
                     @endif
                 </p>
             </div>
         </div>
 
-        <!-- Box Avviso Stato Ordine -->
+        <!-- Box Status Alert -->
         @if($order->status === 'confirmed')
             <div class="mb-8 p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center gap-3 print:bg-emerald-50 print:border-emerald-300 page-break-inside-avoid">
                 <span class="text-2xl shrink-0">✅</span>
                 <div class="text-xs text-emerald-900 leading-relaxed">
                     <p class="font-black uppercase tracking-wider text-emerald-950 text-xs">
-                        ✓ Conferma d'Ordine Definitiva
+                        ✓ {{ $isEn ? 'Definitive Order Confirmation' : "Conferma d'Ordine Definitiva" }}
                     </p>
                     <p class="mt-0.5">
-                        Questo ordine è stato <strong>validato e confermato definitivamente dall'agente commerciale / amministrazione</strong> ed è attualmente in lavorazione per la preparazione ed evasione.
+                        {{ $isEn ? 'This order has been confirmed and submitted to our management ERP system and is currently being processed for preparation and dispatch.' : "Questo ordine è stato validato e confermato definitivamente ed è attualmente in lavorazione per la preparazione ed evasione." }}
                     </p>
                 </div>
             </div>
@@ -135,10 +141,10 @@
                 <span class="text-2xl shrink-0">✏️</span>
                 <div class="text-xs text-amber-900 leading-relaxed">
                     <p class="font-black uppercase tracking-wider text-amber-950 text-xs">
-                        Rettifica Ordine — In Attesa di Approvazione da parte del Cliente
+                        {{ $isEn ? 'Order Revision — Awaiting Customer Approval' : "Rettifica Ordine — In Attesa di Approvazione da parte del Cliente" }}
                     </p>
                     <p class="mt-0.5">
-                        L'agente commerciale ha apportato alcune modifiche/rettifiche a quantità o prezzi per questo ordine. Il documento è in attesa di formale approvazione da parte dell'azienda cliente.
+                        {{ $isEn ? 'The sales representative has made adjustments to quantities or pricing for this order. This document is awaiting formal approval from the customer company.' : "L'agente commerciale ha apportato alcune modifiche/rettifiche a quantità o prezzi per questo ordine. Il documento è in attesa di formale approvazione da parte dell'azienda cliente." }}
                     </p>
                 </div>
             </div>
@@ -147,10 +153,10 @@
                 <span class="text-2xl shrink-0">⏳</span>
                 <div class="text-xs text-blue-900 leading-relaxed">
                     <p class="font-black uppercase tracking-wider text-blue-950 text-xs">
-                        Modifiche Accettate dal Cliente — In Attesa di OK Finale Agente / Amministrazione
+                        {{ $isEn ? 'Modifications Accepted by Customer — Pending Final Validation' : "Modifiche Accettate dal Cliente — In Attesa di OK Finale Agente / Amministrazione" }}
                     </p>
                     <p class="mt-0.5">
-                        L'azienda cliente ha accettato le modifiche dell'ordine. Il documento è ora in attesa della conferma definitiva finale da parte dell'agente commerciale per l'inoltro alla sede.
+                        {{ $isEn ? 'The customer has accepted the order changes. The document is now awaiting final confirmation.' : "L'azienda cliente ha accettato le modifiche dell'ordine. Il documento è ora in attesa della conferma definitiva finale." }}
                     </p>
                 </div>
             </div>
@@ -159,10 +165,10 @@
                 <span class="text-2xl shrink-0">✕</span>
                 <div class="text-xs text-rose-900 leading-relaxed">
                     <p class="font-black uppercase tracking-wider text-rose-950 text-xs">
-                        Modifiche Rifiutate dal Cliente
+                        {{ $isEn ? 'Modifications Rejected by Customer' : 'Modifiche Rifiutate dal Cliente' }}
                     </p>
                     <p class="mt-0.5">
-                        L'azienda cliente non ha accettato le modifiche proposte per questo ordine.
+                        {{ $isEn ? 'The customer declined the proposed changes for this order.' : "L'azienda cliente non ha accettato le modifiche proposte per questo ordine." }}
                     </p>
                 </div>
             </div>
@@ -171,10 +177,10 @@
                 <span class="text-2xl shrink-0">✕</span>
                 <div class="text-xs text-rose-900 leading-relaxed">
                     <p class="font-black uppercase tracking-wider text-rose-950 text-xs">
-                        Ordine Annullato
+                        {{ $isEn ? 'Order Cancelled' : 'Ordine Annullato' }}
                     </p>
                     <p class="mt-0.5">
-                        Il presente ordine risulta annullato.
+                        {{ $isEn ? 'This order has been cancelled.' : 'Il presente ordine risulta annullato.' }}
                     </p>
                 </div>
             </div>
@@ -183,10 +189,10 @@
                 <span class="text-2xl shrink-0">⚠️</span>
                 <div class="text-xs text-amber-950 leading-relaxed">
                     <p class="font-black uppercase tracking-wider text-amber-950 text-xs">
-                        Documento Non Confermato — Proposta d'Ordine in Attesa di Conferma dall'Agente
+                        {{ $isEn ? 'Order Proposal — Pending Confirmation' : "Documento Non Confermato — Proposta d'Ordine in Attesa di Conferma" }}
                     </p>
                     <p class="mt-0.5">
-                        Il presente documento costituisce una <strong>copia commissione / proposta d'ordine</strong> e <strong>NON costituisce conferma definitiva d'ordine</strong>. L'ordine è attualmente in attesa di verifica disponibilità magazzino, tempi di consegna e conferma definitiva da parte dell'agente commerciale / amministrazione.
+                        {{ $isEn ? 'This document is a summary order proposal and does NOT constitute a final invoice.' : "Il presente documento costituisce una proposta d'ordine in attesa di elaborazione." }}
                     </p>
                 </div>
             </div>
@@ -200,52 +206,57 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
             <!-- 1. Dati Cliente -->
             <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">INTESTATO A (CLIENTE B2B)</p>
-                <h3 class="text-base font-black text-slate-900 uppercase">{{ $order->customer->business_name ?? 'Cliente N.D.' }}</h3>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ $isEn ? 'BILL TO (B2B CUSTOMER)' : 'INTESTATO A (CLIENTE B2B)' }}</p>
+                <h3 class="text-base font-black text-slate-900 uppercase">{{ $order->customer->business_name ?? ($isEn ? 'Customer N/A' : 'Cliente N.D.') }}</h3>
                 <div class="mt-2 space-y-1 text-xs text-gray-700">
+                    @if($order->customer && $order->customer->code)
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'CUSTOMER CODE:' : 'CODICE CLIENTE:' }}</span> {{ $order->customer->code }}</p>
+                    @endif
                     @if($order->customer && $order->customer->vat_number)
-                        <p><span class="font-bold text-gray-400 uppercase">P.IVA / C.F.:</span> {{ $order->customer->vat_number }}</p>
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'VAT / TAX ID:' : 'P.IVA / C.F.:' }}</span> {{ $order->customer->vat_number }}</p>
                     @endif
                     @if($order->customer && ($order->customer->contact_name || $order->customer->contact_surname))
-                        <p><span class="font-bold text-gray-400 uppercase">REFERENTE:</span> {{ $order->customer->contact_name }} {{ $order->customer->contact_surname }}</p>
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'CONTACT:' : 'REFERENTE:' }}</span> {{ $order->customer->contact_name }} {{ $order->customer->contact_surname }}</p>
                     @endif
                     @if($order->customer && $order->customer->phone)
-                        <p><span class="font-bold text-gray-400 uppercase">TEL:</span> {{ $order->customer->phone }}</p>
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'PHONE:' : 'TEL:' }}</span> {{ $order->customer->phone }}</p>
                     @endif
                     @if($order->customer && $order->customer->email)
-                        <p><span class="font-bold text-gray-400 uppercase">EMAIL:</span> {{ $order->customer->email }}</p>
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'EMAIL:' : 'EMAIL:' }}</span> {{ $order->customer->email }}</p>
                     @endif
                 </div>
             </div>
 
             <!-- 2. Dati Agente e Pagamento -->
             <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">AGENTE DI RIFERIMENTO & METODO</p>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ $isEn ? 'SALES REPRESENTATIVE & PAYMENT' : 'AGENTE DI RIFERIMENTO & METODO' }}</p>
                 <h3 class="text-base font-black text-slate-900 uppercase">
-                    {{ $order->agent ? $order->agent->name . ' ' . $order->agent->surname : 'Assegnazione Diretta' }}
+                    {{ $order->agent ? $order->agent->name . ' ' . $order->agent->surname : ($isEn ? 'Direct Assignment' : 'Assegnazione Diretta') }}
                 </h3>
                 <div class="mt-2 space-y-1 text-xs text-gray-700">
                     @if($order->agent && $order->agent->email)
-                        <p><span class="font-bold text-gray-400 uppercase">EMAIL AGENTE:</span> {{ $order->agent->email }}</p>
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'AGENT EMAIL:' : 'EMAIL AGENTE:' }}</span> {{ $order->agent->email }}</p>
                     @endif
-                    <p class="pt-2"><span class="font-bold text-gray-400 uppercase">CONDIZIONI PAGAMENTO:</span></p>
-                    <p class="font-bold text-indigo-700 uppercase">{{ $order->payment_method ?: ($order->customer->paymentCondition->name ?? 'Da concordare / Standard') }}</p>
+                    <p class="pt-2"><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'PAYMENT TERMS:' : 'CONDIZIONI PAGAMENTO:' }}</span></p>
+                    <p class="font-bold text-indigo-700 uppercase">{{ $order->payment_method ?: ($order->customer->paymentCondition->name ?? ($isEn ? 'Standard Terms' : 'Da concordare / Standard')) }}</p>
                 </div>
             </div>
 
             <!-- 3. Condizioni Listino Prezzi -->
             <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
-                <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">LISTINO PREZZI APPLICATO</p>
+                <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">{{ $isEn ? 'APPLIED PRICE LIST' : 'LISTINO PREZZI APPLICATO' }}</p>
                 <h3 class="text-base font-black text-indigo-950 uppercase">
-                    {{ $assignedPriceList ? $assignedPriceList->name : 'Listino Prezzi Standard' }}
+                    {{ $assignedPriceList ? $assignedPriceList->name : ($isEn ? 'Standard Price List' : 'Listino Prezzi Standard') }}
                 </h3>
                 <div class="mt-2 space-y-1 text-xs text-gray-700">
                     @if($assignedPriceList && $assignedPriceList->general_discount_percent > 0)
-                        <p><span class="font-bold text-indigo-500 uppercase">SCONTO GENERALE:</span> <span class="font-black text-indigo-900">-{{ floatval($assignedPriceList->general_discount_percent) }}%</span></p>
+                        <p><span class="font-bold text-indigo-500 uppercase">{{ $isEn ? 'GENERAL DISCOUNT:' : 'SCONTO GENERALE:' }}</span> <span class="font-black text-indigo-900">-{{ floatval($assignedPriceList->general_discount_percent) }}%</span></p>
                     @else
-                        <p><span class="font-bold text-gray-400 uppercase">TIPO LISTINO:</span> <span class="font-semibold text-gray-800">Prezzi & Sconti Dedicati B2B</span></p>
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'TERMS TYPE:' : 'TIPO LISTINO:' }}</span> <span class="font-semibold text-gray-800">{{ $isEn ? 'Dedicated B2B Pricing & Discounts' : 'Prezzi & Sconti Dedicati B2B' }}</span></p>
                     @endif
-                    <p class="pt-1 text-[11px] text-gray-500 font-medium">Condizioni commerciali riservate per <span class="font-bold text-slate-900 uppercase">{{ $order->customer->business_name ?? 'Cliente' }}</span></p>
+                    <p class="pt-1 text-[11px] text-gray-500 font-medium">
+                        {{ $isEn ? 'Commercial terms reserved for' : 'Condizioni commerciali riservate per' }} <span class="font-bold text-slate-900 uppercase">{{ $order->customer->business_name ?? ($isEn ? 'Customer' : 'Cliente') }}</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -265,13 +276,13 @@
                 <thead class="bg-slate-900 text-white text-[11px] font-black uppercase tracking-wider">
                     <tr>
                         <th class="py-3 px-3 sm:px-4 w-10">#</th>
-                        <th class="py-3 px-3 sm:px-4">Codice</th>
-                        <th class="py-3 px-3 sm:px-4">Articolo / Descrizione & Listino Applicato</th>
-                        <th class="py-3 px-3 sm:px-4 text-center">Taglia</th>
-                        <th class="py-3 px-3 sm:px-4 text-center">Q.tà</th>
-                        <th class="py-3 px-3 sm:px-4 text-right">Prezzo Base</th>
-                        <th class="py-3 px-3 sm:px-4 text-right">Prezzo Unit. Netto</th>
-                        <th class="py-3 px-3 sm:px-4 text-right">Subtotale</th>
+                        <th class="py-3 px-3 sm:px-4">{{ $isEn ? 'Code' : 'Codice' }}</th>
+                        <th class="py-3 px-3 sm:px-4">{{ $isEn ? 'Product / Description & Applied Pricing' : 'Articolo / Descrizione & Listino Applicato' }}</th>
+                        <th class="py-3 px-3 sm:px-4 text-center">{{ $isEn ? 'Size' : 'Taglia' }}</th>
+                        <th class="py-3 px-3 sm:px-4 text-center">{{ $isEn ? 'Qty' : 'Q.tà' }}</th>
+                        <th class="py-3 px-3 sm:px-4 text-right">{{ $isEn ? 'Base Price' : 'Prezzo Base' }}</th>
+                        <th class="py-3 px-3 sm:px-4 text-right">{{ $isEn ? 'Net Unit Price' : 'Prezzo Unit. Netto' }}</th>
+                        <th class="py-3 px-3 sm:px-4 text-right">{{ $isEn ? 'Subtotal' : 'Subtotale' }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 text-xs">
@@ -300,7 +311,7 @@
                             <td class="py-3.5 px-3 sm:px-4 font-mono font-bold text-slate-800 align-top whitespace-nowrap">{{ $item->product->code ?? '-' }}</td>
                             <td class="py-3.5 px-3 sm:px-4 align-top">
                                 <div class="font-black text-slate-900 uppercase leading-snug">
-                                    {{ $item->product->name ?? 'Prodotto N.D.' }}
+                                    {{ $item->product->name ?? ($isEn ? 'Product N/A' : 'Prodotto N.D.') }}
                                 </div>
                                 @if($item->product && $item->product->brand)
                                     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">
@@ -308,37 +319,37 @@
                                     </div>
                                 @endif
 
-                                <!-- Badge Regola Listino Applicata (come nel dettaglio prodotto) -->
+                                <!-- Badge Regola Listino Applicata -->
                                 <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                     @if($isProductException)
                                         <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-2xs">
-                                            ⭐ Listino Personalizzato: @if($isFixedPrice) Prezzo Netto € {{ number_format($priceDetails['discount_value'], 2, ',', '.') }}{{ $extraStr }} @else {{ $priceDetails['rule_summary'] ?? 'Prezzo Dedicato' }} @endif
+                                            ⭐ {{ $isEn ? 'Custom Price List:' : 'Listino Personalizzato:' }} @if($isFixedPrice) {{ $isEn ? 'Net Price' : 'Prezzo Netto' }} € {{ number_format($priceDetails['discount_value'], 2, ',', '.') }}{{ $extraStr }} @else {{ $priceDetails['rule_summary'] ?? ($isEn ? 'Dedicated Price' : 'Prezzo Dedicato') }} @endif
                                         </span>
                                     @elseif($isFixedPrice)
                                         <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-black uppercase px-2 py-0.5 rounded">
-                                            ⭐ Prezzo Netto Riservato (€ {{ number_format($priceDetails['discount_value'], 2, ',', '.') }}{{ $extraStr }})
+                                            ⭐ {{ $isEn ? 'Reserved Net Price' : 'Prezzo Netto Riservato' }} (€ {{ number_format($priceDetails['discount_value'], 2, ',', '.') }}{{ $extraStr }})
                                         </span>
                                     @elseif($hasTier || ($priceDetails['discount_type'] ?? '') === 'percentage')
                                         <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-800 border border-indigo-200 text-[9px] font-black uppercase px-2 py-0.5 rounded">
-                                            📉 Sconto Quantità: {{ $priceDetails['rule_summary'] ?? ('-' . floatval($priceDetails['discount_value']) . '%') }}
+                                            📉 {{ $isEn ? 'Quantity Discount:' : 'Sconto Quantità:' }} {{ $priceDetails['rule_summary'] ?? ('-' . floatval($priceDetails['discount_value']) . '%') }}
                                         </span>
                                     @elseif($customer && $customer->priceList && $customer->priceList->general_discount_percent > 0)
                                         <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-800 border border-indigo-200 text-[9px] font-black uppercase px-2 py-0.5 rounded">
-                                            📉 Sconto Listino (-{{ floatval($customer->priceList->general_discount_percent) }}%)
+                                            📉 {{ $isEn ? 'List Discount' : 'Sconto Listino' }} (-{{ floatval($customer->priceList->general_discount_percent) }}%)
                                         </span>
                                     @elseif($item->is_modified || ($item->original_price && abs($item->original_price - $item->price) >= 0.01))
                                         <span class="inline-flex items-center gap-1 bg-orange-100 text-orange-900 border border-orange-300 text-[9px] font-black uppercase px-2 py-0.5 rounded">
-                                            ✏️ Prezzo Concordato Agente
+                                            ✏️ {{ $isEn ? 'Representative Agreed Price' : 'Prezzo Concordato Agente' }}
                                         </span>
                                     @elseif($basePrice > (float)$item->price)
                                         <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-800 border border-indigo-200 text-[9px] font-black uppercase px-2 py-0.5 rounded">
-                                            📉 Prezzo Riservato (-{{ number_format((1 - ($item->price / max(0.01, $basePrice))) * 100, 1) }}%)
+                                            📉 {{ $isEn ? 'Reserved Price' : 'Prezzo Riservato' }} (-{{ number_format((1 - ($item->price / max(0.01, $basePrice))) * 100, 1) }}%)
                                         </span>
                                     @endif
 
                                     @if(!empty($item->delivery_date))
                                         <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-black uppercase px-1.5 py-0.5 rounded">
-                                            📅 Consegna dal: {{ $item->delivery_date }}
+                                            📅 {{ $isEn ? 'Delivery from:' : 'Consegna dal:' }} {{ $item->delivery_date }}
                                         </span>
                                     @endif
                                 </div>
@@ -369,7 +380,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-6 text-center text-gray-500 font-bold">Nessun articolo in questo ordine.</td>
+                            <td colspan="8" class="py-6 text-center text-gray-500 font-bold">{{ $isEn ? 'No items in this order.' : 'Nessun articolo in questo ordine.' }}</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -380,25 +391,25 @@
             $uniqueProducts = $order->items->pluck('product')->filter()->unique('id');
         @endphp
 
-        <!-- Card Dettaglio Listino Prezzi & Fasce per Articoli in Ordine (Identica alla vista prodotto) -->
+        <!-- Card Dettaglio Listino Prezzi & Fasce per Articoli in Ordine -->
         @if($assignedPriceList && $uniqueProducts->isNotEmpty())
             <div class="mb-8 bg-gradient-to-br from-indigo-50/70 via-white to-amber-50/40 border border-indigo-100 rounded-2xl p-5 sm:p-6 print:border-gray-300 print:bg-white page-break-inside-avoid">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100/70 pb-3 mb-4">
                     <div class="flex items-center gap-2.5">
                         <span class="text-2xl">📋</span>
                         <div>
-                            <span class="text-[9px] font-black text-indigo-500 uppercase tracking-widest block leading-none">Condizioni Listino Riservate</span>
+                            <span class="text-[9px] font-black text-indigo-500 uppercase tracking-widest block leading-none">{{ $isEn ? 'Reserved Commercial Terms' : 'Condizioni Listino Riservate' }}</span>
                             <h4 class="font-black text-indigo-950 uppercase tracking-tight text-sm mt-0.5">
                                 {{ $assignedPriceList->name }}
                                 @if($order->customer)
-                                    <span class="text-xs font-bold text-gray-400 lowercase">per</span> <span class="text-xs font-black text-slate-900 uppercase">{{ $order->customer->business_name }}</span>
+                                    <span class="text-xs font-bold text-gray-400 lowercase">{{ $isEn ? 'for' : 'per' }}</span> <span class="text-xs font-black text-slate-900 uppercase">{{ $order->customer->business_name }}</span>
                                 @endif
                             </h4>
                         </div>
                     </div>
                     @if($assignedPriceList->general_discount_percent > 0)
                         <span class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full self-start sm:self-auto">
-                            Sconto Generale Listino: -{{ floatval($assignedPriceList->general_discount_percent) }}%
+                            {{ $isEn ? 'General Price List Discount:' : 'Sconto Generale Listino:' }} -{{ floatval($assignedPriceList->general_discount_percent) }}%
                         </span>
                     @endif
                 </div>
@@ -432,14 +443,14 @@
                                         @endif
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-[10px] text-gray-500 font-bold uppercase">Prezzo Base di Listino: € {{ number_format($uProd->price, 2, ',', '.') }}</span>
+                                        <span class="text-[10px] text-gray-500 font-bold uppercase">{{ $isEn ? 'Base List Price:' : 'Prezzo Base di Listino:' }} € {{ number_format($uProd->price, 2, ',', '.') }}</span>
                                         @if($specificTiers->isNotEmpty())
                                             <span class="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
-                                                ⭐ Regola Personalizzata Articolo
+                                                ⭐ {{ $isEn ? 'Item Custom Rule' : 'Regola Personalizzata Articolo' }}
                                             </span>
                                         @elseif($generalTiers->isNotEmpty())
                                             <span class="text-[9px] font-black bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-0.5 rounded-full">
-                                                📉 Fasce Sconto Quantità
+                                                📉 {{ $isEn ? 'Quantity Tiers' : 'Fasce Sconto Quantità' }}
                                             </span>
                                         @endif
                                     </div>
@@ -455,9 +466,9 @@
                                                 <div class="flex justify-between items-start mb-1">
                                                     <span class="text-[10px] font-black text-gray-600 uppercase">
                                                         @if($sTier->min_quantity > 1 || !empty($sTier->max_quantity))
-                                                            Da {{ $sTier->min_quantity }} {{ $sTier->max_quantity ? 'a ' . $sTier->max_quantity : 'in poi' }} pz
+                                                            {{ $isEn ? 'From ' . $sTier->min_quantity . ($sTier->max_quantity ? ' to ' . $sTier->max_quantity : ' pcs onwards') : 'Da ' . $sTier->min_quantity . ($sTier->max_quantity ? ' a ' . $sTier->max_quantity : ' in poi') . ' pz' }}
                                                         @else
-                                                            Tutte le Quantità (1+ pz)
+                                                            {{ $isEn ? 'All Quantities (1+ pcs)' : 'Tutte le Quantità (1+ pz)' }}
                                                         @endif
                                                     </span>
                                                     <span class="text-[9px] font-black text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300">
@@ -465,7 +476,7 @@
                                                     </span>
                                                 </div>
                                                 <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-amber-200/50">
-                                                    <span class="text-[10px] text-gray-500 font-bold">Prezzo Riservato:</span>
+                                                    <span class="text-[10px] text-gray-500 font-bold">{{ $isEn ? 'Reserved Price:' : 'Prezzo Riservato:' }}</span>
                                                     <span class="text-xs font-black text-indigo-700">€ {{ number_format($tierPrice, 2, ',', '.') }}</span>
                                                 </div>
                                             </div>
@@ -480,14 +491,14 @@
                                             <div class="bg-indigo-50/40 rounded-xl border border-indigo-100 p-2.5 flex flex-col justify-between">
                                                 <div class="flex justify-between items-start mb-1">
                                                     <span class="text-[10px] font-black text-gray-600 uppercase">
-                                                        {{ $gTier->min_quantity }}{{ $gTier->max_quantity ? '-' . $gTier->max_quantity : '+' }} pz
+                                                        {{ $gTier->min_quantity }}{{ $gTier->max_quantity ? '-' . $gTier->max_quantity : '+' }} {{ $isEn ? 'pcs' : 'pz' }}
                                                     </span>
                                                     <span class="text-[9px] font-black text-indigo-700 bg-indigo-100/80 px-1.5 py-0.5 rounded border border-indigo-200">
                                                         {{ $gTier->rule_summary }}
                                                     </span>
                                                 </div>
                                                 <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-indigo-100/60">
-                                                    <span class="text-[10px] text-gray-400 font-bold">Prezzo:</span>
+                                                    <span class="text-[10px] text-gray-400 font-bold">{{ $isEn ? 'Price:' : 'Prezzo:' }}</span>
                                                     <span class="text-xs font-black text-indigo-700">€ {{ number_format($gTierPrice, 2, ',', '.') }}</span>
                                                 </div>
                                             </div>
@@ -506,13 +517,13 @@
             <div class="w-full sm:max-w-sm text-xs text-gray-500 space-y-3">
                 @if($order->notes)
                     <div>
-                        <p class="font-black uppercase text-gray-400 text-[10px] mb-1">📝 Note del Cliente:</p>
+                        <p class="font-black uppercase text-gray-400 text-[10px] mb-1">📝 {{ $isEn ? 'Customer Notes:' : 'Note del Cliente:' }}</p>
                         <p class="italic bg-amber-50/50 p-3 rounded-xl border border-amber-200/80 text-gray-800 leading-relaxed whitespace-pre-line">{{ $order->notes }}</p>
                     </div>
                 @endif
                 @if($order->admin_notes)
                     <div>
-                        <p class="font-black uppercase text-indigo-700 text-[10px] mb-1">🏢 Note / Comunicazioni Sede & Agente:</p>
+                        <p class="font-black uppercase text-indigo-700 text-[10px] mb-1">🏢 {{ $isEn ? 'Notes / Communications from Sales & Headquarters:' : 'Note / Comunicazioni Sede & Agente:' }}</p>
                         <p class="font-medium bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 text-indigo-950 leading-relaxed whitespace-pre-line">{{ $order->admin_notes }}</p>
                     </div>
                 @endif
@@ -520,26 +531,26 @@
 
             <div class="w-full sm:w-80 space-y-2 bg-gray-50 p-5 rounded-2xl border border-gray-200 text-right">
                 <div class="flex justify-between text-xs text-gray-600">
-                    <span>Totale Capi / Paia:</span>
-                    <span class="font-bold text-slate-900">{{ $order->items->sum('quantity') }} pz</span>
+                    <span>{{ $isEn ? 'Total Pairs / Pieces:' : 'Totale Capi / Paia:' }}</span>
+                    <span class="font-bold text-slate-900">{{ $order->items->sum('quantity') }} {{ $isEn ? 'pcs' : 'pz' }}</span>
                 </div>
                 @if($totalSavings > 0)
                     <div class="flex justify-between text-xs text-gray-600">
-                        <span>Valore Base di Listino:</span>
+                        <span>{{ $isEn ? 'Standard List Value:' : 'Valore Base di Listino:' }}</span>
                         <span class="font-bold text-gray-500 line-through">€ {{ number_format($totalGross, 2, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between text-xs text-emerald-700 font-bold border-b border-gray-200 pb-2">
-                        <span>Sconto Riservato Applicato:</span>
+                        <span>{{ $isEn ? 'Applied Discount Savings:' : 'Sconto Riservato Applicato:' }}</span>
                         <span>- € {{ number_format($totalSavings, 2, ',', '.') }} ({{ number_format(($totalSavings / max(0.01, $totalGross)) * 100, 1) }}%)</span>
                     </div>
                 @else
                     <div class="flex justify-between text-xs text-gray-600 border-b border-gray-200 pb-2">
-                        <span>Imponibile Merce:</span>
+                        <span>{{ $isEn ? 'Taxable Amount:' : 'Imponibile Merce:' }}</span>
                         <span class="font-bold text-slate-900">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
                     </div>
                 @endif
                 <div class="flex justify-between text-base font-black text-slate-900 pt-1">
-                    <span class="uppercase">TOTALE ORDINE:</span>
+                    <span class="uppercase">{{ $isEn ? 'ORDER TOTAL:' : 'TOTALE ORDINE:' }}</span>
                     <span class="text-indigo-600">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
                 </div>
             </div>
@@ -548,14 +559,14 @@
         <!-- Footer -->
         <div class="mt-12 pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-2 text-[10px] text-gray-400 page-break-inside-avoid">
             <p>
-                Documento generato dal Portale B2B BICAP - {{ date('d/m/Y H:i') }} 
+                {{ $isEn ? 'Document generated by BICAP B2B Portal' : 'Documento generato dal Portale B2B BICAP' }} - {{ date('d/m/Y H:i') }} 
                 @if($order->status === 'confirmed')
-                    • <span class="text-emerald-700 font-bold uppercase">ORDINE CONFERMATO</span>
+                    • <span class="text-emerald-700 font-bold uppercase">{{ $isEn ? 'ORDER CONFIRMED' : 'ORDINE CONFERMATO' }}</span>
                 @else
-                    • <span class="text-amber-700 font-bold uppercase">STATO: {{ strtoupper($order->status_label) }} (NON CONFERMATO)</span>
+                    • <span class="text-amber-700 font-bold uppercase">{{ $isEn ? 'STATUS: ' . strtoupper($order->status_label) . ' (NOT CONFIRMED)' : 'STATO: ' . strtoupper($order->status_label) . ' (NON CONFERMATO)' }}</span>
                 @endif
             </p>
-            <p class="font-bold uppercase">Calzaturificio 5Bi S.r.l. - Barletta (BT) - www.bicap.it</p>
+            <p class="font-bold uppercase">Calzaturificio 5Bi S.r.l. - Barletta (BT) Italy - www.bicap.it</p>
         </div>
     </div>
 

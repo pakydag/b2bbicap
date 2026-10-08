@@ -236,11 +236,25 @@
                                 </td>
                                 <td class="px-4 py-2.5">
                                     <div class="font-black text-slate-900">{{ $customer->business_name }}</div>
-                                    @if($customer->user)
-                                        <span class="inline-block text-[10px] text-emerald-700 font-bold" title="{{ $customer->user->email }}">
-                                            ✓ B2B ({{ $customer->user->email }})
-                                        </span>
-                                    @endif
+                                    <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                        @if($customer->user)
+                                            <span class="inline-block text-[10px] text-emerald-700 font-bold" title="{{ $customer->user->email }}">
+                                                ✓ B2B ({{ $customer->user->email }})
+                                            </span>
+                                        @endif
+                                        @php
+                                            $custLocale = $customer->user?->locale ?? $customer->locale ?? 'it';
+                                        @endphp
+                                        @if($custLocale === 'en')
+                                            <span class="inline-block text-[9px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded" title="Lingua portale: Inglese">
+                                                🇬🇧 EN
+                                            </span>
+                                        @else
+                                            <span class="inline-block text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded" title="Lingua portale: Italiano">
+                                                🇮🇹 IT
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-3 py-2.5 whitespace-nowrap text-gray-600 font-mono">{{ $customer->vat_number ?? '-' }}</td>
                                 <td class="px-3 py-2.5 text-gray-600 whitespace-nowrap">{{ $customer->contact_name }} {{ $customer->contact_surname }}</td>

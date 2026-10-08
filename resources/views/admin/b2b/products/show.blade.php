@@ -16,6 +16,13 @@
                         <span class="text-[10px] text-indigo-600 font-normal">({{ $lastGiacenzeSync->diffForHumans() }})</span>
                     </span>
                 @endif
+                <form action="{{ route('admin.b2b.products.destroy', $product) }}" method="POST" onsubmit="return confirm('Sei sicuro di voler eliminare definitivamente il prodotto \'{{ addslashes($product->name) }}\' (Cod. {{ $product->code }}) dall\'inventario B2B?');" class="inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="inline-flex items-center gap-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow cursor-pointer">
+                        🗑️ Elimina Prodotto
+                    </button>
+                </form>
                 <a href="{{ route('admin.b2b.products.index') }}" class="inline-flex items-center gap-1 px-4 py-2 bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-wider hover:bg-yellow-400 hover:text-slate-950 transition shadow">
                     ← Torna all'Inventario
                 </a>

@@ -8,9 +8,10 @@
                 {{ $product->name }}
             </h2>
         </div>
-    </x-slot>
-
-    @php
+    </x-slot>    @php
+        $locale = app()->getLocale();
+        $isEn = ($locale === 'en');
+        $isIt = !$isEn;
         $c = $product->characteristics ?? [];
         $gallery = [];
         
@@ -144,40 +145,36 @@
             </div>
 
             <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-                <h3 class="font-black text-sm uppercase tracking-widest text-gray-500 mb-4 border-b pb-2">Dettagli Articolo</h3>
+                <h3 class="font-black text-sm uppercase tracking-widest text-gray-500 mb-4 border-b pb-2">{{ $isEn ? 'Article Details' : 'Dettagli Articolo' }}</h3>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                     <div>
-                        <p class="text-gray-500 font-bold uppercase text-xs mb-1">Codice</p>
+                        <p class="text-gray-500 font-bold uppercase text-xs mb-1">{{ $isEn ? 'Code' : 'Codice' }}</p>
                         <p class="font-black text-slate-900">{{ $product->code ?? 'N/D' }}</p>
                     </div>
                     <div>
-                        <p class="text-gray-500 font-bold uppercase text-xs mb-1">Linea</p>
+                        <p class="text-gray-500 font-bold uppercase text-xs mb-1">{{ $isEn ? 'Line / Brand' : 'Linea' }}</p>
                         <p class="font-black text-slate-900">{{ $product->brand->name }}</p>
                     </div>
                     <div>
-                        <p class="text-gray-500 font-bold uppercase text-xs mb-1">Stagione</p>
+                        <p class="text-gray-500 font-bold uppercase text-xs mb-1">{{ $isEn ? 'Season' : 'Stagione' }}</p>
                         <p class="font-black text-slate-900">{{ $product->season ?? 'N/D' }}</p>
                     </div>
                     <div>
-                        <p class="text-gray-500 font-bold uppercase text-xs mb-1">Stato Giacenze</p>
+                        <p class="text-gray-500 font-bold uppercase text-xs mb-1">{{ $isEn ? 'Stock Status' : 'Stato Giacenze' }}</p>
                         @if($giacenzaMatch)
-                            <p class="font-black text-emerald-600 uppercase text-xs">Sincronizzato</p>
+                            <p class="font-black text-emerald-600 uppercase text-xs">{{ $isEn ? 'Synchronized' : 'Sincronizzato' }}</p>
                         @else
-                            <p class="font-black text-rose-500 uppercase text-xs">Non Sincronizzato</p>
+                            <p class="font-black text-rose-500 uppercase text-xs">{{ $isEn ? 'Not Synchronized' : 'Non Sincronizzato' }}</p>
                         @endif
                     </div>
                 </div>
                 <div class="mt-6">
-                    <p class="text-gray-500 font-bold uppercase text-xs mb-1">Descrizione</p>
-                    <p class="text-sm text-gray-700 font-medium leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">{{ $product->description ?? 'Nessuna descrizione disponibile per questo articolo.' }}</p>
+                    <p class="text-gray-500 font-bold uppercase text-xs mb-1">{{ $isEn ? 'Description' : 'Descrizione' }}</p>
+                    <p class="text-sm text-gray-700 font-medium leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">{{ $product->localized_description ?: ($isEn ? 'No description available for this item.' : 'Nessuna descrizione disponibile per questo articolo.') }}</p>
                 </div>
             </div>
 
             @php
-                $locale = app()->getLocale();
-                $isIt = ($locale === 'it');
-                $c = $product->characteristics ?? [];
-                
                 $specs = [];
                 if (!empty($c)) {
                     if (!empty($c['CAT-SICUREZZA'])) $specs[$isIt ? 'Categoria di Sicurezza' : 'Safety Category'] = $c['CAT-SICUREZZA'];
@@ -188,25 +185,30 @@
                     if (!empty($c['MODELLO'])) $specs[$isIt ? 'Modello' : 'Model'] = $c['MODELLO'];
                     
                     $settoreKey = $isIt ? 'SETTORE-DI-UTILIZZO-IT' : 'SETTORE-DI-UTILIZZO-EN';
-                    if (!empty($c[$settoreKey])) $specs[$isIt ? 'Settori di Utilizzo' : 'Work Environments'] = $c[$settoreKey];
+                    $settoreVal = !empty($c[$settoreKey]) ? $c[$settoreKey] : ($c['SETTORE-DI-UTILIZZO-IT'] ?? '');
+                    if (!empty($settoreVal)) $specs[$isIt ? 'Settori di Utilizzo' : 'Work Environments'] = $settoreVal;
                     
                     $tomaiaKey = $isIt ? 'tomaia-descrizione-it' : 'tomaia-descrizione-en';
                     $tomaiaVal = !empty($c[$tomaiaKey]) ? $c[$tomaiaKey] : ($c['PUNTALE'] ?? '');
                     if (!empty($tomaiaVal)) $specs[$isIt ? 'Tomaia' : 'Upper'] = $tomaiaVal;
                     
                     $foderaKey = $isIt ? 'fodera-descrizione-it' : 'fodera-descrizione-en';
-                    if (!empty($c[$foderaKey])) $specs[$isIt ? 'Fodera' : 'Lining'] = $c[$foderaKey];
+                    $foderaVal = !empty($c[$foderaKey]) ? $c[$foderaKey] : ($c['fodera-descrizione-it'] ?? '');
+                    if (!empty($foderaVal)) $specs[$isIt ? 'Fodera' : 'Lining'] = $foderaVal;
                     
                     $puntaleDescKey = $isIt ? 'puntale-descrizione-it' : 'puntale-descrizione-en';
-                    if (!empty($c[$puntaleDescKey])) {
-                        $specs[$isIt ? 'Puntale' : 'Toe Cap'] = $c[$puntaleDescKey];
+                    $puntaleDescVal = !empty($c[$puntaleDescKey]) ? $c[$puntaleDescKey] : ($c['puntale-descrizione-it'] ?? '');
+                    if (!empty($puntaleDescVal)) {
+                        $specs[$isIt ? 'Puntale' : 'Toe Cap'] = $puntaleDescVal;
                     }
                     
                     $laminaKey = $isIt ? 'lamina-descrizione-it' : 'lamina-descrizione-en';
-                    if (!empty($c[$laminaKey])) $specs[$isIt ? 'Lamina Antiperforazione' : 'Anti-Perforation Insert'] = $c[$laminaKey];
+                    $laminaVal = !empty($c[$laminaKey]) ? $c[$laminaKey] : ($c['lamina-descrizione-it'] ?? '');
+                    if (!empty($laminaVal)) $specs[$isIt ? 'Lamina Antiperforazione' : 'Anti-Perforation Insert'] = $laminaVal;
                     
                     $suolaKey = $isIt ? 'suola-descrizione-it' : 'suola-descrizione-en';
-                    if (!empty($c[$suolaKey])) $specs[$isIt ? 'Suola' : 'Outsole'] = $c[$suolaKey];
+                    $suolaVal = !empty($c[$suolaKey]) ? $c[$suolaKey] : ($c['suola-descrizione-it'] ?? '');
+                    if (!empty($suolaVal)) $specs[$isIt ? 'Suola' : 'Outsole'] = $suolaVal;
                 }
             @endphp
 
@@ -234,22 +236,22 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     @if(!empty($c[$isIt ? 'URL-TDS IT' : 'URL-TDS-EN']))
                         <a href="{{ $c[$isIt ? 'URL-TDS IT' : 'URL-TDS-EN'] }}" target="_blank" class="inline-flex items-center text-xs font-black uppercase text-indigo-600 hover:text-indigo-800 transition">
-                            📄 Scheda Tecnica (TDS)
+                            📄 {{ $isIt ? 'Scheda Tecnica (TDS)' : 'Technical Data Sheet (TDS)' }}
                         </a>
                     @endif
                     @if(!empty($c[$isIt ? 'URL-CATALOGO-IT' : 'URL-CATALOGO-EN']))
                         <a href="{{ $c[$isIt ? 'URL-CATALOGO-IT' : 'URL-CATALOGO-EN'] }}" target="_blank" class="inline-flex items-center text-xs font-black uppercase text-indigo-600 hover:text-indigo-800 transition">
-                            📖 Catalogo Brand
+                            📖 {{ $isIt ? 'Catalogo Brand' : 'Brand Catalog' }}
                         </a>
                     @endif
                     @if(!empty($c[$isIt ? 'URL-DICHIARAZIONE-CONFORMITA-IT' : 'URL-DICHIARAZIONE-CONFORMITA-EN']))
                         <a href="{{ $c[$isIt ? 'URL-DICHIARAZIONE-CONFORMITA-IT' : 'URL-DICHIARAZIONE-CONFORMITA-EN'] }}" target="_blank" class="inline-flex items-center text-xs font-black uppercase text-indigo-600 hover:text-indigo-800 transition">
-                            🛡️ Dichiarazione Conformità UE
+                            🛡️ {{ $isIt ? 'Dichiarazione Conformità UE' : 'EU Declaration of Conformity' }}
                         </a>
                     @endif
                     @if(!empty($c['URL-NOTA-INFORMATIVA']))
                         <a href="{{ $c['URL-NOTA-INFORMATIVA'] }}" target="_blank" class="inline-flex items-center text-xs font-black uppercase text-indigo-600 hover:text-indigo-800 transition">
-                            ℹ️ Nota Informativa
+                            ℹ️ {{ $isIt ? 'Nota Informativa' : 'Information Note' }}
                         </a>
                     @endif
                 </div>
@@ -295,11 +297,11 @@
                                         }
                                     @endphp
                                     <span class="text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full shadow-2xs">
-                                        ⭐ LISTINO PERSONALIZZATO: PREZZO NETTO € {{ number_format($priceDetails['discount_value'], 2, ',', '.') }}{{ !empty($extraDiscounts) ? ' (' . implode(' ', $extraDiscounts) . ')' : '' }}
+                                        ⭐ {{ $isEn ? 'CUSTOM PRICE LIST: NET PRICE' : 'LISTINO PERSONALIZZATO: PREZZO NETTO' }} € {{ number_format($priceDetails['discount_value'], 2, ',', '.') }}{{ !empty($extraDiscounts) ? ' (' . implode(' ', $extraDiscounts) . ')' : '' }}
                                     </span>
                                 @else
                                     <span class="text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full shadow-2xs">
-                                        ⭐ LISTINO PERSONALIZZATO ({{ $priceDetails['rule_summary'] ?? 'Prezzo Dedicato' }})
+                                        ⭐ {{ $isEn ? 'CUSTOM PRICE LIST' : 'LISTINO PERSONALIZZATO' }} ({{ $priceDetails['rule_summary'] ?? ($isEn ? 'Dedicated Price' : 'Prezzo Dedicato') }})
                                     </span>
                                 @endif
                             @elseif(($priceDetails['discount_type'] ?? '') === 'fixed_price')
@@ -315,15 +317,15 @@
                                 @endphp
                                 @if(!empty($extraDiscounts))
                                     <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
-                                        PREZZO NETTO RISERVATO (€ {{ number_format($priceDetails['discount_value'], 2, ',', '.') }} {{ implode(' ', $extraDiscounts) }})
+                                        {{ $isEn ? 'DEDICATED NET PRICE' : 'PREZZO NETTO RISERVATO' }} (€ {{ number_format($priceDetails['discount_value'], 2, ',', '.') }} {{ implode(' ', $extraDiscounts) }})
                                     </span>
                                 @elseif($calcDiscountPct > 0)
                                     <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
-                                        PREZZO NETTO RISERVATO (-{{ number_format($calcDiscountPct, 1) }}%)
+                                        {{ $isEn ? 'DEDICATED NET PRICE' : 'PREZZO NETTO RISERVATO' }} (-{{ number_format($calcDiscountPct, 1) }}%)
                                     </span>
                                 @else
                                     <span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
-                                        PREZZO NETTO RISERVATO
+                                        {{ $isEn ? 'DEDICATED NET PRICE' : 'PREZZO NETTO RISERVATO' }}
                                     </span>
                                 @endif
                             @else
@@ -337,7 +339,7 @@
                                     }
                                 @endphp
                                 <span class="text-[10px] font-black bg-indigo-50 text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded-full">
-                                    📉 SCONTO QUANTITÀ AZIENDA ({{ implode(' ', $pctParts) }})
+                                    📉 {{ $isEn ? 'COMPANY VOLUME DISCOUNT' : 'SCONTO QUANTITÀ AZIENDA' }} ({{ implode(' ', $pctParts) }})
                                 </span>
                             @endif
                         </div>
@@ -352,23 +354,27 @@
                 
                 <div class="flex items-center gap-2 shrink-0">
                     <button type="button" @click="showDetails = !showDetails" class="bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-black hover:border-yellow-400 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
-                        <span x-text="showDetails ? '⬅️ Espandi Griglia (Schermo Intero)' : '➡️ Mostra Foto Prodotto'"></span>
+                        <span x-text="showDetails ? '{{ $isEn ? '⬅️ Expand Grid (Full Screen)' : '⬅️ Espandi Griglia (Schermo Intero)' }}' : '{{ $isEn ? '➡️ Show Product Photos' : '➡️ Mostra Foto Prodotto' }}'"></span>
                     </button>
                 </div>
             </div>
 
             @php
                 $currentCustomer = $customer ?? (auth()->user()->role === 'customer' ? auth()->user()->b2bCustomer : null);
-                if (!isset($assignedPriceList) && $currentCustomer && $currentCustomer->b2b_price_list_id) {
+                $assignedPriceList = $assignedPriceList ?? null;
+                $specificTiers = $specificTiers ?? null;
+                $generalTiers = $generalTiers ?? null;
+
+                if (!$assignedPriceList && $currentCustomer && $currentCustomer->b2b_price_list_id) {
                     $assignedPriceList = \App\Models\B2bPriceList::find($currentCustomer->b2b_price_list_id);
                 }
-                if ((!isset($specificTiers) || $specificTiers->isEmpty()) && $assignedPriceList) {
+                if ((!$specificTiers || $specificTiers->isEmpty()) && $assignedPriceList) {
                     $specificTiers = \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
                         ->where('b2b_product_id', $product->id)
                         ->orderBy('min_quantity', 'asc')
                         ->get();
                 }
-                if ((!isset($generalTiers) || $generalTiers->isEmpty()) && $assignedPriceList) {
+                if ((!$generalTiers || $generalTiers->isEmpty()) && $assignedPriceList) {
                     $generalTiers = \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
                         ->whereNull('b2b_product_id')
                         ->orderBy('min_quantity', 'asc')
@@ -383,22 +389,22 @@
                         <div class="flex items-center gap-2.5">
                             <span class="text-2xl">📋</span>
                             <div>
-                                <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block leading-none">Condizioni Listino Riservate</span>
+                                <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block leading-none">{{ $isEn ? 'Dedicated Price List Conditions' : 'Condizioni Listino Riservate' }}</span>
                                 <h4 class="font-black text-indigo-950 uppercase tracking-tight text-sm mt-0.5">
-                                    {{ $assignedPriceList ? $assignedPriceList->name : 'Listino Prezzi Standard' }}
+                                    {{ $assignedPriceList ? $assignedPriceList->name : ($isEn ? 'Standard Price List' : 'Listino Prezzi Standard') }}
                                     @if($currentCustomer)
-                                        <span class="text-xs font-bold text-gray-400 lowercase">per</span> <span class="text-xs font-black text-slate-900 uppercase">{{ $currentCustomer->business_name }}</span>
+                                        <span class="text-xs font-bold text-gray-400 lowercase">{{ $isEn ? 'for' : 'per' }}</span> <span class="text-xs font-black text-slate-900 uppercase">{{ $currentCustomer->business_name }}</span>
                                     @endif
                                 </h4>
                             </div>
                         </div>
                         @if($specificTiers && $specificTiers->count() > 0)
                             <span class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-2xs self-start sm:self-auto">
-                                ⭐ Listino Personalizzato Articolo
+                                ⭐ {{ $isEn ? 'Custom Article Price List' : 'Listino Personalizzato Articolo' }}
                             </span>
                         @elseif($generalTiers && $generalTiers->count() > 0)
                             <span class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-2xs self-start sm:self-auto">
-                                📉 Sconto Quantità da Listino
+                                📉 {{ $isEn ? 'Volume Discount' : 'Sconto Quantità da Listino' }}
                             </span>
                         @endif
                     </div>
@@ -408,9 +414,9 @@
                         <div class="space-y-2">
                             <div class="flex items-center justify-between">
                                 <p class="text-xs font-black text-amber-950 uppercase tracking-tight flex items-center gap-1.5">
-                                    <span>🎯</span> Regola Personalizzata per {{ $product->name }}
+                                    <span>🎯</span> {{ $isEn ? 'Custom Rule for' : 'Regola Personalizzata per' }} {{ $product->name }}
                                 </p>
-                                <span class="text-[10px] text-gray-400 font-bold uppercase">Prezzo Base di Listino: € {{ number_format($product->price, 2, ',', '.') }}</span>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">{{ $isEn ? 'Base List Price:' : 'Prezzo Base di Listino:' }} € {{ number_format($product->price, 2, ',', '.') }}</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                                 @foreach($specificTiers as $sTier)
@@ -421,9 +427,9 @@
                                         <div class="flex justify-between items-start mb-1">
                                             <span class="text-[10px] font-black text-gray-500 uppercase">
                                                 @if($sTier->min_quantity > 1 || !empty($sTier->max_quantity))
-                                                    Da {{ $sTier->min_quantity }} {{ $sTier->max_quantity ? 'a ' . $sTier->max_quantity : 'in poi' }} pz
+                                                    {{ $isEn ? 'From ' . $sTier->min_quantity . ($sTier->max_quantity ? ' to ' . $sTier->max_quantity : '+') . ' pcs' : 'Da ' . $sTier->min_quantity . ' ' . ($sTier->max_quantity ? 'a ' . $sTier->max_quantity : 'in poi') . ' pz' }}
                                                 @else
-                                                    Tutte le Quantità (1+ pz)
+                                                    {{ $isEn ? 'All Quantities (1+ pcs)' : 'Tutte le Quantità (1+ pz)' }}
                                                 @endif
                                             </span>
                                             <span class="text-[9px] font-black text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
@@ -431,14 +437,14 @@
                                             </span>
                                         </div>
                                         <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-gray-50">
-                                            <span class="text-xs text-gray-500 font-bold">Prezzo Riservato:</span>
+                                            <span class="text-xs text-gray-500 font-bold">{{ $isEn ? 'Reserved Price:' : 'Prezzo Riservato:' }}</span>
                                             <span class="text-base font-black text-indigo-700">€ {{ number_format($tierPrice, 2, ',', '.') }}</span>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
                             <p class="text-[10px] text-amber-800 font-semibold italic mt-1">
-                                Questo articolo gode di un prezzo/sconto esclusivo configurato specificamente nel listino aziendale.
+                                {{ $isEn ? 'This item benefits from an exclusive price/discount configured specifically in your company price list.' : 'Questo articolo gode di un prezzo/sconto esclusivo configurato specificamente nel listino aziendale.' }}
                             </p>
                         </div>
                     @elseif($generalTiers && $generalTiers->count() > 0)
@@ -446,9 +452,9 @@
                         <div class="space-y-2">
                             <div class="flex items-center justify-between">
                                 <p class="text-xs font-black text-indigo-950 uppercase tracking-tight flex items-center gap-1.5">
-                                    <span>📊</span> Fasce di Sconto Quantità Applicabili a questo Articolo
+                                    <span>📊</span> {{ $isEn ? 'Quantity Discount Tiers Applicable to this Item' : 'Fasce di Sconto Quantità Applicabili a questo Articolo' }}
                                 </p>
-                                <span class="text-[10px] text-gray-400 font-bold uppercase">Prezzo Base di Listino: € {{ number_format($product->price, 2, ',', '.') }}</span>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">{{ $isEn ? 'Base List Price:' : 'Prezzo Base di Listino:' }} € {{ number_format($product->price, 2, ',', '.') }}</span>
                             </div>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 @foreach($generalTiers as $gTier)
@@ -458,7 +464,7 @@
                                     <div class="bg-white rounded-2xl border border-indigo-100 p-3 shadow-2xs flex flex-col justify-between">
                                         <div class="flex justify-between items-start mb-1">
                                             <span class="text-[10px] font-black text-gray-500 uppercase">
-                                                {{ $gTier->min_quantity }}{{ $gTier->max_quantity ? '-' . $gTier->max_quantity : '+' }} pz
+                                                {{ $gTier->min_quantity }}{{ $gTier->max_quantity ? '-' . $gTier->max_quantity : '+' }} {{ $isEn ? 'pcs' : 'pz' }}
                                             </span>
                                             <span class="text-[9px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
                                                 @if($gTier->discount_type === 'percentage')
@@ -471,14 +477,14 @@
                                             </span>
                                         </div>
                                         <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-gray-50">
-                                            <span class="text-[10px] text-gray-400 font-bold">Prezzo:</span>
+                                            <span class="text-[10px] text-gray-400 font-bold">{{ $isEn ? 'Price:' : 'Prezzo:' }}</span>
                                             <span class="text-sm font-black text-indigo-700">€ {{ number_format($gTierPrice, 2, ',', '.') }}</span>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
                             <p class="text-[10px] text-indigo-500 font-semibold italic mt-1">
-                                Lo sconto per quantità viene calcolato sul totale complessivo dei pezzi ordinati all'interno dello stesso gruppo di consegna nel carrello.
+                                {{ $isEn ? 'The quantity discount is calculated on the total pieces ordered within the same delivery group in the cart.' : 'Lo sconto per quantità viene calcolato sul totale complessivo dei pezzi ordinati all\'interno dello stesso gruppo di consegna nel carrello.' }}
                             </p>
                         </div>
                     @endif
@@ -489,9 +495,9 @@
                 <!-- Prodotto Non Sincronizzato -->
                 <div class="bg-rose-50 border border-rose-100 rounded-3xl p-8 text-center space-y-4">
                     <span class="text-5xl block">⚠️</span>
-                    <h4 class="text-rose-800 font-black uppercase text-lg tracking-wider">NON SINCRONIZZATO</h4>
+                    <h4 class="text-rose-800 font-black uppercase text-lg tracking-wider">{{ $isEn ? 'NOT SYNCHRONIZED' : 'NON SINCRONIZZATO' }}</h4>
                     <p class="text-sm text-rose-700 leading-relaxed max-w-md mx-auto">
-                        Questo articolo non è attualmente allineato con il sistema di gestione del magazzino. La prenotazione e l'ordine delle taglie non sono disponibili per questo prodotto.
+                        {{ $isEn ? 'This item is not currently synchronized with the warehouse management system. Size reservations and orders are not available for this product.' : 'Questo articolo non è attualmente allineato con il sistema di gestione del magazzino. La prenotazione e l\'ordine delle taglie non sono disponibili per questo prodotto.' }}
                     </p>
                 </div>
             @else
@@ -536,14 +542,14 @@
                     <div class="mb-12">
                         <h4 class="font-black text-sm uppercase tracking-widest text-indigo-600 mb-6 flex items-center gap-3">
                             <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
-                            Disponibilità Immediata (Pronta Consegna)
+                            {{ $isEn ? 'Immediate Availability (Ready for Delivery)' : 'Disponibilità Immediata (Pronta Consegna)' }}
                         </h4>
                         
                         <div class="overflow-x-auto pb-4">
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="text-base font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                                        <th class="py-6 px-4 whitespace-nowrap">Variante / Colore</th>
+                                        <th class="py-6 px-4 whitespace-nowrap">{{ $isEn ? 'Variant / Color' : 'Variante / Colore' }}</th>
                                         @foreach($sizes as $size)
                                             <th class="py-6 px-3 text-center whitespace-nowrap">{{ $size }}</th>
                                         @endforeach
@@ -555,7 +561,7 @@
                                             <td class="py-8 px-4">
                                                 <div class="flex items-center">
                                                     <div class="w-3 h-3 rounded-full mr-4 bg-indigo-500"></div>
-                                                    <span class="text-base font-black text-gray-900 uppercase">{{ $color }}</span>
+                                                    <span class="text-base font-black text-gray-900 uppercase">{{ (strtoupper($color) === 'UNICO') ? ($isEn ? 'UNIQUE' : 'UNICO') : $color }}</span>
                                                 </div>
                                             </td>
                                             @foreach($sizes as $size)
@@ -583,11 +589,11 @@
                                                                 </span>
                                                             @elseif($qtyAvailable <= 5 && $qtyAvailable > 0)
                                                                 <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-orange-500 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-orange-50 mb-1">
-                                                                    SOLO {{ $qtyAvailable }}
+                                                                    {{ $isEn ? 'ONLY ' : 'SOLO ' }}{{ $qtyAvailable }}
                                                                 </span>
                                                             @elseif($qtyAvailable <= 0)
                                                                 <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-rose-400 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-rose-50 mb-1">
-                                                                    ESAU.
+                                                                    {{ $isEn ? 'OOS' : 'ESAU.' }}
                                                                 </span>
                                                             @endif
                                                         </div>
@@ -618,17 +624,17 @@
                             <div class="bg-indigo-50/40 rounded-3xl p-8 border border-indigo-100">
                                 <h4 class="font-black text-sm uppercase tracking-widest text-indigo-800 mb-2 flex items-center gap-3">
                                     <span class="w-3 h-3 rounded-full bg-indigo-600 animate-pulse"></span>
-                                    Prenotazione Disponibilità Future
+                                    {{ $isEn ? 'Pre-Order Future Availability' : 'Prenotazione Disponibilità Future' }}
                                 </h4>
                                 <p class="text-xs font-bold text-indigo-600/80 uppercase tracking-widest mb-6">
-                                    Arrivi previsti: {{ $datesListText }}
+                                    {{ $isEn ? 'Expected arrivals:' : 'Arrivi previsti:' }} {{ $datesListText }}
                                 </p>
                                 
                                 <div class="overflow-x-auto pb-4">
                                     <table class="w-full text-left border-collapse">
                                         <thead>
                                             <tr class="text-base font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                                                <th class="py-6 px-4 whitespace-nowrap">Variante / Colore</th>
+                                                <th class="py-6 px-4 whitespace-nowrap">{{ $isEn ? 'Variant / Color' : 'Variante / Colore' }}</th>
                                                 @foreach($sizes as $size)
                                                     <th class="py-6 px-3 text-center whitespace-nowrap">{{ $size }}</th>
                                                 @endforeach
@@ -640,7 +646,7 @@
                                                     <td class="py-8 px-4">
                                                         <div class="flex items-center">
                                                             <div class="w-3 h-3 rounded-full mr-4 bg-indigo-400"></div>
-                                                            <span class="text-base font-black text-gray-900 uppercase">{{ $color }}</span>
+                                                            <span class="text-base font-black text-gray-900 uppercase">{{ (strtoupper($color) === 'UNICO') ? ($isEn ? 'UNIQUE' : 'UNICO') : $color }}</span>
                                                         </div>
                                                     </td>
                                                     @foreach($sizes as $size)
@@ -688,19 +694,19 @@
                     <!-- Sezione Riepilogo e Invio al Carrello -->
                     <div class="mt-12 bg-gray-50 rounded-[32px] p-8 border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
                         <div>
-                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Riepilogo Selezione</span>
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">{{ $isEn ? 'Selection Summary' : 'Riepilogo Selezione' }}</span>
                             <div class="flex items-baseline gap-2">
                                 <span id="total-qty-display" class="text-4xl font-black text-slate-900 leading-none">0</span>
-                                <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Pezzi Totali</span>
+                                <span class="text-xs font-black text-slate-400 uppercase tracking-widest">{{ $isEn ? 'Total Pieces' : 'Pezzi Totali' }}</span>
                             </div>
                         </div>
                         
                         <button type="submit" class="w-full md:w-auto px-12 bg-black border border-zinc-950 text-white py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:border-yellow-400 hover:text-yellow-400 shadow-xl shadow-black/10 transition duration-300 flex items-center justify-center gap-3">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            Aggiungi al Carrello
+                            {{ $isEn ? 'Add to Cart' : 'Aggiungi al Carrello' }}
                         </button>
                     </div>
-                    <p class="text-[10px] text-slate-400 text-center mt-4 font-black uppercase tracking-widest opacity-60">L'ordine verrà salvato come bozza nel carrello B2B.</p>
+                    <p class="text-[10px] text-slate-400 text-center mt-4 font-black uppercase tracking-widest opacity-60">{{ $isEn ? 'The order will be saved as a draft in your B2B cart.' : 'L\'ordine verrà salvato come bozza nel carrello B2B.' }}</p>
                 </form>
             @endif
         </div>

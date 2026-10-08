@@ -135,9 +135,26 @@ class B2bProductController extends Controller
         return redirect()->route('admin.b2b.products.index')->with('error', 'Le informazioni sui prodotti provengono dai file e non possono essere modificate manualmente.');
     }
 
+    /**
+     * Elimina un prodotto dall'inventario B2B.
+     */
     public function destroy(\App\Models\B2bProduct $product)
     {
-        return redirect()->route('admin.b2b.products.index')->with('error', 'I prodotti provengono dai file di sincronizzazione e non possono essere eliminati manualmente.');
+        $name = $product->name;
+        $code = $product->code ?? $product->id;
+
+        try {
+            // Elimina varianti collegate e regole listino specifiche
+            $product->variants()->delete();
+            $product->priceListItems()->delete();
+            $product->delete();
+
+            return redirect()->route('admin.b2b.products.index')
+                ->with('success', "Il prodotto '{$name}' (Cod. {$code}) è stato eliminato con successo dall'inventario B2B.");
+        } catch (\Exception $e) {
+            return redirect()->route('admin.b2b.products.index')
+                ->with('error', "Impossibile eliminare il prodotto '{$name}': " . $e->getMessage());
+        }
     }
 
     /**

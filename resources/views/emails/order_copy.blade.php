@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="{{ ($isEn ?? false) ? 'en' : 'it' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Riepilogo Ordine B2B' }}</title>
+    <title>{{ $title ?? (($isEn ?? false) ? 'B2B Order Confirmation' : 'Riepilogo Ordine B2B') }}</title>
     <style>
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; margin: 0; padding: 0; background-color: #f1f5f9; }
         .wrapper { max-width: 650px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
@@ -49,6 +49,7 @@
 <body>
     <div class="wrapper">
         @php
+            $isEnglish = ($isEn ?? false) || ($order->customer?->user?->locale ?? $order->customer?->locale ?? '') === 'en';
             $logoLocalPath = public_path('storage/logo-bicap.png');
             if (!file_exists($logoLocalPath)) {
                 $logoLocalPath = storage_path('app/public/logo-bicap.png');
@@ -63,324 +64,551 @@
             @elseif($hasLocalLogo)
                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoLocalPath)) }}" alt="BICAP">
             @endif
-            <p>{{ $title ?? 'Riepilogo Ordine B2B' }}</p>
+            <p>{{ $title ?? ($isEnglish ? 'B2B Order Confirmation' : 'Riepilogo Ordine B2B') }}</p>
         </div>
         
         <div class="content">
-            @if($isAgentRecipient && $agent)
-                <p class="greeting">Gentile <strong>{{ $agent->name }} {{ $agent->surname }}</strong>,</p>
-                <p class="text-lead">
-                    Di seguito trovi i dettagli dell'aggiornamento per l'<strong>Ordine B2B #{{ $order->id }}</strong> del cliente <strong>{{ $order->customer->business_name ?? 'Cliente' }}</strong> su <strong>{{ $companyName }}</strong>.
-                </p>
-            @else
-                <p class="greeting">Gentile <strong>{{ $order->customer->business_name ?? 'Cliente' }}</strong>,</p>
-                <p class="text-lead">
-                    Di seguito trovi il riepilogo dettagliato del tuo <strong>Ordine B2B #{{ $order->id }}</strong> trasmesso sul portale <strong>{{ $companyName }}</strong>.
-                </p>
-            @endif
+            @if($isEnglish)
+                @if($isAgentRecipient && $agent)
+                    <p class="greeting">Dear <strong>{{ $agent->name }} {{ $agent->surname }}</strong>,</p>
+                    <p class="text-lead">
+                        Below are the order details for <strong>B2B Order #{{ $order->id }}</strong> placed by <strong>{{ $order->customer->business_name ?? 'Customer' }}</strong> on <strong>{{ $companyName }}</strong>.
+                    </p>
+                @else
+                    <p class="greeting">Dear <strong>{{ $order->customer->business_name ?? 'Customer' }}</strong>,</p>
+                    <p class="text-lead">
+                        Below is the summary of your <strong>B2B Order #{{ $order->id }}</strong> placed on the <strong>{{ $companyName }}</strong> portal.
+                    </p>
+                @endif
 
-            <!-- Box Avviso Stato e Conferma Agente -->
-            @if($order->status === 'confirmed')
-                <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #16a34a; border-radius: 10px;">
-                    <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">
-                        ✓ Ordine Confermato Definitivamente
-                    </h4>
-                    <p style="margin: 0; font-size: 12.5px; color: #14532d; line-height: 1.55;">
-                        Il tuo ordine è stato <strong>verificato e confermato dall'agente commerciale / amministrazione</strong> ed è attualmente in lavorazione per la preparazione ed evasione.
-                    </p>
-                </div>
-            @elseif($order->status === 'revision_pending')
-                <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fffbeb; border: 1px solid #fde68a; border-left: 5px solid #d97706; border-radius: 10px;">
-                    <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">
-                        ✏️ Rettifica Ordine dall'Agente — Richiesta Approvazione
-                    </h4>
-                    <p style="margin: 0; font-size: 12.5px; color: #78350f; line-height: 1.55;">
-                        L'agente commerciale ha apportato alcune modifiche/rettifiche (quantità, disponibilità o prezzi) a questo ordine. Ti invitiamo ad accedere al Portale B2B per visualizzare ed approvare le modifiche.
-                    </p>
-                </div>
-            @elseif($order->status === 'customer_approved')
-                <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #eff6ff; border: 1px solid #bfdbfe; border-left: 5px solid #2563eb; border-radius: 10px;">
-                    <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px;">
-                        ✓ Modifiche Ordine Accettate dal Cliente
-                    </h4>
-                    <p style="margin: 0; font-size: 12.5px; color: #1e3a8a; line-height: 1.55;">
-                        Le modifiche all'ordine sono state confermate ed accettate dal cliente. L'ordine è ora in attesa dell'approvazione finale di conferma da parte dell'agente commerciale / amministrazione per l'inoltro alla sede.
-                    </p>
-                </div>
-            @elseif($order->status === 'customer_rejected')
-                <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #dc2626; border-radius: 10px;">
-                    <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">
-                        ✕ Modifiche Rifiutate dal Cliente
-                    </h4>
-                    <p style="margin: 0; font-size: 12.5px; color: #7f1d1d; line-height: 1.55;">
-                        Le modifiche all'ordine sono state rifiutate dal cliente. L'agente commerciale provvederà a verificare la richiesta e a ricontattare il cliente.
-                    </p>
-                </div>
-            @elseif($order->status === 'cancelled')
-                <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #dc2626; border-radius: 10px;">
-                    <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">
-                        ✕ Ordine Annullato
-                    </h4>
-                    <p style="margin: 0; font-size: 12.5px; color: #7f1d1d; line-height: 1.55;">
-                        Questo ordine è stato annullato. Per ulteriori informazioni puoi fare riferimento al tuo agente commerciale.
-                    </p>
-                </div>
-            @else
-                <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fffdf0; border: 1px solid #fef08a; border-left: 5px solid #eab308; border-radius: 10px;">
-                    <table style="width: 100%; border-collapse: collapse;">
+                <!-- Box Status Alert -->
+                @if($order->status === 'confirmed')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #16a34a; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✓ Order Confirmed
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #14532d; line-height: 1.55;">
+                            Your order has been <strong>confirmed and sent to our ERP management system</strong> and is currently being processed for preparation and dispatch.
+                        </p>
+                    </div>
+                @elseif($order->status === 'revision_pending')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fffbeb; border: 1px solid #fde68a; border-left: 5px solid #d97706; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✏️ Order Revision by Representative — Approval Required
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #78350f; line-height: 1.55;">
+                            Your sales representative has made adjustments (quantities, availability or pricing) to this order. Please log in to the B2B portal to review and approve the changes.
+                        </p>
+                    </div>
+                @elseif($order->status === 'customer_approved')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #eff6ff; border: 1px solid #bfdbfe; border-left: 5px solid #2563eb; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✓ Modifications Accepted by Customer
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #1e3a8a; line-height: 1.55;">
+                            The changes to the order have been approved by the customer. The order is now awaiting final validation from the representative / administration.
+                        </p>
+                    </div>
+                @elseif($order->status === 'customer_rejected')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #dc2626; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✕ Modifications Rejected by Customer
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #7f1d1d; line-height: 1.55;">
+                            The proposed changes to the order were declined by the customer. Your sales representative will follow up with you.
+                        </p>
+                    </div>
+                @elseif($order->status === 'cancelled')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #dc2626; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✕ Order Cancelled
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #7f1d1d; line-height: 1.55;">
+                            This order has been cancelled. For further information, please contact your sales representative.
+                        </p>
+                    </div>
+                @else
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fffdf0; border: 1px solid #fef08a; border-left: 5px solid #eab308; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #854d0e; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ⏳ Order Submitted — Pending Confirmation
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #713f12; line-height: 1.55;">
+                            Your order has been recorded and will be confirmed shortly. You will receive an update once processing begins.
+                        </p>
+                    </div>
+                @endif
+
+                <!-- Banner Order Main Details -->
+                <div class="order-banner">
+                    <table class="order-banner-grid">
                         <tr>
-                            <td style="vertical-align: top; width: 28px; font-size: 20px; line-height: 1; padding-right: 10px;">
-                                ⚠️
+                            <td style="width: 50%;">
+                                <span class="order-banner-label">Order Number:</span><br>
+                                <span class="order-banner-val" style="font-size: 15px; color: #000;">#{{ $order->id }}</span>
                             </td>
-                            <td style="vertical-align: top;">
-                                <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #854d0e; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    In Attesa di Conferma e Rettifica dall'Agente
-                                </h4>
-                                <p style="margin: 0 0 6px; font-size: 12.5px; color: #713f12; line-height: 1.55;">
-                                    La presente email costituisce una <strong>copia riepilogativa della richiesta d'ordine</strong> trasmessa.
-                                </p>
-                                <p style="margin: 0; font-size: 12.5px; color: #713f12; line-height: 1.55;">
-                                    Ti ricordiamo che l'ordine <strong>deve essere confermato dal tuo agente commerciale di riferimento</strong> ed è attualmente <strong>in attesa di eventuale modifica o rettifica</strong> (in base alle disponibilità di magazzino, tempi di produzione o condizioni concordate). Riceverai la notifica di conferma definitiva non appena l'ordine sarà validato.
-                                </p>
+                            <td style="width: 50%;">
+                                <span class="order-banner-label">Date & Time:</span><br>
+                                <span class="order-banner-val">{{ $order->created_at->format('d/m/Y H:i') }}</span>
                             </td>
                         </tr>
+                        <tr>
+                            <td>
+                                <span class="order-banner-label">Internal Order Ref:</span><br>
+                                @if($order->internal_reference)
+                                    <span class="badge-ref">{{ $order->internal_reference }}</span>
+                                @else
+                                    <span style="color: #94a3b8; font-style: italic; font-size: 11px;">Not specified</span>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="order-banner-label">Order Status:</span><br>
+                                @if($order->status === 'confirmed')
+                                    <span class="badge-status status-confirmed">✓ Confirmed</span>
+                                @elseif($order->status === 'cancelled')
+                                    <span class="badge-status status-cancelled">✕ Cancelled</span>
+                                @elseif($order->status === 'revision_pending')
+                                    <span class="badge-status status-pending" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">⏳ Awaiting Customer Approval</span>
+                                @elseif($order->status === 'customer_approved')
+                                    <span class="badge-status status-confirmed" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe;">✓ Changes Approved</span>
+                                @elseif($order->status === 'customer_rejected')
+                                    <span class="badge-status status-cancelled">✕ Changes Rejected</span>
+                                @else
+                                    <span class="badge-status status-pending">⏳ Pending Confirmation</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @if($order->customer)
+                            <tr>
+                                <td>
+                                    <span class="order-banner-label">Company Name:</span><br>
+                                    <span class="order-banner-val">{{ $order->customer->business_name }}</span>
+                                </td>
+                                <td>
+                                    <span class="order-banner-label">VAT / Tax ID:</span><br>
+                                    <span class="order-banner-val" style="font-family: monospace;">{{ $order->customer->vat_number ?? 'N.D.' }}</span>
+                                </td>
+                            </tr>
+                        @endif
                     </table>
                 </div>
-            @endif
 
-            <!-- Banner Dati Principali Ordine -->
-            <div class="order-banner">
-                <table class="order-banner-grid">
-                    <tr>
-                        <td style="width: 50%;">
-                            <span class="order-banner-label">Numero Ordine:</span><br>
-                            <span class="order-banner-val" style="font-size: 15px; color: #000;">#{{ $order->id }}</span>
-                        </td>
-                        <td style="width: 50%;">
-                            <span class="order-banner-label">Data e Ora:</span><br>
-                            <span class="order-banner-val">{{ $order->created_at->format('d/m/Y H:i') }}</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <span class="order-banner-label">Riferimento Ordine Interno:</span><br>
-                            @if($order->internal_reference)
-                                <span class="badge-ref">{{ $order->internal_reference }}</span>
-                            @else
-                                <span style="color: #94a3b8; font-style: italic; font-size: 11px;">Non specificato</span>
-                            @endif
-                        </td>
-                        <td>
-                            <span class="order-banner-label">Stato Ordine:</span><br>
-                            @if($order->status === 'confirmed')
-                                <span class="badge-status status-confirmed">✓ Confermato</span>
-                            @elseif($order->status === 'cancelled')
-                                <span class="badge-status status-cancelled">✕ Annullato</span>
-                            @elseif($order->status === 'revision_pending')
-                                <span class="badge-status status-pending" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">⏳ In Attesa Approvazione Modifiche</span>
-                            @elseif($order->status === 'customer_approved')
-                                <span class="badge-status status-confirmed" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe;">✓ Modifiche Accettate</span>
-                            @elseif($order->status === 'customer_rejected')
-                                <span class="badge-status status-cancelled">✕ Modifiche Rifiutate</span>
-                            @else
-                                <span class="badge-status status-pending">⏳ In Attesa di Conferma Agente</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @if($order->customer)
-                        <tr>
-                            <td>
-                                <span class="order-banner-label">Cliente / Ragione Sociale:</span><br>
-                                <span class="order-banner-val">{{ $order->customer->business_name }}</span>
-                            </td>
-                            <td>
-                                <span class="order-banner-label">Partita IVA / CF:</span><br>
-                                <span class="order-banner-val" style="font-family: monospace;">{{ $order->customer->vat_number ?? 'N.D.' }}</span>
-                            </td>
-                        </tr>
-                    @endif
-                </table>
-            </div>
-
-            <!-- Box Agente di Riferimento -->
-            @php
-                $agent = $order->agent ?: ($order->customer && $order->customer->agents ? $order->customer->agents->first() : null);
-            @endphp
-            @if($agent)
-                <div class="card-box" style="border-left: 4px solid #000000; background: #fffdf5; border-color: #fef08a;">
-                    <h3 style="color: #000000; margin-bottom: 8px;">👤 Agente Commerciale di Riferimento</h3>
-                    <div style="background: #ffffff; padding: 12px 14px; border-radius: 8px; border: 1px solid #fde047;">
-                        <p style="margin: 0 0 4px; font-size: 14px; font-weight: 800; color: #000000;">
-                            {{ $agent->name }} {{ $agent->surname }}
-                        </p>
-                        <p style="margin: 2px 0; font-size: 12px; color: #475569;">
-                            <strong>Email:</strong> <a href="mailto:{{ $agent->email }}" style="color: #2563eb; text-decoration: none; font-weight: bold;">{{ $agent->email }}</a>
-                        </p>
-                        @if($agent->phone)
-                            <p style="margin: 2px 0; font-size: 12px; color: #475569;">
-                                <strong>Telefono:</strong> <a href="tel:{{ $agent->phone }}" style="color: #1e293b; text-decoration: none; font-weight: bold;">{{ $agent->phone }}</a>
+                <!-- Box Assigned Sales Agent -->
+                @if($agent)
+                    <div class="card-box" style="border-left: 4px solid #000000; background: #fffdf5; border-color: #fef08a;">
+                        <h3 style="color: #000000; margin-bottom: 8px;">👤 Assigned Sales Representative</h3>
+                        <div style="background: #ffffff; padding: 12px 14px; border-radius: 8px; border: 1px solid #fde047;">
+                            <p style="margin: 0 0 4px; font-size: 14px; font-weight: 800; color: #000000;">
+                                {{ $agent->name }} {{ $agent->surname }}
                             </p>
-                        @endif
+                            <p style="margin: 2px 0; font-size: 12px; color: #475569;">
+                                <strong>Email:</strong> <a href="mailto:{{ $agent->email }}" style="color: #2563eb; text-decoration: none; font-weight: bold;">{{ $agent->email }}</a>
+                            </p>
+                            @if($agent->phone)
+                                <p style="margin: 2px 0; font-size: 12px; color: #475569;">
+                                    <strong>Phone:</strong> <a href="tel:{{ $agent->phone }}" style="color: #1e293b; text-decoration: none; font-weight: bold;">{{ $agent->phone }}</a>
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Items Table -->
+                <div class="card-box">
+                    <h3>📦 Ordered Items</h3>
+                    <table class="table-wrap">
+                        <thead>
+                            <tr>
+                                <th>Product & Variant</th>
+                                <th style="text-align: center;">Delivery</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Price</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($order->items as $item)
+                                @php
+                                    $qtyChanged = $item->original_quantity && $item->original_quantity != $item->quantity;
+                                    $priceChanged = $item->original_price && abs($item->original_price - $item->price) >= 0.01;
+                                    $isItemModified = $item->is_modified || $qtyChanged || $priceChanged;
+                                @endphp
+                                <tr style="{{ $isItemModified ? 'background-color: #fffdf0;' : '' }}">
+                                    <td>
+                                        <strong>{{ $item->product->name ?? 'Product' }}</strong>
+                                        @if($item->product && $item->product->brand)
+                                            <span style="font-size: 10px; text-transform: uppercase; color: #64748b;">({{ $item->product->brand->name }})</span>
+                                        @endif
+                                        @if($isItemModified)
+                                            <span style="display: inline-block; background: #fef08a; color: #854d0e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 4px; border: 1px solid #fde047;">Modified</span>
+                                        @endif
+                                        <br>
+                                        <small style="color: #64748b;">
+                                            Size: <strong>{{ $item->variant->size ?? 'N/D' }}</strong>
+                                            @if($item->variant && $item->variant->color)
+                                                • Color: {{ (strtoupper($item->variant->color) === 'UNICO') ? 'Unique' : $item->variant->color }}
+                                            @endif
+                                        </small>
+                                    </td>
+                                    <td style="text-align: center; font-size: 11px; white-space: nowrap;">
+                                        @if(empty($item->delivery_date) || $item->delivery_date === 'immediate')
+                                            <span style="color: #166534; font-weight: bold;">⚡ Ready Delivery</span>
+                                        @else
+                                            @php
+                                                $delivDateStr = $item->delivery_date;
+                                                if (str_contains($delivDateStr, '-')) {
+                                                    try {
+                                                        $delivDateStr = \Carbon\Carbon::parse($delivDateStr)->format('d/m/Y');
+                                                    } catch (\Throwable $e) {}
+                                                }
+                                            @endphp
+                                            <span style="color: #1e40af; font-weight: bold;">📅 From: {{ $delivDateStr }}</span>
+                                        @endif
+                                    </td>
+                                    <td style="text-align: center; font-weight: bold; font-size: 13px;">
+                                        {{ $item->quantity }}
+                                        @if($qtyChanged)
+                                            <br><span style="font-size: 10px; color: #b45309; text-decoration: line-through; font-weight: normal;">(Orig: {{ $item->original_quantity }})</span>
+                                        @endif
+                                    </td>
+                                    <td style="text-align: right; font-family: monospace;">
+                                        € {{ number_format($item->price, 2, ',', '.') }}
+                                        @if($priceChanged)
+                                            <br><span style="font-size: 10px; color: #b45309; text-decoration: line-through; font-weight: normal;">(Orig: € {{ number_format($item->original_price, 2, ',', '.') }})</span>
+                                        @endif
+                                    </td>
+                                    <td style="text-align: right; font-weight: bold; font-family: monospace;">€ {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    <div class="total-box">
+                        ORDER TOTAL: <span style="color: #000000; font-size: 18px; margin-left: 8px;">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
                     </div>
                 </div>
-            @endif
 
-            <!-- Tabella Prodotti Ordinati -->
-            <div class="card-box">
-                <h3>📦 Articoli Ordinati</h3>
-                <table class="table-wrap">
-                    <thead>
-                        <tr>
-                            <th>Prodotto & Variante</th>
-                            <th style="text-align: center;">Consegna</th>
-                            <th style="text-align: center;">Qtà</th>
-                            <th style="text-align: right;">Prezzo</th>
-                            <th style="text-align: right;">Totale</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($order->items as $item)
-                            @php
-                                $qtyChanged = $item->original_quantity && $item->original_quantity != $item->quantity;
-                                $priceChanged = $item->original_price && abs($item->original_price - $item->price) >= 0.01;
-                                $isItemModified = $item->is_modified || $qtyChanged || $priceChanged;
-                            @endphp
-                            <tr style="{{ $isItemModified ? 'background-color: #fffdf0;' : '' }}">
-                                <td>
-                                    <strong>{{ $item->product->name ?? 'Articolo' }}</strong>
-                                    @if($item->product && $item->product->brand)
-                                        <span style="font-size: 10px; text-transform: uppercase; color: #64748b;">({{ $item->product->brand->name }})</span>
-                                    @endif
-                                    @if($isItemModified)
-                                        <span style="display: inline-block; background: #fef08a; color: #854d0e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 4px; border: 1px solid #fde047;">Modificato</span>
-                                    @endif
-                                    <br>
-                                    <small style="color: #64748b;">
-                                        Taglia: <strong>{{ $item->variant->size ?? 'N/D' }}</strong>
-                                        @if($item->variant && $item->variant->color)
-                                            • Colore: {{ $item->variant->color }}
-                                        @endif
-                                    </small>
-                                </td>
-                                <td style="text-align: center; font-size: 11px; white-space: nowrap;">
-                                    @if(empty($item->delivery_date) || $item->delivery_date === 'immediate')
-                                        <span style="color: #166534; font-weight: bold;">⚡ Immediata</span>
-                                    @else
-                                        @php
-                                            $delivDateStr = $item->delivery_date;
-                                            if (str_contains($delivDateStr, '-')) {
-                                                try {
-                                                    $delivDateStr = \Carbon\Carbon::parse($delivDateStr)->format('d/m/Y');
-                                                } catch (\Throwable $e) {}
-                                            }
-                                        @endphp
-                                        <span style="color: #1e40af; font-weight: bold;">📅 {{ $delivDateStr }}</span>
-                                    @endif
-                                </td>
-                                <td style="text-align: center; font-weight: bold; font-size: 13px;">
-                                    {{ $item->quantity }}
-                                    @if($qtyChanged)
-                                        <br><span style="font-size: 10px; color: #b45309; text-decoration: line-through; font-weight: normal;">(Iniz: {{ $item->original_quantity }})</span>
-                                    @endif
-                                </td>
-                                <td style="text-align: right; font-family: monospace;">
-                                    € {{ number_format($item->price, 2, ',', '.') }}
-                                    @if($priceChanged)
-                                        <br><span style="font-size: 10px; color: #b45309; text-decoration: line-through; font-weight: normal;">(Iniz: € {{ number_format($item->original_price, 2, ',', '.') }})</span>
-                                    @endif
-                                </td>
-                                <td style="text-align: right; font-weight: bold; font-family: monospace;">€ {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                <div class="total-box">
-                    TOTALE ORDINE: <span style="color: #000000; font-size: 18px; margin-left: 8px;">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
-                </div>
-            </div>
-
-            <!-- Modalità di Pagamento -->
-            @if(!empty($paymentMethod) && $paymentMethod !== 'none')
-                <div class="payment-box">
-                    @if($paymentMethod === 'stripe')
-                        <h4>💳 Pagamento con Carta di Credito (Stripe)</h4>
-                        <p style="margin: 0 0 12px; font-size: 13px; color: #1e3a8a;">Puoi completare il saldo dell'ordine in sicurezza tramite carta:</p>
-                        <div style="text-align: center;">
-                            <a href="{{ $paymentLink }}" class="btn" style="background: #2563eb; color: #ffffff !important;">Paga Ora con Stripe →</a>
-                        </div>
-                    @elseif($paymentMethod === 'paypal')
-                        <h4>🅿️ Pagamento tramite PayPal</h4>
-                        <p style="margin: 0 0 12px; font-size: 13px; color: #1e3a8a;">Puoi completare il pagamento tramite il tuo account PayPal:</p>
-                        <div style="text-align: center;">
-                            <a href="{{ $paymentLink }}" class="btn" style="background: #0284c7; color: #ffffff !important;">Paga Ora con PayPal →</a>
-                        </div>
-                    @elseif($paymentMethod === 'bonifico')
-                        <h4>🏦 Coordinate Bancarie per Bonifico</h4>
-                        <p style="margin: 0 0 10px; font-size: 12px; color: #1e3a8a;">
-                            Effettua il bonifico indicando la causale riportata di seguito:
+                <!-- Notes -->
+                @if($order->notes)
+                    <div class="card-box" style="margin-top: 20px; background: #fffbeb; border-color: #fde68a;">
+                        <h3 style="color: #92400e; margin-bottom: 6px;">📝 Customer Notes</h3>
+                        <p style="margin: 0; font-size: 13px; color: #78350f; font-style: italic; white-space: pre-line;">
+                            {{ $order->notes }}
                         </p>
-                        @php $settings = \App\Models\Setting::all()->pluck('value', 'key'); @endphp
-                        <table class="bonifico-grid">
+                    </div>
+                @endif
+
+                @if($order->admin_notes)
+                    <div class="card-box" style="margin-top: 15px; background: #f0f9ff; border-color: #bae6fd;">
+                        <h3 style="color: #0369a1; margin-bottom: 6px;">🏢 Message from Sales & Management</h3>
+                        <p style="margin: 0; font-size: 13px; color: #0c4a6e; font-weight: 500; white-space: pre-line;">
+                            {{ $order->admin_notes }}
+                        </p>
+                    </div>
+                @endif
+
+                <div class="btn-container">
+                    <a href="{{ $portalUrl ?? route('login') }}" class="btn" style="color:#ffffff;">Go to B2B Portal →</a>
+                </div>
+
+            @else
+                @if($isAgentRecipient && $agent)
+                    <p class="greeting">Gentile <strong>{{ $agent->name }} {{ $agent->surname }}</strong>,</p>
+                    <p class="text-lead">
+                        Di seguito trovi i dettagli dell'aggiornamento per l'<strong>Ordine B2B #{{ $order->id }}</strong> del cliente <strong>{{ $order->customer->business_name ?? 'Cliente' }}</strong> su <strong>{{ $companyName }}</strong>.
+                    </p>
+                @else
+                    <p class="greeting">Gentile <strong>{{ $order->customer->business_name ?? 'Cliente' }}</strong>,</p>
+                    <p class="text-lead">
+                        Di seguito trovi il riepilogo dettagliato del tuo <strong>Ordine B2B #{{ $order->id }}</strong> trasmesso sul portale <strong>{{ $companyName }}</strong>.
+                    </p>
+                @endif
+
+                <!-- Box Avviso Stato e Conferma -->
+                @if($order->status === 'confirmed')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #16a34a; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✓ Ordine Confermato
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #14532d; line-height: 1.55;">
+                            Il tuo ordine è stato <strong>confermato e trasmesso al sistema gestionale</strong> ed è attualmente in lavorazione per la preparazione ed evasione.
+                        </p>
+                    </div>
+                @elseif($order->status === 'revision_pending')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fffbeb; border: 1px solid #fde68a; border-left: 5px solid #d97706; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✏️ Rettifica Ordine dall'Agente — Richiesta Approvazione
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #78350f; line-height: 1.55;">
+                            L'agente commerciale ha apportato alcune modifiche/rettifiche (quantità, disponibilità o prezzi) a questo ordine. Ti invitiamo ad accedere al Portale B2B per visualizzare ed approvare le modifiche.
+                        </p>
+                    </div>
+                @elseif($order->status === 'customer_approved')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #eff6ff; border: 1px solid #bfdbfe; border-left: 5px solid #2563eb; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✓ Modifiche Ordine Accettate dal Cliente
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #1e3a8a; line-height: 1.55;">
+                            Le modifiche all'ordine sono state confermate ed accettate dal cliente. L'ordine è ora in attesa dell'approvazione finale di conferma da parte dell'agente commerciale / amministrazione per l'inoltro alla sede.
+                        </p>
+                    </div>
+                @elseif($order->status === 'customer_rejected')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #dc2626; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✕ Modifiche Rifiutate dal Cliente
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #7f1d1d; line-height: 1.55;">
+                            Le modifiche all'ordine sono state rifiutate dal cliente. L'agente commerciale provvederà a verificare la richiesta e a ricontattare il cliente.
+                        </p>
+                    </div>
+                @elseif($order->status === 'cancelled')
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #dc2626; border-radius: 10px;">
+                        <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ✕ Ordine Annullato
+                        </h4>
+                        <p style="margin: 0; font-size: 12.5px; color: #7f1d1d; line-height: 1.55;">
+                            Questo ordine è stato annullato. Per ulteriori informazioni puoi fare riferimento al tuo agente commerciale.
+                        </p>
+                    </div>
+                @else
+                    <div style="margin-bottom: 22px; padding: 16px 18px; background-color: #fffdf0; border: 1px solid #fef08a; border-left: 5px solid #eab308; border-radius: 10px;">
+                        <table style="width: 100%; border-collapse: collapse;">
                             <tr>
-                                <td style="width: 30%; font-weight: bold; color: #475569;">Intestato a:</td>
-                                <td style="font-weight: bold; color: #0f172a;">{{ $settings['bonifico_intestazione'] ?? 'Cedma Srl' }}</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; color: #475569;">Banca:</td>
-                                <td style="font-weight: bold; color: #0f172a;">{{ $settings['bonifico_banca'] ?? 'N.D.' }}</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; color: #475569;">IBAN:</td>
-                                <td style="font-weight: bold; font-family: monospace; font-size: 14px; color: #000;">{{ $settings['bonifico_iban'] ?? 'N.D.' }}</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; color: #475569;">Causale:</td>
-                                <td style="font-weight: bold; color: #0f172a;">Saldo Ordine B2B #{{ $order->id }}{{ $order->internal_reference ? ' - Rif: ' . $order->internal_reference : '' }}</td>
+                                <td style="vertical-align: top; width: 28px; font-size: 20px; line-height: 1; padding-right: 10px;">
+                                    ⚠️
+                                </td>
+                                <td style="vertical-align: top;">
+                                    <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #854d0e; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        In Attesa di Conferma dall'Agente
+                                    </h4>
+                                    <p style="margin: 0 0 6px; font-size: 12.5px; color: #713f12; line-height: 1.55;">
+                                        La presente email costituisce una <strong>copia riepilogativa della richiesta d'ordine</strong> trasmessa.
+                                    </p>
+                                </td>
                             </tr>
                         </table>
-                    @endif
-                </div>
-            @endif
-
-            <!-- Note Ordine -->
-            @if($order->notes)
-                <div class="card-box" style="margin-top: 20px; background: #fffbeb; border-color: #fde68a;">
-                    <h3 style="color: #92400e; margin-bottom: 6px;">📝 Note del Cliente</h3>
-                    <p style="margin: 0; font-size: 13px; color: #78350f; font-style: italic; white-space: pre-line;">
-                        {{ $order->notes }}
-                    </p>
-                </div>
-            @endif
-
-            @if($order->admin_notes)
-                <div class="card-box" style="margin-top: 15px; background: #f0f9ff; border-color: #bae6fd;">
-                    <h3 style="color: #0369a1; margin-bottom: 6px;">🏢 Messaggio / Note Sede & Agente</h3>
-                    <p style="margin: 0; font-size: 13px; color: #0c4a6e; font-weight: 500; white-space: pre-line;">
-                        {{ $order->admin_notes }}
-                    </p>
-                </div>
-            @endif
-
-            <div class="btn-container">
-                @if($order->status === 'revision_pending')
-                    <a href="{{ $portalUrl ?? route('login') }}" class="btn" style="background: #d97706; color:#ffffff !important;">
-                        🔍 Visualizza e Approva Rettifica Ordine →
-                    </a>
-                @elseif($order->status === 'customer_approved')
-                    <a href="{{ $portalUrl ?? route('login') }}" class="btn" style="background: #2563eb; color:#ffffff !important;">
-                        🚀 Accedi al Portale B2B per Conferma Ordine →
-                    </a>
-                @else
-                    <a href="{{ $portalUrl ?? route('login') }}" class="btn" style="color:#ffffff;">Accedi al Portale B2B →</a>
+                    </div>
                 @endif
-            </div>
+
+                <!-- Banner Dati Principali Ordine -->
+                <div class="order-banner">
+                    <table class="order-banner-grid">
+                        <tr>
+                            <td style="width: 50%;">
+                                <span class="order-banner-label">Numero Ordine:</span><br>
+                                <span class="order-banner-val" style="font-size: 15px; color: #000;">#{{ $order->id }}</span>
+                            </td>
+                            <td style="width: 50%;">
+                                <span class="order-banner-label">Data e Ora:</span><br>
+                                <span class="order-banner-val">{{ $order->created_at->format('d/m/Y H:i') }}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="order-banner-label">Riferimento Ordine Interno:</span><br>
+                                @if($order->internal_reference)
+                                    <span class="badge-ref">{{ $order->internal_reference }}</span>
+                                @else
+                                    <span style="color: #94a3b8; font-style: italic; font-size: 11px;">Non specificato</span>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="order-banner-label">Stato Ordine:</span><br>
+                                @if($order->status === 'confirmed')
+                                    <span class="badge-status status-confirmed">✓ Confermato</span>
+                                @elseif($order->status === 'cancelled')
+                                    <span class="badge-status status-cancelled">✕ Annullato</span>
+                                @elseif($order->status === 'revision_pending')
+                                    <span class="badge-status status-pending" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">⏳ In Attesa Approvazione Modifiche</span>
+                                @elseif($order->status === 'customer_approved')
+                                    <span class="badge-status status-confirmed" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe;">✓ Modifiche Accettate</span>
+                                @elseif($order->status === 'customer_rejected')
+                                    <span class="badge-status status-cancelled">✕ Modifiche Rifiutate</span>
+                                @else
+                                    <span class="badge-status status-pending">⏳ In Attesa di Conferma Agente</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @if($order->customer)
+                            <tr>
+                                <td>
+                                    <span class="order-banner-label">Cliente / Ragione Sociale:</span><br>
+                                    <span class="order-banner-val">{{ $order->customer->business_name }}</span>
+                                </td>
+                                <td>
+                                    <span class="order-banner-label">Partita IVA / CF:</span><br>
+                                    <span class="order-banner-val" style="font-family: monospace;">{{ $order->customer->vat_number ?? 'N.D.' }}</span>
+                                </td>
+                            </tr>
+                        @endif
+                    </table>
+                </div>
+
+                <!-- Box Agente di Riferimento -->
+                @if($agent)
+                    <div class="card-box" style="border-left: 4px solid #000000; background: #fffdf5; border-color: #fef08a;">
+                        <h3 style="color: #000000; margin-bottom: 8px;">👤 Agente Commerciale di Riferimento</h3>
+                        <div style="background: #ffffff; padding: 12px 14px; border-radius: 8px; border: 1px solid #fde047;">
+                            <p style="margin: 0 0 4px; font-size: 14px; font-weight: 800; color: #000000;">
+                                {{ $agent->name }} {{ $agent->surname }}
+                            </p>
+                            <p style="margin: 2px 0; font-size: 12px; color: #475569;">
+                                <strong>Email:</strong> <a href="mailto:{{ $agent->email }}" style="color: #2563eb; text-decoration: none; font-weight: bold;">{{ $agent->email }}</a>
+                            </p>
+                            @if($agent->phone)
+                                <p style="margin: 2px 0; font-size: 12px; color: #475569;">
+                                    <strong>Telefono:</strong> <a href="tel:{{ $agent->phone }}" style="color: #1e293b; text-decoration: none; font-weight: bold;">{{ $agent->phone }}</a>
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Tabella Prodotti Ordinati -->
+                <div class="card-box">
+                    <h3>📦 Articoli Ordinati</h3>
+                    <table class="table-wrap">
+                        <thead>
+                            <tr>
+                                <th>Prodotto & Variante</th>
+                                <th style="text-align: center;">Consegna</th>
+                                <th style="text-align: center;">Qtà</th>
+                                <th style="text-align: right;">Prezzo</th>
+                                <th style="text-align: right;">Totale</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($order->items as $item)
+                                @php
+                                    $qtyChanged = $item->original_quantity && $item->original_quantity != $item->quantity;
+                                    $priceChanged = $item->original_price && abs($item->original_price - $item->price) >= 0.01;
+                                    $isItemModified = $item->is_modified || $qtyChanged || $priceChanged;
+                                @endphp
+                                <tr style="{{ $isItemModified ? 'background-color: #fffdf0;' : '' }}">
+                                    <td>
+                                        <strong>{{ $item->product->name ?? 'Articolo' }}</strong>
+                                        @if($item->product && $item->product->brand)
+                                            <span style="font-size: 10px; text-transform: uppercase; color: #64748b;">({{ $item->product->brand->name }})</span>
+                                        @endif
+                                        @if($isItemModified)
+                                            <span style="display: inline-block; background: #fef08a; color: #854d0e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 4px; border: 1px solid #fde047;">Modificato</span>
+                                        @endif
+                                        <br>
+                                        <small style="color: #64748b;">
+                                            Taglia: <strong>{{ $item->variant->size ?? 'N/D' }}</strong>
+                                            @if($item->variant && $item->variant->color)
+                                                • Colore: {{ $item->variant->color }}
+                                            @endif
+                                        </small>
+                                    </td>
+                                    <td style="text-align: center; font-size: 11px; white-space: nowrap;">
+                                        @if(empty($item->delivery_date) || $item->delivery_date === 'immediate')
+                                            <span style="color: #166534; font-weight: bold;">⚡ Immediata</span>
+                                        @else
+                                            @php
+                                                $delivDateStr = $item->delivery_date;
+                                                if (str_contains($delivDateStr, '-')) {
+                                                    try {
+                                                        $delivDateStr = \Carbon\Carbon::parse($delivDateStr)->format('d/m/Y');
+                                                    } catch (\Throwable $e) {}
+                                                }
+                                            @endphp
+                                            <span style="color: #1e40af; font-weight: bold;">📅 {{ $delivDateStr }}</span>
+                                        @endif
+                                    </td>
+                                    <td style="text-align: center; font-weight: bold; font-size: 13px;">
+                                        {{ $item->quantity }}
+                                        @if($qtyChanged)
+                                            <br><span style="font-size: 10px; color: #b45309; text-decoration: line-through; font-weight: normal;">(Iniz: {{ $item->original_quantity }})</span>
+                                        @endif
+                                    </td>
+                                    <td style="text-align: right; font-family: monospace;">
+                                        € {{ number_format($item->price, 2, ',', '.') }}
+                                        @if($priceChanged)
+                                            <br><span style="font-size: 10px; color: #b45309; text-decoration: line-through; font-weight: normal;">(Iniz: € {{ number_format($item->original_price, 2, ',', '.') }})</span>
+                                        @endif
+                                    </td>
+                                    <td style="text-align: right; font-weight: bold; font-family: monospace;">€ {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    <div class="total-box">
+                        TOTALE ORDINE: <span style="color: #000000; font-size: 18px; margin-left: 8px;">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
+                    </div>
+                </div>
+
+                <!-- Modalità di Pagamento -->
+                @if(!empty($paymentMethod) && $paymentMethod !== 'none')
+                    <div class="payment-box">
+                        @if($paymentMethod === 'stripe')
+                            <h4>💳 Pagamento con Carta di Credito (Stripe)</h4>
+                            <p style="margin: 0 0 12px; font-size: 13px; color: #1e3a8a;">Puoi completare il saldo dell'ordine in sicurezza tramite carta:</p>
+                            <div style="text-align: center;">
+                                <a href="{{ $paymentLink }}" class="btn" style="background: #2563eb; color: #ffffff !important;">Paga Ora con Stripe →</a>
+                            </div>
+                        @elseif($paymentMethod === 'paypal')
+                            <h4>🅿️ Pagamento tramite PayPal</h4>
+                            <p style="margin: 0 0 12px; font-size: 13px; color: #1e3a8a;">Puoi completare il pagamento tramite il tuo account PayPal:</p>
+                            <div style="text-align: center;">
+                                <a href="{{ $paymentLink }}" class="btn" style="background: #0284c7; color: #ffffff !important;">Paga Ora con PayPal →</a>
+                            </div>
+                        @elseif($paymentMethod === 'bonifico')
+                            <h4>🏦 Coordinate Bancarie per Bonifico</h4>
+                            <p style="margin: 0 0 10px; font-size: 12px; color: #1e3a8a;">
+                                Effettua il bonifico indicando la causale riportata di seguito:
+                            </p>
+                            @php $settings = \App\Models\Setting::all()->pluck('value', 'key'); @endphp
+                            <table class="bonifico-grid">
+                                <tr>
+                                    <td style="width: 30%; font-weight: bold; color: #475569;">Intestato a:</td>
+                                    <td style="font-weight: bold; color: #0f172a;">{{ $settings['bonifico_intestazione'] ?? 'Cedma Srl' }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #475569;">Banca:</td>
+                                    <td style="font-weight: bold; color: #0f172a;">{{ $settings['bonifico_banca'] ?? 'N.D.' }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #475569;">IBAN:</td>
+                                    <td style="font-weight: bold; font-family: monospace; font-size: 14px; color: #000;">{{ $settings['bonifico_iban'] ?? 'N.D.' }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #475569;">Causale:</td>
+                                    <td style="font-weight: bold; color: #0f172a;">Saldo Ordine B2B #{{ $order->id }}{{ $order->internal_reference ? ' - Rif: ' . $order->internal_reference : '' }}</td>
+                                </tr>
+                            </table>
+                        @endif
+                    </div>
+                @endif
+
+                <!-- Note Ordine -->
+                @if($order->notes)
+                    <div class="card-box" style="margin-top: 20px; background: #fffbeb; border-color: #fde68a;">
+                        <h3 style="color: #92400e; margin-bottom: 6px;">📝 Note del Cliente</h3>
+                        <p style="margin: 0; font-size: 13px; color: #78350f; font-style: italic; white-space: pre-line;">
+                            {{ $order->notes }}
+                        </p>
+                    </div>
+                @endif
+
+                @if($order->admin_notes)
+                    <div class="card-box" style="margin-top: 15px; background: #f0f9ff; border-color: #bae6fd;">
+                        <h3 style="color: #0369a1; margin-bottom: 6px;">🏢 Messaggio / Note Sede & Agente</h3>
+                        <p style="margin: 0; font-size: 13px; color: #0c4a6e; font-weight: 500; white-space: pre-line;">
+                            {{ $order->admin_notes }}
+                        </p>
+                    </div>
+                @endif
+
+                <div class="btn-container">
+                    <a href="{{ $portalUrl ?? route('login') }}" class="btn" style="color:#ffffff;">Accedi al Portale B2B →</a>
+                </div>
+            @endif
         </div>
 
         <div class="footer">
             <p style="margin: 0 0 6px; font-size: 11px; color: #94a3b8;">
-                Per qualsiasi informazione o modifica relativa a questo ordine, contatta direttamente il tuo agente commerciale di riferimento indicato sopra.
+                {{ $isEnglish ? 'For any inquiries regarding this order, please contact your dedicated sales representative listed above.' : 'Per qualsiasi informazione o modifica relativa a questo ordine, contatta direttamente il tuo agente commerciale di riferimento indicato sopra.' }}
             </p>
-            &copy; Cedma srl - Tutti i diritti riservati.
+            &copy; {{ date('Y') }} {{ $companyName }} - {{ $isEnglish ? 'All rights reserved.' : 'Tutti i diritti riservati.' }}
         </div>
     </div>
 </body>

@@ -1,13 +1,16 @@
+@php
+    $isEn = app()->getLocale() === 'en';
+@endphp
 <x-agent-layout>
     <x-slot name="header">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <h2 class="text-2xl font-black text-gray-800 tracking-tight uppercase">
-                    {{ __('Catalogo Prodotti') }}
+                    {{ $isEn ? 'Product Catalog' : 'Catalogo Prodotti' }}
                 </h2>
                 @if($customer)
                     <p class="text-xs font-bold text-gray-500 mt-1 flex items-center gap-2">
-                        <span>Listino attivo per:</span>
+                        <span>{{ $isEn ? 'Active price list for:' : 'Listino attivo per:' }}</span>
                         <strong class="text-slate-900 uppercase font-black">{{ $customer->business_name }}</strong>
                         @if($customer->priceList)
                             <span class="bg-yellow-400 text-slate-950 px-2 py-0.5 rounded text-[10px] font-black uppercase shadow-xs">
@@ -27,19 +30,19 @@
             <div class="flex flex-wrap items-center gap-3 flex-1">
                 <button type="button" @click="showFilters = !showFilters" class="flex items-center gap-2 bg-zinc-50 border border-zinc-200 text-zinc-700 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-zinc-100 hover:text-black hover:border-yellow-400 transition shadow-sm shrink-0">
                     <span>🎛️</span>
-                    <span>Filtri</span>
-                    <span class="bg-black text-white px-2 py-0.5 rounded text-[10px]" x-text="showFilters ? 'Nascondi' : 'Mostra'"></span>
+                    <span>{{ $isEn ? 'Filters' : 'Filtri' }}</span>
+                    <span class="bg-black text-white px-2 py-0.5 rounded text-[10px]" x-text="showFilters ? '{{ $isEn ? 'Hide' : 'Nascondi' }}' : '{{ $isEn ? 'Show' : 'Mostra' }}'"></span>
                 </button>
 
                 <!-- Ricerca Veloce per Nome / Codice -->
                 <div class="relative flex-1 max-w-xs">
-                    <input type="text" name="search" form="filter-form" value="{{ request('search') }}" oninput="clearTimeout(window.searchTimeout); window.searchTimeout = setTimeout(() => this.form.submit(), 500)" placeholder="Cerca per nome o codice..." class="text-xs border-gray-200 rounded-xl pl-8 pr-4 py-2 focus:ring-black focus:border-black w-full">
+                    <input type="text" name="search" form="filter-form" value="{{ request('search') }}" oninput="clearTimeout(window.searchTimeout); window.searchTimeout = setTimeout(() => this.form.submit(), 500)" placeholder="{{ $isEn ? 'Search by name or code...' : 'Cerca per nome o codice...' }}" class="text-xs border-gray-200 rounded-xl pl-8 pr-4 py-2 focus:ring-black focus:border-black w-full">
                     <span class="absolute left-3 top-2.5 text-gray-400 text-xs">🔍</span>
                 </div>
             </div>
             
             <div class="text-xs text-gray-400 font-black uppercase tracking-widest text-right shrink-0">
-                {{ count($products) }} {{ count($products) == 1 ? 'Prodotto Trovato' : 'Prodotti Trovati' }}
+                {{ count($products) }} {{ count($products) == 1 ? ($isEn ? 'Product Found' : 'Prodotto Trovato') : ($isEn ? 'Products Found' : 'Prodotti Trovati') }}
             </div>
         </div>
 
@@ -49,15 +52,15 @@
                 <form id="filter-form" action="{{ route('agent.catalog') }}" method="GET" class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6">
                     <!-- Header Filtri con Reset -->
                     <div class="flex justify-between items-center border-b pb-4">
-                        <span class="text-sm font-black uppercase tracking-wider text-slate-900">Filtri</span>
-                        <a href="{{ route('agent.catalog') }}" class="text-xs font-black text-red-500 hover:text-red-700 uppercase tracking-widest transition">Resetta</a>
+                        <span class="text-sm font-black uppercase tracking-wider text-slate-900">{{ $isEn ? 'Filters' : 'Filtri' }}</span>
+                        <a href="{{ route('agent.catalog') }}" class="text-xs font-black text-red-500 hover:text-red-700 uppercase tracking-widest transition">{{ $isEn ? 'Reset' : 'Resetta' }}</a>
                     </div>
 
                     <!-- 1. Collezioni / Brand -->
                     @if($authorizedBrands->isNotEmpty())
                     <div x-data="{ open: true }" class="border-b border-gray-50 pb-4">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Collezioni</span>
+                            <span>{{ $isEn ? 'Collections' : 'Collezioni' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -75,7 +78,7 @@
                     @if(!empty($filterOptions['settori']))
                     <div x-data="{ open: false }" class="border-b border-gray-50 pb-4">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Settori</span>
+                            <span>{{ $isEn ? 'Work Environments' : 'Settori' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -93,7 +96,7 @@
                     @if(!empty($filterOptions['tipologie']))
                     <div x-data="{ open: false }" class="border-b border-gray-50 pb-4">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Tipologia</span>
+                            <span>{{ $isEn ? 'Shoe Type' : 'Tipologia' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -111,7 +114,7 @@
                     @if(!empty($filterOptions['categorie']))
                     <div x-data="{ open: false }" class="border-b border-gray-50 pb-4">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Categoria Sicurezza</span>
+                            <span>{{ $isEn ? 'Safety Category' : 'Categoria Sicurezza' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -129,7 +132,7 @@
                     @if(!empty($filterOptions['materiali']))
                     <div x-data="{ open: false }" class="border-b border-gray-50 pb-4">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Materiale</span>
+                            <span>{{ $isEn ? 'Material' : 'Materiale' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -147,7 +150,7 @@
                     @if(!empty($filterOptions['puntali']))
                     <div x-data="{ open: false }" class="border-b border-gray-50 pb-4">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Puntale</span>
+                            <span>{{ $isEn ? 'Toe Cap' : 'Puntale' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -165,7 +168,7 @@
                     @if(!empty($filterOptions['suole']))
                     <div x-data="{ open: false }" class="border-b border-gray-50 pb-4">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Suola</span>
+                            <span>{{ $isEn ? 'Outsole' : 'Suola' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -183,7 +186,7 @@
                     @if(!empty($filterOptions['calzate']))
                     <div x-data="{ open: false }" class="border-b border-gray-50 pb-4">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Calzata</span>
+                            <span>{{ $isEn ? 'Fitting' : 'Calzata' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -201,7 +204,7 @@
                     @if(!empty($filterOptions['norme']))
                     <div x-data="{ open: false }" class="pb-2">
                         <button type="button" @click="open = !open" class="flex justify-between items-center w-full text-xs font-black uppercase tracking-wider text-gray-700 hover:text-yellow-600 transition">
-                            <span>Normativa</span>
+                            <span>{{ $isEn ? 'Standard' : 'Normativa' }}</span>
                             <span x-text="open ? '−' : '+'" class="text-yellow-500 text-sm font-bold"></span>
                         </button>
                         <div x-show="open" x-transition class="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -231,7 +234,7 @@
                                 <!-- Badge Sincronizzazione -->
                                 @if(isset($product->is_synchronized) && !$product->is_synchronized)
                                     <span class="absolute top-4 right-4 bg-rose-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-md z-10 animate-pulse">
-                                        NON SINCRONIZZATO
+                                        {{ $isEn ? 'NOT SYNCHRONIZED' : 'NON SINCRONIZZATO' }}
                                     </span>
                                 @endif
 
@@ -243,7 +246,7 @@
                             </div>
 
                             <div class="p-6 flex-1 flex flex-col titoli">
-                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{{ $product->season ?? 'Qualsiasi Stagione' }}</p>
+                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{{ $product->season ?? ($isEn ? 'All Seasons' : 'Qualsiasi Stagione') }}</p>
                                 <h3 class="text-lg font-black text-gray-900 leading-tight mb-1 uppercase">{{ $product->name }}</h3>
 
                                 <!-- Codice e Categoria di Sicurezza -->
@@ -252,7 +255,7 @@
                                         <span class="bg-zinc-50 text-zinc-700 border border-zinc-200 px-2 py-0.5 rounded-md">{{ $product->code }}</span>
                                     @endif
                                     @if(isset($product->is_synchronized) && !$product->is_synchronized)
-                                        <span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded-md border border-rose-100">NON SINCRONIZZATO</span>
+                                        <span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded-md border border-rose-100">{{ $isEn ? 'NOT SYNCHRONIZED' : 'NON SINCRONIZZATO' }}</span>
                                     @endif
                                     @if(!empty($product->characteristics['CAT-SICUREZZA']))
                                         <span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md border border-slate-200">{{ $product->characteristics['CAT-SICUREZZA'] }}</span>
@@ -260,12 +263,12 @@
                                 </div>
 
                                 <div class="flex-1 text-sm text-gray-500 italic mb-3 line-clamp-2">
-                                    {{ $product->description ?? 'Nessuna descrizione disponibile.' }}
+                                    {{ $product->localized_description ?: ($isEn ? 'No description available.' : 'Nessuna descrizione disponibile.') }}
                                 </div>
 
                                 @if(!empty($product->characteristics['RANGE-TAGLIE-VALORE']))
                                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2">
-                                        Range Taglie: <span class="text-gray-700 font-extrabold">{{ $product->characteristics['RANGE-TAGLIE-VALORE'] }}</span>
+                                        {{ $isEn ? 'Size Range:' : 'Range Taglie:' }} <span class="text-gray-700 font-extrabold">{{ $product->characteristics['RANGE-TAGLIE-VALORE'] }}</span>
                                     </p>
                                 @endif
 
@@ -275,7 +278,7 @@
                                             <span class="bg-gray-50 text-gray-600 border border-gray-100 px-2 py-0.5 rounded text-[10px] font-bold">{{ $size }}</span>
                                         @endforeach
                                         @if($product->variants->isEmpty())
-                                            <span class="text-xs text-rose-400 font-bold uppercase italic">Esaurito</span>
+                                            <span class="text-xs text-rose-400 font-bold uppercase italic">{{ $isEn ? 'Out of Stock' : 'Esaurito' }}</span>
                                         @endif
                                     </div>
                                 </div>
@@ -303,12 +306,12 @@
 
                                         @if(!empty($product->price_details['is_product_exception']))
                                             <span class="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded uppercase inline-block mt-1">
-                                                ⭐ Prezzo Riservato
+                                                {{ $isEn ? '⭐ Custom Price' : '⭐ Prezzo Riservato' }}
                                             </span>
                                         @endif
                                     </div>
                                     <a href="{{ route('agent.product', $product) }}" class="bg-black border border-zinc-950 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:border-yellow-400 hover:text-yellow-400 shadow-lg shadow-black/10 transition duration-300">
-                                        Vedi Dettaglio
+                                        {{ $isEn ? 'View Details' : 'Vedi Dettaglio' }}
                                     </a>
                                 </div>
                             </div>
@@ -316,7 +319,7 @@
                     @empty
                         <div class="col-span-full py-20 text-center">
                             <span class="text-6xl block mb-4">🔍</span>
-                            <p class="text-gray-400 font-bold uppercase tracking-widest text-sm">Nessun prodotto trovato per i filtri selezionati.</p>
+                            <p class="text-gray-400 font-bold uppercase tracking-widest text-sm">{{ $isEn ? 'No products found for the selected filters.' : 'Nessun prodotto trovato per i filtri selezionati.' }}</p>
                         </div>
                     @endforelse
                 </div>

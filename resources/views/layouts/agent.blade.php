@@ -47,8 +47,17 @@
                     @else
                         <h1 class="text-xl font-bold tracking-tight uppercase text-yellow-400">B2B Portal</h1>
                     @endif
+                    @php
+                        $isEn = app()->getLocale() === 'en';
+                    @endphp
                     <span class="text-xs font-black uppercase tracking-widest text-zinc-400 border-l border-zinc-800 pl-3 hidden sm:inline">
-                        {{ Auth::user()->role === 'customer' ? 'Area Clienti' : 'Area Agenti' }}
+                        @if(Auth::user()->role === 'customer')
+                            {{ $isEn ? 'Customer Portal' : 'Area Clienti' }}
+                        @elseif(Auth::user()->role === 'admin')
+                            {{ $isEn ? 'Admin Portal' : 'Area Amministrazione' }}
+                        @else
+                            {{ $isEn ? 'Agent Portal' : 'Area Agenti' }}
+                        @endif
                     </span>
                 </a>
 
@@ -197,19 +206,29 @@
                     </div>
                 @endif
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <!-- Switcher Lingua (IT / EN) -->
+                    <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl p-0.5 shadow-sm">
+                        <a href="{{ route('set-locale', 'it') }}" class="px-2 py-1 text-[11px] font-black uppercase rounded-lg transition {{ app()->getLocale() === 'it' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-zinc-400 hover:text-white' }}" title="Lingua Italiana">
+                            🇮🇹 IT
+                        </a>
+                        <a href="{{ route('set-locale', 'en') }}" class="px-2 py-1 text-[11px] font-black uppercase rounded-lg transition {{ app()->getLocale() === 'en' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-zinc-400 hover:text-white' }}" title="English Language">
+                            🇬🇧 EN
+                        </a>
+                    </div>
+
                     <span class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-1.5 rounded-xl font-bold uppercase hidden lg:flex items-center gap-2">
                         👤 {{ Auth::user()->name }}
                     </span>
                     
                     <a href="{{ route('agent.profile') }}" class="text-xs font-black text-yellow-400 hover:text-slate-950 bg-zinc-900 hover:bg-yellow-400 border border-zinc-800 hover:border-yellow-400 px-3.5 py-1.5 rounded-xl transition duration-300 uppercase shadow-sm hidden md:block">
-                        Profilo
+                        {{ $isEn ? 'Profile' : 'Profilo' }}
                     </a>
 
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit" class="text-xs font-black text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-900/50 px-3 py-1.5 rounded-xl transition duration-200 uppercase">
-                            🚪 Esci
+                            🚪 {{ $isEn ? 'Logout' : 'Esci' }}
                         </button>
                     </form>
                 </div>
@@ -221,7 +240,7 @@
                 <aside class="flex-shrink-0 bg-white text-gray-800 hidden md:flex flex-col h-full border-r border-gray-100 shadow-sm transition-all duration-300" :class="sidebarOpen ? 'w-64' : 'w-20'">
                     
                     <div class="flex items-center justify-end p-4 h-14 shrink-0 border-b border-gray-50">
-                        <button type="button" @click="sidebarOpen = !sidebarOpen; localStorage.setItem('b2b_sidebar_open', sidebarOpen)" class="text-gray-400 hover:text-gray-900 p-1.5 hover:bg-gray-100 rounded-lg transition duration-200" title="Espandi/Comprimi Menu">
+                        <button type="button" @click="sidebarOpen = !sidebarOpen; localStorage.setItem('b2b_sidebar_open', sidebarOpen)" class="text-gray-400 hover:text-gray-900 p-1.5 hover:bg-gray-100 rounded-lg transition duration-200" title="{{ $isEn ? 'Toggle Menu' : 'Espandi/Comprimi Menu' }}">
                             <span x-text="sidebarOpen ? '◀' : '▶'"></span>
                         </button>
                     </div>
@@ -236,25 +255,25 @@
                             <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">📊</span> 
                             <span x-show="sidebarOpen" x-transition class="text-sm">Dashboard</span>
                         </a>
-                        <a href="{{ route('agent.catalog') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.catalog') || request()->routeIs('agent.product') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="Catalogo Prodotti">
+                        <a href="{{ route('agent.catalog') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.catalog') || request()->routeIs('agent.product') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="{{ $isEn ? 'Product Catalog' : 'Catalogo Prodotti' }}">
                             <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">📦</span> 
-                            <span x-show="sidebarOpen" x-transition class="text-sm">Catalogo Prodotti</span>
+                            <span x-show="sidebarOpen" x-transition class="text-sm">{{ $isEn ? 'Product Catalog' : 'Catalogo Prodotti' }}</span>
                         </a>
-                        <a href="{{ route('agent.cart') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.cart') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center relative'" title="Carrello">
+                        <a href="{{ route('agent.cart') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.cart') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center relative'" title="{{ $isEn ? 'Shopping Cart' : 'Carrello' }}">
                             <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">🛒</span> 
-                            <span x-show="sidebarOpen" x-transition class="text-sm">Carrello</span>
+                            <span x-show="sidebarOpen" x-transition class="text-sm">{{ $isEn ? 'Shopping Cart' : 'Carrello' }}</span>
                             @if(count(session('b2b_cart', [])) > 0)
                                 <span :class="sidebarOpen ? 'ml-auto bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm' : 'absolute -top-1 -right-1 bg-rose-600 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black shadow-sm'">{{ count(session('b2b_cart')) }}</span>
                             @endif
                         </a>
-                        <a href="{{ route('agent.orders') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.orders') || request()->routeIs('agent.order_detail') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="Ordini Inviati">
+                        <a href="{{ route('agent.orders') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.orders') || request()->routeIs('agent.order_detail') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="{{ $isEn ? 'My Orders' : 'Ordini Inviati' }}">
                             <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">📝</span> 
-                            <span x-show="sidebarOpen" x-transition class="text-sm">Ordini Inviati</span>
+                            <span x-show="sidebarOpen" x-transition class="text-sm">{{ $isEn ? 'Orders' : 'Ordini Inviati' }}</span>
                         </a>
                         @if(Auth::user()->role === 'agent' || Auth::user()->role === 'admin')
-                        <a href="{{ route('agent.price-lists.index') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.price-lists.*') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="Listini Prezzi">
+                        <a href="{{ route('agent.price-lists.index') }}" class="flex items-center px-3 py-2.5 transition-all duration-200 {{ request()->routeIs('agent.price-lists.*') ? $activeClass : $inactiveClass }}" :class="sidebarOpen ? '' : 'justify-center'" title="{{ $isEn ? 'Price Lists' : 'Listini Prezzi' }}">
                             <span class="text-base" :class="sidebarOpen ? 'mr-3' : ''">🏷️</span> 
-                            <span x-show="sidebarOpen" x-transition class="text-sm">Listini Prezzi</span>
+                            <span x-show="sidebarOpen" x-transition class="text-sm">{{ $isEn ? 'Price Lists' : 'Listini Prezzi' }}</span>
                         </a>
                         @endif
                     </nav>
@@ -266,7 +285,7 @@
                         <div class="flex items-center gap-2">
                             <span class="font-black text-yellow-400 text-sm tracking-wider">B2B PORTAL</span>
                             <span class="text-[10px] font-bold text-zinc-400 uppercase bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
-                                {{ Auth::user()->role === 'customer' ? 'Cliente' : (Auth::user()->role === 'admin' ? 'Admin' : 'Agente') }}
+                                {{ Auth::user()->role === 'customer' ? ($isEn ? 'Customer' : 'Cliente') : (Auth::user()->role === 'admin' ? 'Admin' : ($isEn ? 'Agent' : 'Agente')) }}
                             </span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -284,17 +303,24 @@
                         
                         <!-- Mobile Dropdown -->
                         <div x-show="mobileNav" @click.away="mobileNav = false" x-transition class="absolute top-full left-0 right-0 bg-black border-b border-zinc-800 p-4 space-y-2 shadow-2xl z-50" style="display: none;">
+                            <div class="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2">
+                                <span class="text-xs font-bold text-zinc-400">{{ $isEn ? 'Language:' : 'Lingua:' }}</span>
+                                <div class="flex items-center gap-1">
+                                    <a href="{{ route('set-locale', 'it') }}" class="px-2.5 py-1 text-xs font-bold rounded {{ app()->getLocale() === 'it' ? 'bg-yellow-400 text-black' : 'text-zinc-400 bg-zinc-900' }}">🇮🇹 IT</a>
+                                    <a href="{{ route('set-locale', 'en') }}" class="px-2.5 py-1 text-xs font-bold rounded {{ app()->getLocale() === 'en' ? 'bg-yellow-400 text-black' : 'text-zinc-400 bg-zinc-900' }}">🇬🇧 EN</a>
+                                </div>
+                            </div>
                             <a href="{{ route('agent.dashboard') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.dashboard') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">📊 Dashboard</a>
-                            <a href="{{ route('agent.catalog') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.catalog') || request()->routeIs('agent.product') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">📦 Catalogo Prodotti</a>
-                            <a href="{{ route('agent.cart') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.cart') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">🛒 Carrello ({{ count(session('b2b_cart', [])) }})</a>
-                            <a href="{{ route('agent.orders') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.orders') || request()->routeIs('agent.order_detail') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">📝 Ordini Inviati</a>
+                            <a href="{{ route('agent.catalog') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.catalog') || request()->routeIs('agent.product') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">📦 {{ $isEn ? 'Product Catalog' : 'Catalogo Prodotti' }}</a>
+                            <a href="{{ route('agent.cart') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.cart') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">🛒 {{ $isEn ? 'Shopping Cart' : 'Carrello' }} ({{ count(session('b2b_cart', [])) }})</a>
+                            <a href="{{ route('agent.orders') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.orders') || request()->routeIs('agent.order_detail') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">📝 {{ $isEn ? 'My Orders' : 'Ordini Inviati' }}</a>
                             @if(Auth::user()->role === 'agent' || Auth::user()->role === 'admin')
-                                <a href="{{ route('agent.price-lists.index') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.price-lists.*') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">🏷️ Listini Prezzi</a>
+                                <a href="{{ route('agent.price-lists.index') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider {{ request()->routeIs('agent.price-lists.*') ? 'bg-yellow-400 text-slate-950' : 'text-zinc-300 hover:text-white bg-zinc-900' }}">🏷️ {{ $isEn ? 'Price Lists' : 'Listini Prezzi' }}</a>
                             @endif
                             @if(Auth::user()->role === 'admin')
                                 <a href="{{ route('admin.b2b.orders.index') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider text-amber-300 bg-zinc-900 border border-amber-500/30">⚙️ Pannello Admin B2B</a>
                             @endif
-                            <a href="{{ route('agent.profile') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-white">👤 Profilo</a>
+                            <a href="{{ route('agent.profile') }}" class="block px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-white">👤 {{ $isEn ? 'Profile' : 'Profilo' }}</a>
                         </div>
                     </header>
 

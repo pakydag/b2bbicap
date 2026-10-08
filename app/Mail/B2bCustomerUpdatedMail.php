@@ -17,6 +17,7 @@ class B2bCustomerUpdatedMail extends Mailable
     public $loginEmail;
     public $companyName;
     public $portalUrl;
+    public $isEn;
 
     /**
      * Create a new message instance.
@@ -24,9 +25,10 @@ class B2bCustomerUpdatedMail extends Mailable
     public function __construct($customer, $loginEmail = null)
     {
         $this->customer = $customer;
-        $this->customer->loadMissing('agents', 'paymentCondition', 'priceList');
+        $this->customer->loadMissing('agents', 'paymentCondition', 'priceList', 'user');
         $this->loginEmail = $loginEmail ?: ($customer->user?->email ?? $customer->email);
         $this->companyName = Setting::where('key', 'mail_from_name')->value('value') ?? config('mail.from.name') ?? 'Calzaturificio 5b';
+        $this->isEn = ($customer->user?->locale ?? $customer->locale ?? app()->getLocale()) === 'en';
 
         if (request() && request()->getHost() && request()->getHost() !== 'localhost') {
             $this->portalUrl = request()->getSchemeAndHttpHost() . request()->getBaseUrl() . '/login';
@@ -40,8 +42,12 @@ class B2bCustomerUpdatedMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        $subject = $this->isEn 
+            ? 'B2B Profile & Information Updated - ' . $this->companyName
+            : 'Aggiornamento Dati e Profilo B2B - ' . $this->companyName;
+
         return new Envelope(
-            subject: 'Aggiornamento Dati e Profilo B2B - ' . $this->companyName,
+            subject: $subject,
         );
     }
 

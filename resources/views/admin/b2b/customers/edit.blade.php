@@ -178,6 +178,37 @@
                                 <input type="password" name="b2b_password" id="b2b_password" placeholder="Inserisci nuova password o clicca su 'Genera Password Sicura'" oninput="checkCustomerPasswordCriteria()" class="block w-full border-gray-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-yellow-400 focus:border-yellow-400 shadow-sm @error('b2b_password') border-red-500 @enderror">
                                 @error('b2b_password') <p class="text-rose-500 text-xs mt-1 font-bold">{{ $message }}</p> @enderror
                             </div>
+
+                            @php
+                                $selectedLocale = old('locale', $customerUser?->locale ?? $customer->locale ?? 'it');
+                            @endphp
+
+                            <!-- Selezione Lingua Portale B2B -->
+                            <div>
+                                <label class="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2">
+                                    🌐 Lingua Portale B2B / Preferred Language
+                                </label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label class="flex items-center gap-3 p-3.5 bg-white border-2 rounded-xl cursor-pointer transition {{ $selectedLocale === 'it' ? 'border-yellow-400 bg-yellow-50/40 shadow-xs' : 'border-gray-200 hover:border-gray-300' }}">
+                                        <input type="radio" name="locale" value="it" {{ $selectedLocale === 'it' ? 'checked' : '' }} class="w-4 h-4 text-black border-gray-300 focus:ring-yellow-400">
+                                        <div>
+                                            <span class="block text-xs font-black text-slate-900">🇮🇹 Italiano (IT)</span>
+                                            <span class="block text-[11px] text-gray-500 font-medium">Portale B2B, schede tecniche, riepilogo PDF ed email in Italiano</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="flex items-center gap-3 p-3.5 bg-white border-2 rounded-xl cursor-pointer transition {{ $selectedLocale === 'en' ? 'border-yellow-400 bg-yellow-50/40 shadow-xs' : 'border-gray-200 hover:border-gray-300' }}">
+                                        <input type="radio" name="locale" value="en" {{ $selectedLocale === 'en' ? 'checked' : '' }} class="w-4 h-4 text-black border-gray-300 focus:ring-yellow-400">
+                                        <div>
+                                            <span class="block text-xs font-black text-slate-900">🇬🇧 English (EN)</span>
+                                            <span class="block text-[11px] text-gray-500 font-medium">B2B Portal, specs from EN fields, PDF summary and emails in English</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-1.5 font-semibold">
+                                    Se impostato su <strong>English</strong>, il cliente visualizzerà automaticamente il catalogo in inglese con tutte le specifiche tecniche tradotte, riceverà le notifiche d'ordine in inglese e potrà scaricare il PDF in inglese.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Criteri di Sicurezza Password -->

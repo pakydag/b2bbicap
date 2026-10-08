@@ -18,6 +18,7 @@ class B2bCustomerAccountMail extends Mailable
     public $password;
     public $companyName;
     public $portalUrl;
+    public $isEn;
 
     /**
      * Create a new message instance.
@@ -25,10 +26,11 @@ class B2bCustomerAccountMail extends Mailable
     public function __construct($customer, $loginEmail, $password)
     {
         $this->customer = $customer;
-        $this->customer->loadMissing('agents');
+        $this->customer->loadMissing('agents', 'user');
         $this->loginEmail = $loginEmail;
         $this->password = $password;
         $this->companyName = Setting::where('key', 'mail_from_name')->value('value') ?? config('mail.from.name') ?? 'Calzaturificio 5b';
+        $this->isEn = ($customer->user?->locale ?? $customer->locale ?? app()->getLocale()) === 'en';
 
         if (request() && request()->getHost() && request()->getHost() !== 'localhost') {
             $this->portalUrl = request()->getSchemeAndHttpHost() . request()->getBaseUrl() . '/login';
@@ -42,8 +44,12 @@ class B2bCustomerAccountMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        $subject = $this->isEn 
+            ? 'B2B Portal Access Activation - ' . $this->companyName
+            : 'Attivazione Accesso Portale B2B - ' . $this->companyName;
+
         return new Envelope(
-            subject: 'Attivazione Accesso Portale B2B - ' . $this->companyName,
+            subject: $subject,
         );
     }
 

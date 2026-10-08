@@ -23,9 +23,9 @@ class SyncGiacenze extends Command
     protected $description = 'Scarica l\'ultimo file Giacenza.csv dal server FTPS (51.75.145.169 / Output/Giacenza.csv)';
 
     /**
-     * Cooldown in secondi tra sincronizzazioni (2 minuti = 120s)
+     * Cooldown in secondi tra sincronizzazioni (1 minuto = 60s)
      */
-    protected int $cooldownSeconds = 120;
+    protected int $cooldownSeconds = 60;
 
     /**
      * Execute the console command.
@@ -33,7 +33,7 @@ class SyncGiacenze extends Command
     public function handle()
     {
         $lockKey = 'b2b_sync_giacenze_process_lock';
-        $lock = Cache::lock($lockKey, 120);
+        $lock = Cache::lock($lockKey, 60);
 
         if (!$lock->get()) {
             $msg = "[SyncGiacenze] Un'altra sincronizzazione giacenze è già in corso. Operazione saltata.";
@@ -43,7 +43,7 @@ class SyncGiacenze extends Command
         }
 
         try {
-            // Controllo Cooldown (2 minuti)
+            // Controllo Cooldown (1 minuto)
             if (!$this->option('force')) {
                 $lastSync = Cache::get('b2b_last_giacenze_sync_timestamp');
                 if ($lastSync) {

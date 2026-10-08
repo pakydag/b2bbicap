@@ -8,7 +8,7 @@ class B2bCustomer extends Model
 {
     protected $fillable = [
         'code', 'business_name', 'vat_number', 'contact_name', 
-        'contact_surname', 'phone', 'email', 'payment_condition_id',
+        'contact_surname', 'phone', 'email', 'locale', 'payment_condition_id',
         'b2b_price_list_id'
     ];
 

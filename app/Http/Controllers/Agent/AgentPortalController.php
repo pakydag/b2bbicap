@@ -51,6 +51,7 @@ class AgentPortalController extends Controller
             $allAgentProducts = B2bProduct::whereIn('b2b_brand_id', $brandIds)->where('is_active', true)->get();
         }
         
+        $isEn = app()->getLocale() === 'en';
         $filterOptions = [
             'settori' => [],
             'tipologie' => [],
@@ -62,19 +63,35 @@ class AgentPortalController extends Controller
             'norme' => [],
         ];
         
+        $settoreKey = $isEn ? 'SETTORE-DI-UTILIZZO-EN' : 'SETTORE-DI-UTILIZZO-IT';
+        $tipologiaKey = $isEn ? 'TIPOLOGIA-FILTRO-EN' : 'TIPOLOGIA-FILTRO-IT';
+        $materialeKey = $isEn ? 'MATERIALE-FILTRO-EN' : 'MATERIALE-FILTRO-IT';
+        $puntaleKey = $isEn ? 'PUNTALE-FILTRO-EN' : 'PUNTALE-FILTRO-IT';
+        $suolaKey = $isEn ? 'SUOLA-FILTRO-EN' : 'SUOLA-FILTRO-IT';
+
         foreach ($allAgentProducts as $p) {
             $c = $p->characteristics ?? [];
-            if (!empty($c['SETTORE-DI-UTILIZZO-IT'])) {
-                $parts = array_map('trim', explode('/', $c['SETTORE-DI-UTILIZZO-IT']));
+            $settoreVal = !empty($c[$settoreKey]) ? $c[$settoreKey] : ($c['SETTORE-DI-UTILIZZO-IT'] ?? '');
+            if (!empty($settoreVal)) {
+                $parts = array_map('trim', explode('/', $settoreVal));
                 foreach ($parts as $part) {
                     if ($part !== '') $filterOptions['settori'][$part] = true;
                 }
             }
-            if (!empty($c['TIPOLOGIA-FILTRO-IT'])) $filterOptions['tipologie'][trim($c['TIPOLOGIA-FILTRO-IT'])] = true;
+            $tipVal = !empty($c[$tipologiaKey]) ? $c[$tipologiaKey] : ($c['TIPOLOGIA-FILTRO-IT'] ?? '');
+            if (!empty($tipVal)) $filterOptions['tipologie'][trim($tipVal)] = true;
+
             if (!empty($c['CAT-SICUREZZA-FILTRO'])) $filterOptions['categorie'][trim($c['CAT-SICUREZZA-FILTRO'])] = true;
-            if (!empty($c['MATERIALE-FILTRO-IT'])) $filterOptions['materiali'][trim($c['MATERIALE-FILTRO-IT'])] = true;
-            if (!empty($c['PUNTALE-FILTRO-IT'])) $filterOptions['puntali'][trim($c['PUNTALE-FILTRO-IT'])] = true;
-            if (!empty($c['SUOLA-FILTRO-IT'])) $filterOptions['suole'][trim($c['SUOLA-FILTRO-IT'])] = true;
+
+            $matVal = !empty($c[$materialeKey]) ? $c[$materialeKey] : ($c['MATERIALE-FILTRO-IT'] ?? '');
+            if (!empty($matVal)) $filterOptions['materiali'][trim($matVal)] = true;
+
+            $puntVal = !empty($c[$puntaleKey]) ? $c[$puntaleKey] : ($c['PUNTALE-FILTRO-IT'] ?? '');
+            if (!empty($puntVal)) $filterOptions['puntali'][trim($puntVal)] = true;
+
+            $suolaVal = !empty($c[$suolaKey]) ? $c[$suolaKey] : ($c['SUOLA-FILTRO-IT'] ?? '');
+            if (!empty($suolaVal)) $filterOptions['suole'][trim($suolaVal)] = true;
+
             if (!empty($c['CALZATA'])) $filterOptions['calzate'][trim($c['CALZATA'])] = true;
             if (!empty($c['NORMA'])) $filterOptions['norme'][trim($c['NORMA'])] = true;
         }
@@ -101,13 +118,17 @@ class AgentPortalController extends Controller
         if ($request->filled('settori')) {
             $query->where(function($q) use ($request) {
                 foreach ($request->settori as $sector) {
-                    $q->orWhere('characteristics->SETTORE-DI-UTILIZZO-IT', 'like', '%' . $sector . '%');
+                    $q->orWhere('characteristics->SETTORE-DI-UTILIZZO-IT', 'like', '%' . $sector . '%')
+                      ->orWhere('characteristics->SETTORE-DI-UTILIZZO-EN', 'like', '%' . $sector . '%');
                 }
             });
         }
         
         if ($request->filled('tipologie')) {
-            $query->whereIn('characteristics->TIPOLOGIA-FILTRO-IT', $request->tipologie);
+            $query->where(function($q) use ($request) {
+                $q->whereIn('characteristics->TIPOLOGIA-FILTRO-IT', $request->tipologie)
+                  ->orWhereIn('characteristics->TIPOLOGIA-FILTRO-EN', $request->tipologie);
+            });
         }
         
         if ($request->filled('categorie')) {
@@ -115,15 +136,24 @@ class AgentPortalController extends Controller
         }
         
         if ($request->filled('materiali')) {
-            $query->whereIn('characteristics->MATERIALE-FILTRO-IT', $request->materiali);
+            $query->where(function($q) use ($request) {
+                $q->whereIn('characteristics->MATERIALE-FILTRO-IT', $request->materiali)
+                  ->orWhereIn('characteristics->MATERIALE-FILTRO-EN', $request->materiali);
+            });
         }
         
         if ($request->filled('puntali')) {
-            $query->whereIn('characteristics->PUNTALE-FILTRO-IT', $request->puntali);
+            $query->where(function($q) use ($request) {
+                $q->whereIn('characteristics->PUNTALE-FILTRO-IT', $request->puntali)
+                  ->orWhereIn('characteristics->PUNTALE-FILTRO-EN', $request->puntali);
+            });
         }
         
         if ($request->filled('suole')) {
-            $query->whereIn('characteristics->SUOLA-FILTRO-IT', $request->suole);
+            $query->where(function($q) use ($request) {
+                $q->whereIn('characteristics->SUOLA-FILTRO-IT', $request->suole)
+                  ->orWhereIn('characteristics->SUOLA-FILTRO-EN', $request->suole);
+            });
         }
         
         if ($request->filled('calzate')) {
@@ -740,7 +770,7 @@ class AgentPortalController extends Controller
             'agent_id' => $agentId,
             'b2b_customer_id' => $customerId,
             'internal_reference' => $request->internal_reference,
-            'status' => 'pending',
+            'status' => 'confirmed',
             'notes' => $request->notes,
             'total_amount' => 0,
         ]);
@@ -779,20 +809,26 @@ class AgentPortalController extends Controller
 
         $order->update(['total_amount' => $total]);
         
-        // Invio notifica ricezione ordine a Cliente e Agente
+        // Genera ed invia subito via FTP il file CSV dell'ordine
+        $csvResult = $this->exportOrderToFtpCsv($order);
+
+        // Invio notifica ricezione e conferma ordine a Cliente e Agente
         try {
             $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
             $custEmail = $order->customer?->user?->email ?: $order->customer?->email;
             $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
             $agentEmail = $agent?->email;
+            $custLocale = $order->customer?->locale ?: ($order->customer?->user?->locale ?: 'it');
+            $custIsEn = $custLocale === 'en';
 
             if (!empty($custEmail)) {
+                $subj = $custIsEn ? 'B2B Order Confirmation #' . $order->id : 'Conferma Ordine B2B #' . $order->id;
                 \Illuminate\Support\Facades\Mail::to($custEmail)
-                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Ricezione Ordine B2B'));
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', $subj));
             }
             if (!empty($agentEmail)) {
                 \Illuminate\Support\Facades\Mail::to($agentEmail)
-                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Nuovo Ordine B2B Registrato'));
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Nuovo Ordine B2B Confermato #' . $order->id));
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning("[OrderCreatedMail] Errore invio notifica ordine #{$order->id}: " . $e->getMessage());
@@ -801,18 +837,29 @@ class AgentPortalController extends Controller
         // Aggiorniamo la sessione con i restanti prodotti non inviati
         $cart = array_values($cart);
         
+        $isEn = app()->getLocale() === 'en';
+        $msg = $isEn
+            ? "Order #{$order->id} submitted and confirmed successfully."
+            : "Ordine #{$order->id} inviato e confermato con successo.";
+        if (!empty($csvResult['uploaded'])) {
+            $msg .= $isEn 
+                ? " File {$csvResult['filename']} transmitted to FTP Input folder."
+                : " File {$csvResult['filename']} trasmesso nella cartella Input dell'FTP.";
+        }
+
         if (count($cart) > 0) {
             $cart = $this->recalculateCartPrices($cart, $b2bCustomer);
             session()->put('b2b_cart', $cart);
             $this->persistCart($cart);
 
-            return redirect()->route('agent.cart')->with('success', 'Ordine #' . $order->id . ' inviato correttamente all\'amministrazione. Nel carrello sono ancora presenti articoli da inviare.');
+            $moreMsg = $isEn ? ' There are still remaining items in your cart to send.' : ' Nel carrello sono ancora presenti articoli da inviare.';
+            return redirect()->route('agent.cart')->with('success', $msg . $moreMsg);
         }
 
         session()->put('b2b_cart', $cart);
         $this->persistCart($cart);
 
-        return redirect()->route('agent.orders')->with('success', 'Ordine #' . $order->id . ' inviato correttamente all\'amministrazione.');
+        return redirect()->route('agent.orders')->with('success', $msg);
     }
 
     public function orders()
@@ -1074,7 +1121,10 @@ class AgentPortalController extends Controller
             abort(403, 'Non sei autorizzato ad accettare questo ordine.');
         }
 
-        $order->update(['status' => 'customer_approved']);
+        $order->update(['status' => 'confirmed']);
+
+        // Genera ed invia subito via FTP il file CSV dell'ordine
+        $csvResult = $this->exportOrderToFtpCsv($order);
 
         // Notifica cliente e agente
         $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
@@ -1082,11 +1132,11 @@ class AgentPortalController extends Controller
         $agent = $order->agent ?: ($order->customer?->agents ? $order->customer->agents->first() : null);
         $agentEmail = $agent?->email;
 
-        // 1. Notifica al cliente (conferma accettazione)
+        // 1. Notifica al cliente (conferma accettazione e ordine definitivo)
         if (!empty($custEmail)) {
             try {
                 \Illuminate\Support\Facades\Mail::to($custEmail)
-                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Modifiche Ordine B2B Accettate'));
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Conferma Definitiva Ordine B2B'));
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning("[OrderAcceptMail] Errore notifica cliente {$custEmail}: " . $e->getMessage());
             }
@@ -1096,13 +1146,18 @@ class AgentPortalController extends Controller
         if (!empty($agentEmail)) {
             try {
                 \Illuminate\Support\Facades\Mail::to($agentEmail)
-                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Modifiche Ordine B2B Accettate dal Cliente'));
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Conferma Definitiva Ordine B2B per Agente'));
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning("[OrderAcceptMail] Errore notifica agente {$agentEmail}: " . $e->getMessage());
             }
         }
 
-        return redirect()->back()->with('success', 'Hai accettato le modifiche dell\'Ordine #' . $order->id . '. L\'ordine è in attesa di OK finale dall\'agente/amministrazione.');
+        $msg = 'Hai accettato le modifiche dell\'Ordine #' . $order->id . '. L\'ordine è stato confermato con successo.';
+        if (!empty($csvResult['uploaded'])) {
+            $msg .= ' File ' . $csvResult['filename'] . ' trasmesso nella cartella Input dell\'FTP.';
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     public function rejectOrderModifications(B2bOrder $order)
@@ -1384,7 +1439,7 @@ class AgentPortalController extends Controller
     public function pingSync()
     {
         $lastSync = \Illuminate\Support\Facades\Cache::get('b2b_last_giacenze_sync_timestamp');
-        $needsSync = !$lastSync || abs(now()->diffInSeconds($lastSync)) >= 120;
+        $needsSync = !$lastSync || abs(now()->diffInSeconds($lastSync)) >= 60;
 
         if ($needsSync) {
             try {
@@ -1403,9 +1458,9 @@ class AgentPortalController extends Controller
 
     public function getGiacenzaData()
     {
-        // Controllo e avvio automatico sync non-bloccante se sono passati più di 2 minuti
+        // Controllo e avvio automatico sync non-bloccante se sono passati più di 60 secondi (1 minuto)
         $lastSync = \Illuminate\Support\Facades\Cache::get('b2b_last_giacenze_sync_timestamp');
-        if (!$lastSync || abs(now()->diffInSeconds($lastSync)) >= 120) {
+        if (!$lastSync || abs(now()->diffInSeconds($lastSync)) >= 60) {
             try {
                 $phpBinary = \App\Models\B2bProduct::getPhpCliBinary();
                 $artisan = base_path('artisan');

@@ -1,7 +1,10 @@
+@php
+    $isEn = app()->getLocale() === 'en';
+@endphp
 <x-agent-layout>
     <x-slot name="header">
         <h2 class="text-2xl font-black text-gray-800 tracking-tight uppercase">
-            {{ __('Il Tuo Carrello B2B') }}
+            {{ $isEn ? 'Your B2B Cart' : 'Il Tuo Carrello B2B' }}
         </h2>
     </x-slot>
 
@@ -9,9 +12,9 @@
         @if(empty($cart))
             <div class="bg-white rounded-[40px] shadow-sm border border-gray-100 p-20 text-center">
                 <span class="text-8xl block mb-6">🛒</span>
-                <h3 class="text-2xl font-black text-gray-900 uppercase tracking-tight mb-2">Il carrello è vuoto</h3>
-                <p class="text-gray-400 font-bold uppercase tracking-widest text-sm mb-10">Sfoglia il catalogo per iniziare una nuova raccolta ordini.</p>
-                <a href="{{ route('agent.catalog') }}" class="inline-block bg-black border border-zinc-950 text-white px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:border-yellow-400 hover:text-yellow-400 transition">Torna al Catalogo</a>
+                <h3 class="text-2xl font-black text-gray-900 uppercase tracking-tight mb-2">{{ $isEn ? 'Your cart is empty' : 'Il carrello è vuoto' }}</h3>
+                <p class="text-gray-400 font-bold uppercase tracking-widest text-sm mb-10">{{ $isEn ? 'Browse the catalog to start a new order.' : 'Sfoglia il catalogo per iniziare una nuova raccolta ordini.' }}</p>
+                <a href="{{ route('agent.catalog') }}" class="inline-block bg-black border border-zinc-950 text-white px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:border-yellow-400 hover:text-yellow-400 transition">{{ $isEn ? 'Back to Catalog' : 'Torna al Catalogo' }}</a>
             </div>
         @else
             <div class="flex flex-col 2xl:flex-row gap-8 items-start min-w-0">
@@ -27,7 +30,7 @@
 
                     @foreach($groupedCart as $key => $items)
                         @php
-                            $groupTitle = $key === 'immediate' ? 'Pronta Consegna' : 'Consegna dal ' . $key;
+                            $groupTitle = $key === 'immediate' ? ($isEn ? 'Immediate Delivery' : 'Pronta Consegna') : ($isEn ? 'Delivery from ' . $key : 'Consegna dal ' . $key);
                         @endphp
                         <div>
                             <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-4 pl-4 border-l-4 {{ $key === 'immediate' ? 'border-emerald-500' : 'border-amber-500' }}">{{ $groupTitle }}</h3>
@@ -36,12 +39,12 @@
                                     <table class="w-full text-left">
                                         <thead class="bg-gray-50/75">
                                             <tr class="text-xs font-black text-gray-500 uppercase tracking-widest border-b border-gray-100">
-                                                <th class="px-6 py-4">Articolo</th>
-                                                <th class="px-4 py-4 text-center">Dettagli</th>
-                                                <th class="px-4 py-4 text-center">Prezzo Cad.</th>
-                                                <th class="px-4 py-4 text-center">Quantità</th>
-                                                <th class="px-6 py-4 text-right">Subtotale</th>
-                                                <th class="px-4 py-4 text-center">Azioni</th>
+                                                <th class="px-6 py-4">{{ $isEn ? 'Product' : 'Articolo' }}</th>
+                                                <th class="px-4 py-4 text-center">{{ $isEn ? 'Details' : 'Dettagli' }}</th>
+                                                <th class="px-4 py-4 text-center">{{ $isEn ? 'Unit Price' : 'Prezzo Cad.' }}</th>
+                                                <th class="px-4 py-4 text-center">{{ $isEn ? 'Quantity' : 'Quantità' }}</th>
+                                                <th class="px-6 py-4 text-right">{{ $isEn ? 'Subtotal' : 'Subtotale' }}</th>
+                                                <th class="px-4 py-4 text-center">{{ $isEn ? 'Actions' : 'Azioni' }}</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-50">
@@ -73,13 +76,13 @@
                                                                     </span>
                                                                 @else
                                                                     <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
-                                                                        ✓ Immediata
+                                                                        {{ $isEn ? '✓ Immediate' : '✓ Immediata' }}
                                                                     </span>
                                                                 @endif
 
                                                                 @if($isProductException)
                                                                     <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
-                                                                        ⭐ Prezzo Riservato
+                                                                        {{ $isEn ? '⭐ Custom Price' : '⭐ Prezzo Riservato' }}
                                                                     </span>
                                                                 @endif
                                                             </div>
@@ -88,7 +91,7 @@
                                                 </td>
                                                 <td class="px-4 py-5 text-center whitespace-nowrap">
                                                     <span class="bg-indigo-50 text-indigo-800 border border-indigo-100 px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider">
-                                                        {{ $item['color'] ?? 'Unico' }} / {{ $item['size'] }}
+                                                        {{ (!empty($item['color']) && strtoupper($item['color']) !== 'UNICO') ? $item['color'] : ($isEn ? 'Unique' : 'Unico') }} / {{ $item['size'] }}
                                                     </span>
                                                 </td>
                                                 <td class="px-4 py-5 text-center uppercase whitespace-nowrap">
@@ -103,7 +106,7 @@
                                                                 € {{ number_format($item['price'], 2, ',', '.') }}
                                                             </span>
                                                             <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight" title="Prezzo calcolato da regola specifica / listino personalizzato">
-                                                                ⭐ Listino Personalizzato
+                                                                ⭐ {{ $isEn ? 'Custom Price List' : 'Listino Personalizzato' }}
                                                             </span>
                                                             @if($ruleSummary)
                                                                 <span class="text-[9px] text-gray-500 font-bold mt-0.5 tracking-tight">
@@ -118,7 +121,7 @@
                                                                 € {{ number_format($item['price'], 2, ',', '.') }}
                                                             </span>
                                                             <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tight">
-                                                                📉 Sconto Quantità
+                                                                📉 {{ $isEn ? 'Volume Discount' : 'Sconto Quantità' }}
                                                             </span>
                                                             @if($ruleSummary)
                                                                 <span class="text-[9px] text-indigo-500 font-bold mt-0.5 tracking-tight">
@@ -150,7 +153,7 @@
                                                     </form>
                                                     @if(isset($item['available_qty']))
                                                         <div class="text-[10px] text-gray-400 font-bold mt-1 text-center">
-                                                            Max: {{ $item['available_qty'] }} pz
+                                                            Max: {{ $item['available_qty'] }} {{ $isEn ? 'pcs' : 'pz' }}
                                                         </div>
                                                     @endif
                                                 </td>
@@ -180,32 +183,32 @@
                     <div class="bg-white rounded-3xl sm:rounded-[40px] shadow-sm border border-gray-100 p-6 sm:p-8 space-y-6 sticky top-6">
                         <div>
                             @if(auth()->user()->role === 'customer')
-                                <h3 class="font-black text-lg text-gray-900 uppercase tracking-tight mb-4 border-b border-gray-50 pb-2">Riepilogo Azienda</h3>
+                                <h3 class="font-black text-lg text-gray-900 uppercase tracking-tight mb-4 border-b border-gray-50 pb-2">{{ $isEn ? 'Company Summary' : 'Riepilogo Azienda' }}</h3>
                                 <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 mb-6">
-                                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ordinante</p>
+                                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{{ $isEn ? 'Purchaser / Company' : 'Ordinante' }}</p>
                                     <p class="font-black text-indigo-900 uppercase">{{ auth()->user()->b2bCustomer->business_name }}</p>
-                                    <p class="text-[10px] text-gray-500 font-bold mt-1">P.IVA: {{ auth()->user()->b2bCustomer->vat_number ?? 'N/D' }}</p>
+                                    <p class="text-[10px] text-gray-500 font-bold mt-1">VAT/P.IVA: {{ auth()->user()->b2bCustomer->vat_number ?? 'N/D' }}</p>
                                 </div>
                                 <form action="{{ route('agent.process_checkout') }}" method="POST" id="checkout-form">
                                     @csrf
                                     <div class="space-y-6">
                             @else
-                                <h3 class="font-black text-lg text-gray-900 uppercase tracking-tight mb-2 border-b border-gray-50 pb-2">Selezione Cliente & Listino</h3>
+                                <h3 class="font-black text-lg text-gray-900 uppercase tracking-tight mb-2 border-b border-gray-50 pb-2">{{ $isEn ? 'Customer & Price List Selection' : 'Selezione Cliente & Listino' }}</h3>
                                 
                                 @if(!$customer)
                                     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 text-xs font-bold text-amber-900 flex items-start gap-3 shadow-sm">
                                         <span class="text-xl">⚠️</span>
                                         <div>
-                                            <p class="font-black uppercase text-xs">Nessun Cliente Attivo</p>
-                                            <p class="text-[11px] text-amber-800 font-medium mt-0.5 leading-relaxed">I prezzi attuali nel carrello sono a Listino Base. Seleziona un'azienda autorizzata per applicare il listino dedicato prima dell'invio.</p>
+                                            <p class="font-black uppercase text-xs">{{ $isEn ? 'No Active Customer' : 'Nessun Cliente Attivo' }}</p>
+                                            <p class="text-[11px] text-amber-800 font-medium mt-0.5 leading-relaxed">{{ $isEn ? 'Current cart prices are at Base List Price. Select an authorized company to apply their dedicated price list before submitting.' : 'I prezzi attuali nel carrello sono a Listino Base. Seleziona un\'azienda autorizzata per applicare il listino dedicato prima dell\'invio.' }}</p>
                                         </div>
                                     </div>
                                 @else
                                     <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-4 flex items-center justify-between shadow-sm">
                                         <div>
-                                            <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 block">Cliente Attivo</span>
+                                            <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 block">{{ $isEn ? 'Active Customer' : 'Cliente Attivo' }}</span>
                                             <p class="font-black text-emerald-950 text-sm uppercase">{{ $customer->business_name }}</p>
-                                            <p class="text-[10px] text-emerald-800 font-medium">P.IVA: {{ $customer->vat_number ?? 'N/D' }}</p>
+                                            <p class="text-[10px] text-emerald-800 font-medium">VAT/P.IVA: {{ $customer->vat_number ?? 'N/D' }}</p>
                                         </div>
                                         @if($customer->priceList)
                                             <span class="bg-emerald-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full shadow-sm">
@@ -218,7 +221,7 @@
                                 <div x-data="{ 
                                         search: '',
                                         show: false,
-                                        selectedName: '{{ $customer ? addslashes(($customer->code ? '[' . $customer->code . '] ' : '') . $customer->business_name) : 'Seleziona un cliente...' }}',
+                                        selectedName: '{{ $customer ? addslashes(($customer->code ? '[' . $customer->code . '] ' : '') . $customer->business_name) : ($isEn ? 'Select a customer...' : 'Seleziona un cliente...') }}',
                                         selectedId: '{{ $customer ? $customer->id : '' }}',
                                         customers: [
                                             @foreach($customers as $c)
@@ -227,7 +230,7 @@
                                                 code: '{{ addslashes($c->code ?? '') }}', 
                                                 name: '{{ addslashes($c->business_name) }}', 
                                                 vat: '{{ $c->vat_number }}',
-                                                priceList: '{{ addslashes($c->priceList?->name ?? 'Listino Base') }}'
+                                                priceList: '{{ addslashes($c->priceList?->name ?? ($isEn ? 'Base List Price' : 'Listino Base')) }}'
                                             },
                                             @endforeach
                                         ],
@@ -263,7 +266,7 @@
                                         }
                                     }" class="relative mb-6">
                                     
-                                    <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Cambia Cliente / Listino *</label>
+                                    <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">{{ $isEn ? 'Change Customer / Price List *' : 'Cambia Cliente / Listino *' }}</label>
                                     
                                     <!-- Custom Searchable Select -->
                                     <div class="relative">
@@ -277,7 +280,7 @@
                                              class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden" 
                                              x-cloak>
                                             <div class="p-3 border-b border-gray-50 bg-gray-50">
-                                                <input type="text" x-model="search" placeholder="Cerca per codice, nome o P.IVA..." 
+                                                <input type="text" x-model="search" placeholder="{{ $isEn ? 'Search by code, name or VAT...' : 'Cerca per codice, nome o P.IVA...' }}" 
                                                        class="w-full border-gray-200 rounded-xl text-xs focus:ring-yellow-400 focus:border-yellow-400 p-2.5 bg-white">
                                             </div>
                                             <div class="max-h-60 overflow-y-auto divide-y divide-gray-50">
@@ -292,17 +295,17 @@
                                                                 <p class="font-black text-gray-900 text-xs uppercase group-hover:text-amber-900" x-text="c.name"></p>
                                                             </div>
                                                             <div class="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400 font-medium">
-                                                                <span x-text="'P.IVA: ' + (c.vat || 'N/D')"></span>
+                                                                <span x-text="'VAT/P.IVA: ' + (c.vat || 'N/D')"></span>
                                                                 <span class="text-amber-700 font-bold" x-text="'• ' + c.priceList"></span>
                                                             </div>
                                                         </div>
                                                         <span class="text-[10px] font-black uppercase text-amber-700 opacity-0 group-hover:opacity-100 transition">
-                                                            Applica Listino →
+                                                            {{ $isEn ? 'Apply Price List →' : 'Applica Listino →' }}
                                                         </span>
                                                     </div>
                                                 </template>
                                                 <div x-show="filteredCustomers.length === 0" class="p-4 text-center text-xs text-gray-400 italic">
-                                                    Nessun cliente trovato per questa ricerca.
+                                                    {{ $isEn ? 'No customers found for this search.' : 'Nessun cliente trovato per questa ricerca.' }}
                                                 </div>
                                             </div>
                                         </div>
@@ -317,21 +320,21 @@
 
                                     <div>
                                         <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5 flex items-center justify-between">
-                                            <span>Riferimento Ordine Interno *</span>
-                                            <span class="text-[10px] text-amber-600 font-bold lowercase bg-amber-50 px-2 py-0.5 rounded border border-amber-200">obbligatorio</span>
+                                            <span>{{ $isEn ? 'Internal Order Reference *' : 'Riferimento Ordine Interno *' }}</span>
+                                            <span class="text-[10px] text-amber-600 font-bold lowercase bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{{ $isEn ? 'required' : 'obbligatorio' }}</span>
                                         </label>
                                         <input type="text" name="internal_reference" required 
-                                               placeholder="Es. ORD-2026-001 o N. Ordine Interno..." 
+                                               placeholder="{{ $isEn ? 'e.g. PO-2026-001 or Internal Order No...' : 'Es. ORD-2026-001 o N. Ordine Interno...' }}" 
                                                value="{{ old('internal_reference') }}" 
                                                class="w-full border-gray-300 rounded-2xl text-sm font-bold text-gray-900 focus:ring-yellow-400 focus:border-yellow-400 p-3.5 bg-gray-50/50 shadow-inner">
                                         <p class="text-[10px] text-gray-400 font-medium mt-1 leading-tight">
-                                            Questo riferimento sarà visualizzato negli elenchi ordini, nei documenti PDF e nelle email di conferma.
+                                            {{ $isEn ? 'This reference will be displayed in order lists, PDF documents, and confirmation emails.' : 'Questo riferimento sarà visualizzato negli elenchi ordini, nei documenti PDF e nelle email di conferma.' }}
                                         </p>
                                     </div>
 
                                     <div>
-                                        <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Note per la sede</label>
-                                        <textarea name="notes" placeholder="Eventuali istruzioni speciali..." rows="4" class="w-full border-gray-200 rounded-2xl text-base focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                        <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">{{ $isEn ? 'Notes for headquarters' : 'Note per la sede' }}</label>
+                                        <textarea name="notes" placeholder="{{ $isEn ? 'Any special instructions...' : 'Eventuali istruzioni speciali...' }}" rows="4" class="w-full border-gray-200 rounded-2xl text-base focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                                     </div>
 
                                     @php
@@ -364,15 +367,15 @@
                                                 <div class="flex items-center gap-2.5">
                                                     <span class="text-xl">📋</span>
                                                     <div>
-                                                        <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block leading-none">Listino Prezzi Applicato</span>
+                                                        <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block leading-none">{{ $isEn ? 'Applied Price List' : 'Listino Prezzi Applicato' }}</span>
                                                         <h4 class="font-black text-indigo-950 uppercase tracking-tight text-sm mt-0.5">
-                                                            {{ $assignedPriceList ? $assignedPriceList->name : 'Condizioni Standard' }}
+                                                            {{ $assignedPriceList ? $assignedPriceList->name : ($isEn ? 'Standard Conditions' : 'Condizioni Standard') }}
                                                         </h4>
                                                     </div>
                                                 </div>
                                                 @if($assignedPriceList)
                                                     <span class="bg-indigo-600 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
-                                                        Attivo
+                                                        {{ $isEn ? 'Active' : 'Attivo' }}
                                                     </span>
                                                 @endif
                                             </div>
@@ -381,13 +384,13 @@
                                             @if($generalTiers && $generalTiers->count() > 0)
                                                 <div>
                                                     <h5 class="font-black text-indigo-900 uppercase tracking-wider text-xs mb-2 flex items-center gap-1.5">
-                                                        <span>📉</span> Sconti Quantità Generali (Catalogo)
+                                                        <span>📉</span> {{ $isEn ? 'General Volume Discounts (Catalog)' : 'Sconti Quantità Generali (Catalogo)' }}
                                                     </h5>
                                                     <div class="bg-white/90 rounded-2xl border border-indigo-100 p-3 shadow-2xs space-y-1.5">
                                                         @foreach($generalTiers as $tier)
                                                             <div class="flex justify-between items-center text-xs font-bold text-indigo-950">
                                                                 <span class="text-gray-600">
-                                                                    Da {{ $tier->min_quantity }} {{ $tier->max_quantity ? 'a ' . $tier->max_quantity : 'in poi' }} pz
+                                                                    {{ $isEn ? 'From ' . $tier->min_quantity . ($tier->max_quantity ? ' to ' . $tier->max_quantity : '+') . ' pcs' : 'Da ' . $tier->min_quantity . ' ' . ($tier->max_quantity ? 'a ' . $tier->max_quantity : 'in poi') . ' pz' }}
                                                                 </span>
                                                                 <span class="font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
                                                                     @if($tier->discount_type === 'percentage')
@@ -402,7 +405,7 @@
                                                         @endforeach
                                                     </div>
                                                     <p class="text-[10px] text-indigo-500 font-semibold mt-1.5 leading-tight">
-                                                        Validi su tutti i prodotti standard non soggetti a listino personalizzato.
+                                                        {{ $isEn ? 'Valid on all standard products not subject to a custom price list.' : 'Validi su tutti i prodotti standard non soggetti a listino personalizzato.' }}
                                                     </p>
                                                 </div>
                                             @endif
@@ -414,7 +417,7 @@
                                                 @endphp
                                                 <div>
                                                     <h5 class="font-black text-amber-900 uppercase tracking-wider text-xs mb-2 flex items-center gap-1.5">
-                                                        <span>⭐</span> Listino Personalizzato Articoli (Eccezioni)
+                                                        <span>⭐</span> {{ $isEn ? 'Custom Item Price List (Exceptions)' : 'Listino Personalizzato Articoli (Eccezioni)' }}
                                                     </h5>
                                                     <div class="space-y-2">
                                                         @foreach($groupedExceptions as $prodId => $pTiers)
@@ -430,12 +433,12 @@
                                                                                 {{ $exceptionProduct->code ? $exceptionProduct->code . ' - ' : '' }}{{ $exceptionProduct->name }}
                                                                             </p>
                                                                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                                                                Listino Base: € {{ number_format($exceptionProduct->price, 2, ',', '.') }}
+                                                                                {{ $isEn ? 'Base Price:' : 'Listino Base:' }} € {{ number_format($exceptionProduct->price, 2, ',', '.') }}
                                                                             </p>
                                                                         </div>
                                                                         @if($inCart)
                                                                             <span class="inline-flex items-center gap-0.5 bg-amber-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 shadow-xs">
-                                                                                ✓ Nel Carrello
+                                                                                {{ $isEn ? '✓ In Cart' : '✓ Nel Carrello' }}
                                                                             </span>
                                                                         @endif
                                                                     </div>
@@ -448,9 +451,9 @@
                                                                             <div class="flex justify-between items-center text-[11px] font-bold bg-white px-2.5 py-1.5 rounded-lg border border-amber-100 shadow-2xs">
                                                                                 <span class="text-gray-600">
                                                                                     @if($pTier->min_quantity > 1 || !empty($pTier->max_quantity))
-                                                                                        Da {{ $pTier->min_quantity }} {{ $pTier->max_quantity ? 'a ' . $pTier->max_quantity : 'in poi' }} pz:
+                                                                                        {{ $isEn ? 'From ' . $pTier->min_quantity . ($pTier->max_quantity ? ' to ' . $pTier->max_quantity : '+') . ' pcs:' : 'Da ' . $pTier->min_quantity . ' ' . ($pTier->max_quantity ? 'a ' . $pTier->max_quantity : 'in poi') . ' pz:' }}
                                                                                     @else
-                                                                                        Prezzo Riservato:
+                                                                                        {{ $isEn ? 'Reserved Price:' : 'Prezzo Riservato:' }}
                                                                                     @endif
                                                                                 </span>
                                                                                 <div class="text-right">
@@ -469,7 +472,7 @@
                                                         @endforeach
                                                     </div>
                                                     <p class="text-[10px] text-amber-800 font-semibold mt-1.5 leading-tight">
-                                                        Prezzi netti e sconti dedicati applicati direttamente ai rispettivi articoli.
+                                                        {{ $isEn ? 'Net prices and dedicated discounts applied directly to the respective items.' : 'Prezzi netti e sconti dedicati applicati direttamente ai rispettivi articoli.' }}
                                                     </p>
                                                 </div>
                                             @endif
@@ -479,15 +482,15 @@
                                     <div class="bg-black border border-zinc-950 rounded-3xl p-6 text-white shadow-xl space-y-4">
                                         <div class="border-b border-zinc-800 pb-4 mb-4">
                                             <div class="flex justify-between items-center mb-1">
-                                                <span class="text-[10px] font-bold uppercase text-zinc-400">Totale Carrello ({{ collect($cart)->sum('quantity') }} pz)</span>
+                                                <span class="text-[10px] font-bold uppercase text-zinc-400">{{ $isEn ? 'Total Cart (' . collect($cart)->sum('quantity') . ' pcs)' : 'Totale Carrello (' . collect($cart)->sum('quantity') . ' pz)' }}</span>
                                                 <span class="text-sm font-black text-zinc-300">€ {{ number_format(collect($cart)->sum(fn($i) => $i['price'] * $i['quantity']), 2, ',', '.') }}</span>
                                             </div>
-                                            <p class="text-[9px] text-zinc-500 italic">Il totale include tutti gli articoli attualmente nel carrello.</p>
+                                            <p class="text-[9px] text-zinc-500 italic">{{ $isEn ? 'The total includes all items currently in the cart.' : 'Il totale include tutti gli articoli attualmente nel carrello.' }}</p>
                                         </div>
 
                                         @foreach($groupedCart as $key => $items)
                                             @php
-                                                $groupTitle = $key === 'immediate' ? 'Pronta Consegna' : 'Consegna dal ' . $key;
+                                                $groupTitle = $key === 'immediate' ? ($isEn ? 'Immediate Delivery' : 'Pronta Consegna') : ($isEn ? 'Delivery from ' . $key : 'Consegna dal ' . $key);
                                                 $groupQty = collect($items)->sum('quantity');
                                                 $groupTotal = collect($items)->sum(fn($i) => $i['price'] * $i['quantity']);
                                             @endphp
@@ -496,15 +499,15 @@
                                                     <span class="{{ $key === 'immediate' ? 'text-emerald-400' : 'text-amber-400' }}">●</span> {{ $groupTitle }}
                                                 </h5>
                                                 <div class="flex justify-between items-center mb-1 text-xs">
-                                                    <span class="text-zinc-400 font-bold">Pezzi</span>
+                                                    <span class="text-zinc-400 font-bold">{{ $isEn ? 'Pieces' : 'Pezzi' }}</span>
                                                     <span class="font-black text-white">{{ $groupQty }}</span>
                                                 </div>
                                                 <div class="flex justify-between items-center mb-4">
-                                                    <span class="text-xs text-zinc-400 font-bold">Totale</span>
+                                                    <span class="text-xs text-zinc-400 font-bold">{{ $isEn ? 'Total' : 'Totale' }}</span>
                                                     <span class="text-lg font-black text-yellow-400">€ {{ number_format($groupTotal, 2, ',', '.') }}</span>
                                                 </div>
                                                 <button type="submit" name="delivery_group" value="{{ $key }}" class="w-full bg-white text-black hover:bg-yellow-400 hover:text-black py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition duration-300">
-                                                    Invia questo Ordine
+                                                    {{ $isEn ? 'Submit this Order' : 'Invia questo Ordine' }}
                                                 </button>
                                             </div>
                                         @endforeach

@@ -62,6 +62,40 @@ class B2bProduct extends Model
         return asset('storage/' . $this->image);
     }
 
+    /**
+     * Restituisce la descrizione localizzata in base alla lingua corrente (IT / EN).
+     */
+    public function getLocalizedDescriptionAttribute(): string
+    {
+        $locale = app()->getLocale();
+        if ($locale === 'en') {
+            $c = $this->characteristics ?? [];
+            if (!empty($c['descrizione-articolo-en'])) {
+                return $c['descrizione-articolo-en'];
+            }
+            if (!empty($c['descrizione-articolo-EN'])) {
+                return $c['descrizione-articolo-EN'];
+            }
+            if (!empty($c['DESCRIZIONE-ARTICOLO-EN'])) {
+                return $c['DESCRIZIONE-ARTICOLO-EN'];
+            }
+        }
+        return $this->description ?? '';
+    }
+
+    /**
+     * Restituisce la descrizione estesa HTML localizzata (IT / EN).
+     */
+    public function getLocalizedExtendedHtmlAttribute(): ?string
+    {
+        $locale = app()->getLocale();
+        $c = $this->characteristics ?? [];
+        if ($locale === 'en') {
+            return $c['DESCRIZIONE ESTESA HTML EN'] ?? $c['DESCRIZIONE ESTESA HTML IT'] ?? null;
+        }
+        return $c['DESCRIZIONE ESTESA HTML IT'] ?? $c['DESCRIZIONE ESTESA HTML EN'] ?? null;
+    }
+
     public function brand()
     {
         return $this->belongsTo(B2bBrand::class, 'b2b_brand_id');

@@ -34,6 +34,13 @@ Route::get('/', function () {
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['it', 'en'])) {
         session(['locale' => $locale]);
+        \Illuminate\Support\Facades\App::setLocale($locale);
+        if (auth()->check()) {
+            auth()->user()->update(['locale' => $locale]);
+            if (auth()->user()->b2bCustomer) {
+                auth()->user()->b2bCustomer->update(['locale' => $locale]);
+            }
+        }
     }
     return redirect()->back();
 })->name('set-locale');

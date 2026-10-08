@@ -1,7 +1,10 @@
+@php
+    $isEn = app()->getLocale() === 'en';
+@endphp
 <x-agent-layout>
     <x-slot name="header">
         <h2 class="text-2xl font-black text-gray-800 tracking-tight uppercase">
-            {{ __('I Tuoi Ordini Inviati') }}
+            {{ $isEn ? 'Your Submitted Orders' : 'I Tuoi Ordini Inviati' }}
         </h2>
     </x-slot>
 
@@ -20,12 +23,12 @@
                         'cancelled' => 'bg-slate-100 text-slate-700 border-slate-300',
                     ];
                     $statusLabels = [
-                        'pending' => 'In Attesa',
-                        'revision_pending' => 'In Attesa Cliente',
-                        'customer_approved' => 'Approvato',
-                        'customer_rejected' => 'Rifiutato',
-                        'confirmed' => 'Confermato',
-                        'cancelled' => 'Annullato',
+                        'pending' => $isEn ? 'Pending' : 'In Attesa',
+                        'revision_pending' => $isEn ? 'Pending Client Approval' : 'In Attesa Cliente',
+                        'customer_approved' => $isEn ? 'Approved' : 'Approvato',
+                        'customer_rejected' => $isEn ? 'Rejected' : 'Rifiutato',
+                        'confirmed' => $isEn ? 'Confirmed' : 'Confermato',
+                        'cancelled' => $isEn ? 'Cancelled' : 'Annullato',
                     ];
                 @endphp
                 <div class="p-4 space-y-3">
@@ -35,7 +38,7 @@
                                 <span class="text-base font-black text-gray-900">#{{ $order->id }}</span>
                                 @if($order->is_modified)
                                     <span class="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-black uppercase">
-                                        ✏️ Modificato
+                                        {{ $isEn ? '✏️ Modified' : '✏️ Modificato' }}
                                     </span>
                                 @endif
                                 <span class="text-xs text-gray-400 font-bold">• {{ $order->created_at->format('d/m/Y') }}</span>
@@ -43,7 +46,7 @@
                             @if($order->internal_reference)
                                 <div class="mt-0.5">
                                     <span class="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-800 border border-slate-200 px-1.5 py-0.5 rounded font-mono font-black">
-                                        🏷️ Rif: {{ $order->internal_reference }}
+                                        🏷️ {{ $isEn ? 'Ref: ' : 'Rif: ' }}{{ $order->internal_reference }}
                                     </span>
                                 </div>
                             @endif
@@ -56,7 +59,7 @@
                     <div class="flex justify-between items-baseline">
                         <div class="min-w-0 pr-2">
                             <p class="font-black text-slate-900 text-sm uppercase truncate">{{ $order->customer->business_name }}</p>
-                            <p class="text-[11px] text-gray-400 font-bold uppercase tracking-tight">{{ $order->customer->vat_number }}</p>
+                            <p class="text-[11px] text-gray-400 font-bold uppercase tracking-tight">VAT/P.IVA: {{ $order->customer->vat_number }}</p>
                         </div>
                         <div class="text-right shrink-0">
                             <p class="text-base font-black text-gray-900">€ {{ number_format($order->total_amount, 2, ',', '.') }}</p>
@@ -68,13 +71,13 @@
                             🖨️ PDF
                         </a>
                         <a href="{{ route('agent.order_detail', $order) }}" class="flex-1 bg-black border border-zinc-950 text-white py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:border-yellow-400 hover:text-yellow-400 shadow-md transition duration-200 text-center">
-                            Dettaglio B2B
+                            {{ $isEn ? 'B2B Details' : 'Dettaglio B2B' }}
                         </a>
                     </div>
                 </div>
             @empty
                 <div class="px-6 py-12 text-center text-gray-500 uppercase tracking-widest text-xs font-bold">
-                    Non hai ancora inviato alcun ordine al sistema.
+                    {{ $isEn ? 'You have not submitted any orders yet.' : 'Non hai ancora inviato alcun ordine al sistema.' }}
                 </div>
             @endforelse
         </div>
@@ -84,12 +87,12 @@
             <table class="w-full text-left">
                 <thead class="bg-gray-50/50">
                     <tr class="text-[11px] lg:text-xs font-black text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                        <th class="px-3 lg:px-5 py-3.5 whitespace-nowrap">ID Ordine / Rif. Interno</th>
-                        <th class="px-3 lg:px-5 py-3.5">Cliente B2B</th>
-                        <th class="px-2 lg:px-4 py-3.5 text-center whitespace-nowrap">Data</th>
-                        <th class="px-2 lg:px-4 py-3.5 text-center whitespace-nowrap">Stato</th>
-                        <th class="px-3 lg:px-4 py-3.5 text-right whitespace-nowrap">Totale</th>
-                        <th class="px-3 lg:px-5 py-3.5 text-right whitespace-nowrap">Azioni</th>
+                        <th class="px-3 lg:px-5 py-3.5 whitespace-nowrap">{{ $isEn ? 'Order ID / Internal Ref.' : 'ID Ordine / Rif. Interno' }}</th>
+                        <th class="px-3 lg:px-5 py-3.5">{{ $isEn ? 'B2B Customer' : 'Cliente B2B' }}</th>
+                        <th class="px-2 lg:px-4 py-3.5 text-center whitespace-nowrap">{{ $isEn ? 'Date' : 'Data' }}</th>
+                        <th class="px-2 lg:px-4 py-3.5 text-center whitespace-nowrap">{{ $isEn ? 'Status' : 'Stato' }}</th>
+                        <th class="px-3 lg:px-4 py-3.5 text-right whitespace-nowrap">{{ $isEn ? 'Total' : 'Totale' }}</th>
+                        <th class="px-3 lg:px-5 py-3.5 text-right whitespace-nowrap">{{ $isEn ? 'Actions' : 'Azioni' }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -104,12 +107,12 @@
                                 'cancelled' => 'bg-slate-100 text-slate-700 border-slate-300',
                             ];
                             $statusLabels = [
-                                'pending' => 'In Attesa',
-                                'revision_pending' => 'In Attesa Cliente',
-                                'customer_approved' => 'Approvato',
-                                'customer_rejected' => 'Rifiutato',
-                                'confirmed' => 'Confermato',
-                                'cancelled' => 'Annullato',
+                                'pending' => $isEn ? 'Pending' : 'In Attesa',
+                                'revision_pending' => $isEn ? 'Pending Client Approval' : 'In Attesa Cliente',
+                                'customer_approved' => $isEn ? 'Approved' : 'Approvato',
+                                'customer_rejected' => $isEn ? 'Rejected' : 'Rifiutato',
+                                'confirmed' => $isEn ? 'Confirmed' : 'Confermato',
+                                'cancelled' => $isEn ? 'Cancelled' : 'Annullato',
                             ];
                         @endphp
                         <tr class="group hover:bg-gray-50/60 transition">
@@ -117,20 +120,20 @@
                                 <div>#{{ $order->id }}</div>
                                 @if($order->internal_reference)
                                     <div class="mt-1">
-                                        <span class="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-800 border border-slate-200 px-1.5 py-0.5 rounded font-mono font-bold" title="Riferimento Ordine Interno">
+                                        <span class="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-800 border border-slate-200 px-1.5 py-0.5 rounded font-mono font-bold" title="{{ $isEn ? 'Internal Order Reference' : 'Riferimento Ordine Interno' }}">
                                             🏷️ {{ $order->internal_reference }}
                                         </span>
                                     </div>
                                 @endif
                                 @if($order->is_modified)
-                                    <span class="inline-block mt-1 text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider" title="Ordine modificato dall'agente">
-                                        ✏️ Mod
+                                    <span class="inline-block mt-1 text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider" title="{{ $isEn ? 'Order modified by agent' : 'Ordine modificato dall\'agente' }}">
+                                        {{ $isEn ? '✏️ Mod' : '✏️ Mod' }}
                                     </span>
                                 @endif
                             </td>
                             <td class="px-3 lg:px-5 py-3.5 min-w-0 max-w-[140px] md:max-w-[180px] lg:max-w-none">
                                 <p class="font-black text-slate-900 uppercase text-xs lg:text-sm leading-tight truncate" title="{{ $order->customer->business_name }}">{{ $order->customer->business_name }}</p>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{{ $order->customer->vat_number }}</p>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">VAT/P.IVA: {{ $order->customer->vat_number }}</p>
                             </td>
                             <td class="px-2 lg:px-4 py-3.5 text-center whitespace-nowrap">
                                 <span class="text-xs font-bold text-gray-500">{{ $order->created_at->format('d/m/Y') }}</span>
@@ -145,12 +148,12 @@
                             </td>
                             <td class="px-3 lg:px-5 py-3.5 text-right whitespace-nowrap">
                                 <div class="inline-flex items-center gap-1.5 justify-end">
-                                    <a href="{{ route('agent.orders.pdf', $order) }}" target="_blank" class="inline-flex items-center gap-1 bg-yellow-400 border border-yellow-300 text-slate-950 px-2.5 py-1.5 rounded-xl text-xs font-black uppercase hover:bg-yellow-300 shadow-sm transition duration-200" title="Scarica PDF Ordine">
+                                    <a href="{{ route('agent.orders.pdf', $order) }}" target="_blank" class="inline-flex items-center gap-1 bg-yellow-400 border border-yellow-300 text-slate-950 px-2.5 py-1.5 rounded-xl text-xs font-black uppercase hover:bg-yellow-300 shadow-sm transition duration-200" title="{{ $isEn ? 'Download Order PDF' : 'Scarica PDF Ordine' }}">
                                         <span>🖨️</span>
                                         <span class="hidden xl:inline">PDF</span>
                                     </a>
                                     <a href="{{ route('agent.order_detail', $order) }}" class="inline-flex items-center bg-black border border-zinc-950 text-white px-2.5 lg:px-3 py-1.5 rounded-xl text-xs font-black uppercase hover:border-yellow-400 hover:text-yellow-400 shadow-sm transition duration-200">
-                                        Dettaglio
+                                        {{ $isEn ? 'Details' : 'Dettaglio' }}
                                     </a>
                                 </div>
                             </td>
@@ -158,7 +161,7 @@
                     @empty
                         <tr>
                             <td colspan="6" class="px-6 py-16 text-center text-gray-500 uppercase tracking-widest text-xs font-bold">
-                                Non hai ancora inviato alcun ordine al sistema.
+                                {{ $isEn ? 'You have not submitted any orders yet.' : 'Non hai ancora inviato alcun ordine al sistema.' }}
                             </td>
                         </tr>
                     @endforelse

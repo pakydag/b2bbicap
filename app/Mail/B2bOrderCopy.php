@@ -19,17 +19,19 @@ class B2bOrderCopy extends Mailable
     public $title;
     public $companyName;
     public $portalUrl;
+    public $isEn;
 
     /**
      * Create a new message instance.
      */
-    public function __construct($order, $paymentLink = null, $paymentMethod = 'none', $title = 'Riepilogo Ordine B2B')
+    public function __construct($order, $paymentLink = null, $paymentMethod = 'none', $title = null)
     {
         $this->order = $order;
         $this->order->loadMissing('agent', 'customer.agents', 'customer.user', 'items.product.brand', 'items.variant');
         $this->paymentLink = $paymentLink;
         $this->paymentMethod = $paymentMethod;
-        $this->title = $title;
+        $this->isEn = ($order->customer?->user?->locale ?? $order->customer?->locale ?? app()->getLocale()) === 'en';
+        $this->title = $title ?: ($this->isEn ? 'B2B Order Confirmation' : 'Riepilogo Ordine B2B');
         $this->companyName = Setting::where('key', 'mail_from_name')->value('value') ?? config('mail.from.name') ?? 'Calzaturificio 5b';
 
         if (request() && request()->getHost() && request()->getHost() !== 'localhost') {
@@ -44,10 +46,10 @@ class B2bOrderCopy extends Mailable
      */
     public function envelope(): Envelope
     {
-        $prefix = $this->title ?? 'Riepilogo Ordine B2B';
+        $prefix = $this->title ?? ($this->isEn ? 'B2B Order Confirmation' : 'Riepilogo Ordine B2B');
         $subject = "{$prefix} #{$this->order->id}";
         if (!empty($this->order->internal_reference)) {
-            $subject .= " (Rif: {$this->order->internal_reference})";
+            $subject .= ($this->isEn ? " (Ref: " : " (Rif: ") . "{$this->order->internal_reference})";
         }
         $subject .= " - {$this->companyName}";
 

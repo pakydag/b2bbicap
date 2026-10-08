@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="{{ ($isEn ?? false) ? 'en' : 'it' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aggiornamento Dati e Profilo B2B</title>
+    <title>{{ ($isEn ?? false) ? 'B2B Profile & Information Updated' : 'Aggiornamento Dati e Profilo B2B' }}</title>
     <style>
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; margin: 0; padding: 0; background-color: #f1f5f9; }
         .wrapper { max-width: 650px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
@@ -27,6 +27,7 @@
 <body>
     <div class="wrapper">
         @php
+            $isEnglish = ($isEn ?? false) || ($customer->user?->locale ?? $customer->locale ?? '') === 'en';
             $logoLocalPath = public_path('storage/logo-bicap.png');
             if (!file_exists($logoLocalPath)) {
                 $logoLocalPath = storage_path('app/public/logo-bicap.png');
@@ -39,115 +40,219 @@
             @elseif($hasLocalLogo)
                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoLocalPath)) }}" alt="BICAP">
             @endif
-            <p>Aggiornamento Profilo Aziendale</p>
+            <p>{{ $isEnglish ? 'Company Profile Updated' : 'Aggiornamento Profilo Aziendale' }}</p>
         </div>
         
         <div class="content">
-            <p class="greeting">Gentile <strong>{{ $customer->business_name }}</strong>,</p>
-            <p class="text-lead">
-                Ti informiamo che i dati della tua anagrafica e le relative autorizzazioni sul <strong>Portale B2B</strong> di <strong>{{ $companyName }}</strong> sono stati aggiornati.
-                Di seguito trovi il riepilogo aggiornato delle informazioni del tuo account.
-            </p>
+            @if($isEnglish)
+                <p class="greeting">Dear <strong>{{ $customer->business_name }}</strong>,</p>
+                <p class="text-lead">
+                    Please be informed that your company account details and permissions on the <strong>B2B Portal</strong> of <strong>{{ $companyName }}</strong> have been updated.
+                    Below is the updated summary of your account details.
+                </p>
 
-            <!-- Box Credenziali di Accesso -->
-            @if($loginEmail)
-                <div class="card-box" style="border-left: 4px solid #facc15;">
-                    <h3>🔐 Accesso Portale B2B</h3>
-                    <p style="margin: 4px 0; font-size: 13px;"><strong>Email (Login):</strong> {{ $loginEmail }}</p>
-                    <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><em>* La password di accesso rimane invariata.</em></p>
+                <!-- Box Login Credentials -->
+                @if($loginEmail)
+                    <div class="card-box" style="border-left: 4px solid #facc15;">
+                        <h3>🔐 B2B Portal Access</h3>
+                        <p style="margin: 4px 0; font-size: 13px;"><strong>Email (Login):</strong> {{ $loginEmail }}</p>
+                        <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><em>* Your existing password remains unchanged.</em></p>
+                    </div>
+                @endif
+
+                <div class="btn-container">
+                    <a href="{{ $portalUrl ?? route('login') }}" class="btn" style="color:#ffffff;">Log In to B2B Portal →</a>
                 </div>
-            @endif
 
-            <div class="btn-container">
-                <a href="{{ $portalUrl ?? route('login') }}" class="btn" style="color:#ffffff;">Accedi al Portale B2B →</a>
-            </div>
-
-            <!-- Box Agente di Riferimento -->
-            @if($customer->agents && $customer->agents->isNotEmpty())
-                <div class="card-box" style="border-left: 4px solid #000000; background: #fffdf5; border-color: #fef08a;">
-                    <h3 style="color: #000000; margin-bottom: 8px;">👤 Agente Commerciale di Riferimento</h3>
-                    <p style="margin: 0 0 12px; font-size: 13px; color: #475569;">
-                        Per qualsiasi richiesta d'ordine, chiarimento o assistenza commerciale, puoi fare riferimento al tuo agente dedicato:
-                    </p>
-                    @foreach($customer->agents as $ag)
-                        <div style="background: #ffffff; padding: 12px 14px; border-radius: 8px; border: 1px solid #fde047; margin-bottom: 8px;">
-                            <p style="margin: 0 0 4px; font-size: 14px; font-weight: 800; color: #000000;">
-                                {{ $ag->name }} {{ $ag->surname }}
-                            </p>
-                            <p style="margin: 2px 0; font-size: 12px; color: #475569;">
-                                <strong>Email:</strong> <a href="mailto:{{ $ag->email }}" style="color: #2563eb; text-decoration: none; font-weight: bold;">{{ $ag->email }}</a>
-                            </p>
-                            @if($ag->phone)
-                                <p style="margin: 2px 0; font-size: 12px; color: #475569;">
-                                    <strong>Telefono:</strong> <a href="tel:{{ $ag->phone }}" style="color: #1e293b; text-decoration: none; font-weight: bold;">{{ $ag->phone }}</a>
+                <!-- Box Assigned Sales Agent -->
+                @if($customer->agents && $customer->agents->isNotEmpty())
+                    <div class="card-box" style="border-left: 4px solid #000000; background: #fffdf5; border-color: #fef08a;">
+                        <h3 style="color: #000000; margin-bottom: 8px;">👤 Assigned Sales Representative</h3>
+                        <p style="margin: 0 0 12px; font-size: 13px; color: #475569;">
+                            For any order inquiries, quotes, or commercial support, you can contact your dedicated sales representative:
+                        </p>
+                        @foreach($customer->agents as $ag)
+                            <div style="background: #ffffff; padding: 12px 14px; border-radius: 8px; border: 1px solid #fde047; margin-bottom: 8px;">
+                                <p style="margin: 0 0 4px; font-size: 14px; font-weight: 800; color: #000000;">
+                                    {{ $ag->name }} {{ $ag->surname }}
                                 </p>
+                                <p style="margin: 2px 0; font-size: 12px; color: #475569;">
+                                    <strong>Email:</strong> <a href="mailto:{{ $ag->email }}" style="color: #2563eb; text-decoration: none; font-weight: bold;">{{ $ag->email }}</a>
+                                </p>
+                                @if($ag->phone)
+                                    <p style="margin: 2px 0; font-size: 12px; color: #475569;">
+                                        <strong>Phone:</strong> <a href="tel:{{ $ag->phone }}" style="color: #1e293b; text-decoration: none; font-weight: bold;">{{ $ag->phone }}</a>
+                                    </p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <!-- Box Company Summary -->
+                <div class="card-box">
+                    <h3>🏢 Updated Company Details</h3>
+                    <table class="table-wrap">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%;">Company Name</th>
+                                <td><strong>{{ $customer->business_name }}</strong></td>
+                            </tr>
+                            @if($customer->code)
+                                <tr>
+                                    <th>Customer Code</th>
+                                    <td><code>{{ $customer->code }}</code></td>
+                                </tr>
                             @endif
-                        </div>
-                    @endforeach
+                            @if($customer->vat_number)
+                                <tr>
+                                    <th>VAT / Tax ID</th>
+                                    <td>{{ $customer->vat_number }}</td>
+                                </tr>
+                            @endif
+                            @if($customer->agents && $customer->agents->isNotEmpty())
+                                <tr>
+                                    <th>Assigned Agent</th>
+                                    <td>
+                                        <strong>{{ $customer->agents->map(fn($a) => $a->name . ' ' . $a->surname)->join(', ') }}</strong>
+                                        <br><span style="color: #64748b; font-size: 11px;">{{ $customer->agents->pluck('email')->join(', ') }}</span>
+                                    </td>
+                                </tr>
+                            @endif
+                            @if($customer->paymentCondition)
+                                <tr>
+                                    <th>Payment Term</th>
+                                    <td>{{ $customer->paymentCondition->name }}</td>
+                                </tr>
+                            @endif
+                            @if($customer->contact_name || $customer->contact_surname)
+                                <tr>
+                                    <th>Contact Person</th>
+                                    <td>{{ $customer->contact_name }} {{ $customer->contact_surname }}</td>
+                                </tr>
+                            @endif
+                            @if($customer->email)
+                                <tr>
+                                    <th>Company Email</th>
+                                    <td>{{ $customer->email }}</td>
+                                </tr>
+                            @endif
+                            @if($customer->phone)
+                                <tr>
+                                    <th>Phone</th>
+                                    <td>{{ $customer->phone }}</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="greeting">Gentile <strong>{{ $customer->business_name }}</strong>,</p>
+                <p class="text-lead">
+                    Ti informiamo che i dati della tua anagrafica e le relative autorizzazioni sul <strong>Portale B2B</strong> di <strong>{{ $companyName }}</strong> sono stati aggiornati.
+                    Di seguito trovi il riepilogo aggiornato delle informazioni del tuo account.
+                </p>
+
+                <!-- Box Credenziali di Accesso -->
+                @if($loginEmail)
+                    <div class="card-box" style="border-left: 4px solid #facc15;">
+                        <h3>🔐 Accesso Portale B2B</h3>
+                        <p style="margin: 4px 0; font-size: 13px;"><strong>Email (Login):</strong> {{ $loginEmail }}</p>
+                        <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><em>* La password di accesso rimane invariata.</em></p>
+                    </div>
+                @endif
+
+                <div class="btn-container">
+                    <a href="{{ $portalUrl ?? route('login') }}" class="btn" style="color:#ffffff;">Accedi al Portale B2B →</a>
+                </div>
+
+                <!-- Box Agente di Riferimento -->
+                @if($customer->agents && $customer->agents->isNotEmpty())
+                    <div class="card-box" style="border-left: 4px solid #000000; background: #fffdf5; border-color: #fef08a;">
+                        <h3 style="color: #000000; margin-bottom: 8px;">👤 Agente Commerciale di Riferimento</h3>
+                        <p style="margin: 0 0 12px; font-size: 13px; color: #475569;">
+                            Per qualsiasi richiesta d'ordine, chiarimento o assistenza commerciale, puoi fare riferimento al tuo agente dedicato:
+                        </p>
+                        @foreach($customer->agents as $ag)
+                            <div style="background: #ffffff; padding: 12px 14px; border-radius: 8px; border: 1px solid #fde047; margin-bottom: 8px;">
+                                <p style="margin: 0 0 4px; font-size: 14px; font-weight: 800; color: #000000;">
+                                    {{ $ag->name }} {{ $ag->surname }}
+                                </p>
+                                <p style="margin: 2px 0; font-size: 12px; color: #475569;">
+                                    <strong>Email:</strong> <a href="mailto:{{ $ag->email }}" style="color: #2563eb; text-decoration: none; font-weight: bold;">{{ $ag->email }}</a>
+                                </p>
+                                @if($ag->phone)
+                                    <p style="margin: 2px 0; font-size: 12px; color: #475569;">
+                                        <strong>Telefono:</strong> <a href="tel:{{ $ag->phone }}" style="color: #1e293b; text-decoration: none; font-weight: bold;">{{ $ag->phone }}</a>
+                                    </p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <!-- Box Riepilogo Azienda -->
+                <div class="card-box">
+                    <h3>🏢 Dati Anagrafica Aziendale Aggiornati</h3>
+                    <table class="table-wrap">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%;">Ragione Sociale</th>
+                                <td><strong>{{ $customer->business_name }}</strong></td>
+                            </tr>
+                            @if($customer->code)
+                                <tr>
+                                    <th>Codice Cliente</th>
+                                    <td><code>{{ $customer->code }}</code></td>
+                                </tr>
+                            @endif
+                            @if($customer->vat_number)
+                                <tr>
+                                    <th>Partita IVA / CF</th>
+                                    <td>{{ $customer->vat_number }}</td>
+                                </tr>
+                            @endif
+                            @if($customer->agents && $customer->agents->isNotEmpty())
+                                <tr>
+                                    <th>Agente Assegnato</th>
+                                    <td>
+                                        <strong>{{ $customer->agents->map(fn($a) => $a->name . ' ' . $a->surname)->join(', ') }}</strong>
+                                        <br><span style="color: #64748b; font-size: 11px;">{{ $customer->agents->pluck('email')->join(', ') }}</span>
+                                    </td>
+                                </tr>
+                            @endif
+                            @if($customer->paymentCondition)
+                                <tr>
+                                    <th>Condizione Pagamento</th>
+                                    <td>{{ $customer->paymentCondition->name }}</td>
+                                </tr>
+                            @endif
+                            @if($customer->contact_name || $customer->contact_surname)
+                                <tr>
+                                    <th>Referente</th>
+                                    <td>{{ $customer->contact_name }} {{ $customer->contact_surname }}</td>
+                                </tr>
+                            @endif
+                            @if($customer->email)
+                                <tr>
+                                    <th>Email Aziendale</th>
+                                    <td>{{ $customer->email }}</td>
+                                </tr>
+                            @endif
+                            @if($customer->phone)
+                                <tr>
+                                    <th>Telefono</th>
+                                    <td>{{ $customer->phone }}</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
                 </div>
             @endif
-
-            <!-- Box Riepilogo Azienda -->
-            <div class="card-box">
-                <h3>🏢 Dati Anagrafica Aziendale Aggiornati</h3>
-                <table class="table-wrap">
-                    <tbody>
-                        <tr>
-                            <th style="width: 35%;">Ragione Sociale</th>
-                            <td><strong>{{ $customer->business_name }}</strong></td>
-                        </tr>
-                        @if($customer->code)
-                            <tr>
-                                <th>Codice Cliente</th>
-                                <td><code>{{ $customer->code }}</code></td>
-                            </tr>
-                        @endif
-                        @if($customer->vat_number)
-                            <tr>
-                                <th>Partita IVA / CF</th>
-                                <td>{{ $customer->vat_number }}</td>
-                            </tr>
-                        @endif
-                        @if($customer->agents && $customer->agents->isNotEmpty())
-                            <tr>
-                                <th>Agente Assegnato</th>
-                                <td>
-                                    <strong>{{ $customer->agents->map(fn($a) => $a->name . ' ' . $a->surname)->join(', ') }}</strong>
-                                    <br><span style="color: #64748b; font-size: 11px;">{{ $customer->agents->pluck('email')->join(', ') }}</span>
-                                </td>
-                            </tr>
-                        @endif
-                        @if($customer->paymentCondition)
-                            <tr>
-                                <th>Condizione Pagamento</th>
-                                <td>{{ $customer->paymentCondition->name }}</td>
-                            </tr>
-                        @endif
-                        @if($customer->contact_name || $customer->contact_surname)
-                            <tr>
-                                <th>Referente</th>
-                                <td>{{ $customer->contact_name }} {{ $customer->contact_surname }}</td>
-                            </tr>
-                        @endif
-                        @if($customer->email)
-                            <tr>
-                                <th>Email Aziendale</th>
-                                <td>{{ $customer->email }}</td>
-                            </tr>
-                        @endif
-                        @if($customer->phone)
-                            <tr>
-                                <th>Telefono</th>
-                                <td>{{ $customer->phone }}</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
         </div>
 
         <div class="footer">
-            &copy; Cedma srl - Tutti i diritti riservati.
+            &copy; {{ date('Y') }} {{ $companyName }} - {{ $isEnglish ? 'All rights reserved.' : 'Tutti i diritti riservati.' }}
         </div>
     </div>
 </body>

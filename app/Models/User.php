@@ -48,6 +48,7 @@ class User extends Authenticatable
         'can_manage_voip',
         'can_manage_agents',
         'b2b_customer_id',
+        'locale',
     ];
 
     /**

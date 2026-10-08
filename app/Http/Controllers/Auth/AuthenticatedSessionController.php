@@ -32,6 +32,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Imposta la lingua predefinita dell'utente in sessione
+        $user = $request->user();
+        if ($user) {
+            $userLocale = $user->locale ?: ($user->b2bCustomer?->locale ?: 'it');
+            session(['locale' => $userLocale]);
+            \Illuminate\Support\Facades\App::setLocale($userLocale);
+        }
+
         // Avvio non-bloccante della sincronizzazione Giacenze B2B in background ad ogni accesso (FTPS)
         try {
             $phpBinary = \App\Models\B2bProduct::getPhpCliBinary();
