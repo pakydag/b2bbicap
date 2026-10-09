@@ -367,7 +367,7 @@ class AgentPortalController extends Controller
                         } else {
                             $future = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
                             $current = (int)($match['current_stock'][$size] ?? 0);
-                            $item['available_qty'] = ($future > 0) ? max(0, $future + min(0, $current)) : 0;
+                            $item['available_qty'] = max(0, $future + $current);
                         }
                     }
                 }
@@ -439,7 +439,7 @@ class AgentPortalController extends Controller
                     $futureQty = $sumFuture;
                 }
                 $currentQty = (int)($match['current_stock'][$size] ?? 0);
-                $availableQty = ($futureQty > 0) ? max(0, $futureQty + min(0, $currentQty)) : 0;
+                $availableQty = max(0, $futureQty + $currentQty);
             }
             
             $totalRequestedQty = $currentCartQty + $qtyRequested;
@@ -635,7 +635,7 @@ class AgentPortalController extends Controller
                         $futureQty = $sumFuture;
                     }
                     $currentQty = (int)($match['current_stock'][$size] ?? 0);
-                    $availableQty = ($futureQty > 0) ? max(0, $futureQty + min(0, $currentQty)) : 0;
+                    $availableQty = max(0, $futureQty + $currentQty);
                 }
                 
                 if ($newQty > $availableQty) {
@@ -1308,7 +1308,7 @@ class AgentPortalController extends Controller
                     $futureQty = $sumFuture;
                 }
                 $currentQty = (int)($match['current_stock'][$size] ?? 0);
-                $availableStock = ($futureQty > 0) ? max(0, $futureQty + min(0, $currentQty)) : 0;
+                $availableStock = max(0, $futureQty + $currentQty);
                 if ($reqQty > $availableStock) {
                     $insufficientItems[] = "{$product->name} (Taglia {$size}): Richiesti {$reqQty} pz, Disponibilità per la data {$deliveryDate}: {$availableStock} pz.";
                 }

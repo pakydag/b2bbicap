@@ -655,7 +655,7 @@
                                                                 $variant = $variants->where('size', $size)->first(); 
                                                                 $future = (int)($summedFutureStock[$size] ?? 0);
                                                                 $current = (int)($giacenzaMatch['current_stock'][$size] ?? 0);
-                                                                $qtyFuture = ($future > 0) ? max(0, $future + min(0, $current)) : 0;
+                                                                $qtyFuture = max(0, $future + $current);
                                                             @endphp
                                                             @if($variant)
                                                                 <div class="relative inline-block">
