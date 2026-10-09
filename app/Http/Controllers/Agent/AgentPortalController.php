@@ -365,7 +365,9 @@ class AgentPortalController extends Controller
                         if (empty($deliveryDate)) {
                             $item['available_qty'] = $match['current_stock'][$size] ?? 0;
                         } else {
-                            $item['available_qty'] = $match['future_stock'][$deliveryDate][$size] ?? 0;
+                            $futureStock = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
+                            $currentStock = max(0, (int)($match['current_stock'][$size] ?? 0));
+                            $item['available_qty'] = $futureStock + $currentStock;
                         }
                     }
                 }
@@ -428,14 +430,16 @@ class AgentPortalController extends Controller
             if (empty($deliveryDate)) {
                 $availableQty = $match['current_stock'][$size] ?? 0;
             } else {
-                $availableQty = $match['future_stock'][$deliveryDate][$size] ?? 0;
-                if ($availableQty == 0 && !empty($match['future_stock'])) {
+                $futureQty = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
+                if ($futureQty == 0 && !empty($match['future_stock'])) {
                     $sumFuture = 0;
                     foreach ($match['future_stock'] as $fDate => $fSizes) {
                         $sumFuture += (int)($fSizes[$size] ?? 0);
                     }
-                    $availableQty = $sumFuture;
+                    $futureQty = $sumFuture;
                 }
+                $currentQty = max(0, (int)($match['current_stock'][$size] ?? 0));
+                $availableQty = $futureQty + $currentQty;
             }
             
             $totalRequestedQty = $currentCartQty + $qtyRequested;
@@ -622,14 +626,16 @@ class AgentPortalController extends Controller
                 if (empty($deliveryDate)) {
                     $availableQty = $match['current_stock'][$size] ?? 0;
                 } else {
-                    $availableQty = $match['future_stock'][$deliveryDate][$size] ?? 0;
-                    if ($availableQty == 0 && !empty($match['future_stock'])) {
+                    $futureQty = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
+                    if ($futureQty == 0 && !empty($match['future_stock'])) {
                         $sumFuture = 0;
                         foreach ($match['future_stock'] as $fDate => $fSizes) {
                             $sumFuture += (int)($fSizes[$size] ?? 0);
                         }
-                        $availableQty = $sumFuture;
+                        $futureQty = $sumFuture;
                     }
+                    $currentQty = max(0, (int)($match['current_stock'][$size] ?? 0));
+                    $availableQty = $futureQty + $currentQty;
                 }
                 
                 if ($newQty > $availableQty) {
@@ -1293,14 +1299,16 @@ class AgentPortalController extends Controller
                     $insufficientItems[] = "{$product->name} (Taglia {$size}): Richiesti {$reqQty} pz, Disponibilità immediata in magazzino {$availableStock} pz.";
                 }
             } else {
-                $availableStock = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
-                if ($availableStock == 0 && !empty($match['future_stock'])) {
+                $futureQty = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
+                if ($futureQty == 0 && !empty($match['future_stock'])) {
                     $sumFuture = 0;
                     foreach ($match['future_stock'] as $fDate => $fSizes) {
                         $sumFuture += (int)($fSizes[$size] ?? 0);
                     }
-                    $availableStock = $sumFuture;
+                    $futureQty = $sumFuture;
                 }
+                $currentQty = max(0, (int)($match['current_stock'][$size] ?? 0));
+                $availableStock = $futureQty + $currentQty;
                 if ($reqQty > $availableStock) {
                     $insufficientItems[] = "{$product->name} (Taglia {$size}): Richiesti {$reqQty} pz, Disponibilità per la data {$deliveryDate}: {$availableStock} pz.";
                 }
