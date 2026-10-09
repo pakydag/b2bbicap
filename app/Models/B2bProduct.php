@@ -33,7 +33,7 @@ class B2bProduct extends Model
         if (defined('PHP_BINARY') && !str_contains(PHP_BINARY, 'fpm') && file_exists(PHP_BINARY)) {
             return PHP_BINARY;
         }
-        foreach (['/usr/bin/php', '/usr/bin/php8.3', '/usr/bin/php8.4', '/usr/local/bin/php'] as $candidate) {
+        foreach (['/usr/bin/php', '/usr/bin/php8.3', '/usr/bin/php8.4', '/usr/bin/php8.2', '/usr/bin/php8.1', '/usr/local/bin/php'] as $candidate) {
             if (file_exists($candidate) && is_executable($candidate)) {
                 return $candidate;
             }
