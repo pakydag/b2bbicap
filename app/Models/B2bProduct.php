@@ -41,6 +41,23 @@ class B2bProduct extends Model
         return 'php';
     }
 
+    public static function triggerAsyncSync(bool $force = false): void
+    {
+        $forceFlag = $force ? ' --force' : '';
+        $phpBinary = self::getPhpCliBinary();
+        $artisan = base_path('artisan');
+
+        try {
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                pclose(popen("start /B \"\" \"{$phpBinary}\" \"{$artisan}\" b2b:sync-giacenze{$forceFlag} > NUL 2>&1", "r"));
+            } else {
+                exec("\"{$phpBinary}\" \"{$artisan}\" b2b:sync-giacenze{$forceFlag} > /dev/null 2>&1 &");
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("[AsyncSync] Errore avvio sync giacenze in background: " . $e->getMessage());
+        }
+    }
+
     public function getImageUrlAttribute(): string
     {
         if (empty($this->image)) {

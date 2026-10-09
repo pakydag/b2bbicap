@@ -61,13 +61,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         // Avvio non-bloccante della sincronizzazione Giacenze B2B in background ad ogni accesso (FTPS)
-        try {
-            $phpBinary = \App\Models\B2bProduct::getPhpCliBinary();
-            $artisan = base_path('artisan');
-            exec("{$phpBinary} {$artisan} b2b:sync-giacenze --force > /dev/null 2>&1 &");
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning("[AuthLogin] Impossibile avviare il sync giacenze in background: " . $e->getMessage());
-        }
+        \App\Models\B2bProduct::triggerAsyncSync(true);
 
         // Ignora background/ajax endpoint eventualmente salvati in intended
         $intended = session()->get('url.intended');

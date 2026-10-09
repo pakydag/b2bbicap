@@ -1442,11 +1442,7 @@ class AgentPortalController extends Controller
         $needsSync = !$lastSync || abs(now()->diffInSeconds($lastSync)) >= 60;
 
         if ($needsSync) {
-            try {
-                $phpBinary = \App\Models\B2bProduct::getPhpCliBinary();
-                $artisan = base_path('artisan');
-                exec("{$phpBinary} {$artisan} b2b:sync-giacenze > /dev/null 2>&1 &");
-            } catch (\Throwable $e) {}
+            \App\Models\B2bProduct::triggerAsyncSync();
         }
 
         return response()->json([
@@ -1461,11 +1457,7 @@ class AgentPortalController extends Controller
         // Controllo e avvio automatico sync non-bloccante se sono passati più di 60 secondi (1 minuto)
         $lastSync = \Illuminate\Support\Facades\Cache::get('b2b_last_giacenze_sync_timestamp');
         if (!$lastSync || abs(now()->diffInSeconds($lastSync)) >= 60) {
-            try {
-                $phpBinary = \App\Models\B2bProduct::getPhpCliBinary();
-                $artisan = base_path('artisan');
-                exec("{$phpBinary} {$artisan} b2b:sync-giacenze > /dev/null 2>&1 &");
-            } catch (\Throwable $e) {}
+            \App\Models\B2bProduct::triggerAsyncSync();
         }
 
         $csvPath = base_path('Giacenza.csv');
