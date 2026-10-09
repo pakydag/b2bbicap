@@ -23,9 +23,9 @@ class SyncGiacenze extends Command
     protected $description = 'Scarica l\'ultimo file Giacenza.csv dal server FTPS (51.75.145.169 / Output/Giacenza.csv)';
 
     /**
-     * Cooldown in secondi tra sincronizzazioni (1 minuto = 60s)
+     * Cooldown in secondi tra sincronizzazioni (30s)
      */
-    protected int $cooldownSeconds = 60;
+    protected int $cooldownSeconds = 30;
 
     /**
      * Execute the console command.
