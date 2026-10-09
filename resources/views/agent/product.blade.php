@@ -653,8 +653,7 @@
                                                         <td class="py-6 px-2 text-center">
                                                             @php 
                                                                 $variant = $variants->where('size', $size)->first(); 
-                                                                $current = $giacenzaMatch['current_stock'][$size] ?? 0;
-                                                                $qtyFuture = ($summedFutureStock[$size] ?? 0) + $current;
+                                                                $qtyFuture = $summedFutureStock[$size] ?? 0;
                                                             @endphp
                                                             @if($variant)
                                                                 <div class="relative inline-block">
@@ -671,6 +670,10 @@
                                                                     @if($qtyFuture > 0)
                                                                         <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-indigo-600 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-indigo-100">
                                                                             +{{ $qtyFuture }}
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-rose-400 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-rose-50 mb-1">
+                                                                            {{ $isEn ? 'OOS' : 'ESAU.' }}
                                                                         </span>
                                                                     @endif
                                                                 </div>
