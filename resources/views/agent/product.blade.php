@@ -653,8 +653,8 @@
                                                         <td class="py-6 px-2 text-center">
                                                             @php 
                                                                 $variant = $variants->where('size', $size)->first(); 
-                                                                $current = max(0, (int)($giacenzaMatch['current_stock'][$size] ?? 0));
-                                                                $qtyFuture = ($summedFutureStock[$size] ?? 0) + $current;
+                                                                $current = (int)($giacenzaMatch['current_stock'][$size] ?? 0);
+                                                                $qtyFuture = max(0, ($summedFutureStock[$size] ?? 0) + $current);
                                                             @endphp
                                                             @if($variant)
                                                                 <div class="relative inline-block">
