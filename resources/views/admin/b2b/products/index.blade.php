@@ -172,6 +172,7 @@
                         if ($gMatch) {
                             $curStock = $gMatch['current_stock'] ?? [];
                             $futStock = $gMatch['future_stock'] ?? [];
+                            $futCommitted = $gMatch['future_committed'] ?? [];
                             $totPronta = 0;
                             foreach ($curStock as $qty) {
                                 if ($qty > 0) $totPronta += $qty;
@@ -180,9 +181,11 @@
                             foreach ($futStock as $sizes) {
                                 $totArrivo += array_sum($sizes);
                             }
+                            $totFutCommitted = array_sum($futCommitted);
                         } else {
                             $totPronta = $product->variants->sum('quantity');
                             $totArrivo = 0;
+                            $totFutCommitted = 0;
                         }
                     @endphp
                     <div class="p-3.5 flex items-center justify-between gap-3 hover:bg-yellow-50/40 transition">
@@ -212,6 +215,9 @@
                                         <span class="font-bold text-emerald-700">🟢 {{ $totPronta }} pz</span>
                                         @if($totArrivo > 0)
                                             <span class="text-[10px] font-bold text-amber-700">+{{ $totArrivo }} arr.</span>
+                                        @endif
+                                        @if($totFutCommitted > 0)
+                                            <span class="text-[10px] font-bold text-purple-700">-{{ $totFutCommitted }} imp. fut.</span>
                                         @endif
                                     @else
                                         <span class="text-amber-700 font-bold text-[10px]">No Mag.</span>
@@ -261,6 +267,7 @@
                                 if ($gMatch) {
                                     $curStock = $gMatch['current_stock'] ?? [];
                                     $futStock = $gMatch['future_stock'] ?? [];
+                                    $futCommitted = $gMatch['future_committed'] ?? [];
                                     $totPronta = 0;
                                     foreach ($curStock as $qty) {
                                         if ($qty > 0) $totPronta += $qty;
@@ -269,9 +276,11 @@
                                     foreach ($futStock as $sizes) {
                                         $totArrivo += array_sum($sizes);
                                     }
+                                    $totFutCommitted = array_sum($futCommitted);
                                 } else {
                                     $totPronta = $product->variants->sum('quantity');
                                     $totArrivo = 0;
+                                    $totFutCommitted = 0;
                                 }
                             @endphp
                             <tr class="hover:bg-yellow-50/40 transition">
@@ -319,6 +328,9 @@
                                         <div class="font-black text-emerald-700 text-xs">🟢 Pronta: {{ $totPronta }} pz</div>
                                         @if($totArrivo > 0)
                                             <div class="text-[10px] text-amber-700 font-bold mt-0.5">🚚 In arrivo: +{{ $totArrivo }}</div>
+                                        @endif
+                                        @if($totFutCommitted > 0)
+                                            <div class="text-[10px] text-purple-700 font-bold mt-0.5">📅 Imp. futuro: -{{ $totFutCommitted }}</div>
                                         @endif
                                         <div class="text-[10px] text-gray-400 font-semibold mt-0.5">{{ $product->variants->count() }} varianti</div>
                                     @else

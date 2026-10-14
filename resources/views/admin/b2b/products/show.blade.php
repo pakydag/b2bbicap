@@ -73,37 +73,40 @@
                         @endif
 
 @php
+    $warehouseStock = $giacenzaMatch['warehouse_stock'] ?? [];
     $currentStock = $giacenzaMatch['current_stock'] ?? [];
     $futureStockGrouped = $giacenzaMatch['future_stock'] ?? [];
+    $futureCommitted = $giacenzaMatch['future_committed'] ?? [];
+    $readyCommitted = $giacenzaMatch['ready_committed'] ?? [];
     
     $totProntaDisponibile = 0;
-    $totProntaImpegnata = 0;
     foreach ($currentStock as $s => $q) {
         if ($q > 0) {
             $totProntaDisponibile += $q;
-        } else {
-            $totProntaImpegnata += abs($q);
         }
     }
     
+    $totProntaImpegnata = array_sum($readyCommitted);
     $totProntaNetto = array_sum($currentStock);
     $totArrivo = 0;
     foreach ($futureStockGrouped as $d => $sizesArr) {
         $totArrivo += array_sum($sizesArr);
     }
+    $totFuturoImpegnato = array_sum($futureCommitted);
     
     if (empty($giacenzaMatch)) {
         $totProntaDisponibile = $product->variants->sum('stock');
         $totProntaNetto = $totProntaDisponibile;
         foreach ($product->variants as $v) {
             $currentStock[$v->size] = $v->stock;
+            $warehouseStock[$v->size] = $v->stock;
         }
     }
 
-    $totGiacenzaGlobale = $totProntaNetto + $totArrivo;
+    $totGiacenzaGlobale = $totProntaNetto + $totArrivo - $totFuturoImpegnato;
 
     $allSizes = $product->variants->pluck('size')->toArray();
-    $allSizes = array_unique(array_merge($allSizes, array_keys($currentStock)));
+    $allSizes = array_unique(array_merge($allSizes, array_keys($warehouseStock), array_keys($currentStock), array_keys($futureCommitted), array_keys($readyCommitted)));
     foreach ($futureStockGrouped as $d => $sArr) {
         $allSizes = array_merge($allSizes, array_keys($sArr));
     }
@@ -120,12 +123,15 @@
                                 <span class="block text-[9px] font-bold text-emerald-800 uppercase">Pronta Consegna</span>
                                 <span class="text-sm font-black text-emerald-700">🟢 {{ $totProntaDisponibile }}</span>
                                 @if($totProntaImpegnata > 0)
-                                    <span class="block text-[9px] font-bold text-rose-600 mt-0.5" title="Quantità impegnata su ordini pregressi">-{{ $totProntaImpegnata }} imp.</span>
+                                    <span class="block text-[9px] font-bold text-rose-600 mt-0.5" title="Quantità impegnata pronta">-{{ $totProntaImpegnata }} imp.</span>
                                 @endif
                             </div>
                             <div class="bg-amber-50/70 p-2.5 rounded-2xl border border-amber-100 text-center">
                                 <span class="block text-[9px] font-bold text-amber-800 uppercase">In Arrivo</span>
                                 <span class="text-sm font-black text-amber-700">🚚 {{ $totArrivo }}</span>
+                                @if($totFuturoImpegnato > 0)
+                                    <span class="block text-[9px] font-bold text-purple-600 mt-0.5" title="Quantità impegnata futura">-{{ $totFuturoImpegnato }} imp.</span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -157,13 +163,18 @@
                                     <span>🟢 Pronta Consegna:</span> <strong>{{ $totProntaDisponibile }}</strong>
                                 </span>
                                 @if($totProntaImpegnata > 0)
-                                    <span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2 py-1 rounded-full uppercase" title="Totale impegnato su ordini">
-                                        ⚠️ Impegnati: -{{ $totProntaImpegnata }}
+                                    <span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold px-2 py-1 rounded-full uppercase" title="Totale impegnato pronta">
+                                        ⚠️ Imp. Pronta: -{{ $totProntaImpegnata }}
                                     </span>
                                 @endif
                                 @if($totArrivo > 0)
                                     <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-3 py-1 rounded-full uppercase flex items-center gap-1">
                                         <span>🚚 In Arrivo:</span> <strong>{{ $totArrivo }}</strong>
+                                    </span>
+                                @endif
+                                @if($totFuturoImpegnato > 0)
+                                    <span class="bg-purple-50 text-purple-700 border border-purple-200 text-xs font-bold px-2 py-1 rounded-full uppercase" title="Totale impegnato futuro">
+                                        📅 Imp. Futuro: -{{ $totFuturoImpegnato }}
                                     </span>
                                 @endif
                                 <span class="bg-slate-900 text-white text-xs font-black px-3 py-1 rounded-full uppercase" title="Disponibilità netta globale (Pronta consegna + Arrivi - Impegnati)">
@@ -176,6 +187,8 @@
                             @forelse($allSizes as $size)
                                 @php
                                     $pQty = $currentStock[$size] ?? 0;
+                                    $futImp = $futureCommitted[$size] ?? 0;
+                                    $readyImp = $readyCommitted[$size] ?? 0;
                                     $futureEntries = [];
                                     foreach ($futureStockGrouped as $date => $sizesArr) {
                                         if (!empty($sizesArr[$size]) && $sizesArr[$size] > 0) {
@@ -206,6 +219,12 @@
                                                 <span class="block text-[8px] font-semibold text-amber-900 leading-none mt-0.5">{{ $fEntry['date'] }}</span>
                                             </div>
                                         @endforeach
+
+                                        @if($futImp > 0)
+                                            <div class="text-[10px] font-bold text-purple-800 bg-purple-100/90 rounded py-0.5 px-1 leading-tight shadow-sm" title="Impegnato su ordini futuri">
+                                                📅 -{{ $futImp }} imp.
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             @empty

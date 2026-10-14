@@ -503,11 +503,14 @@
             @else
                 @php
                     $currentSizes = array_keys($giacenzaMatch['current_stock'] ?? []);
+                    $warehouseSizes = array_keys($giacenzaMatch['warehouse_stock'] ?? []);
                     $futureSizes = [];
                     foreach ($giacenzaMatch['future_stock'] ?? [] as $date => $stocks) {
                         $futureSizes = array_merge($futureSizes, array_keys($stocks));
                     }
-                    $allCsvSizes = array_unique(array_merge($currentSizes, $futureSizes));
+                    $futCommittedSizes = array_keys($giacenzaMatch['future_committed'] ?? []);
+                    $readyCommittedSizes = array_keys($giacenzaMatch['ready_committed'] ?? []);
+                    $allCsvSizes = array_unique(array_merge($currentSizes, $warehouseSizes, $futureSizes, $futCommittedSizes, $readyCommittedSizes));
                     $sizes = collect($allCsvSizes)
                         ->filter(function($s) {
                             return is_numeric($s) && intval($s) >= 30 && intval($s) <= 50;
@@ -654,8 +657,8 @@
                                                             @php 
                                                                 $variant = $variants->where('size', $size)->first(); 
                                                                 $future = (int)($summedFutureStock[$size] ?? 0);
-                                                                $current = (int)($giacenzaMatch['current_stock'][$size] ?? 0);
-                                                                $qtyFuture = max(0, $future + $current);
+                                                                $futCommitted = (int)($giacenzaMatch['future_committed'][$size] ?? 0);
+                                                                $qtyFuture = ($future > 0) ? max(0, $future - $futCommitted) : 0;
                                                             @endphp
                                                             @if($variant)
                                                                 <div class="relative inline-block">

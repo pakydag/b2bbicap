@@ -362,13 +362,7 @@ class AgentPortalController extends Controller
                     if ($match) {
                         $size = $item['size'] ?? '';
                         $deliveryDate = $item['delivery_date'] ?? null;
-                        if (empty($deliveryDate)) {
-                            $item['available_qty'] = max(0, (int)($match['current_stock'][$size] ?? 0));
-                        } else {
-                            $future = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
-                            $current = (int)($match['current_stock'][$size] ?? 0);
-                            $item['available_qty'] = max(0, $future + $current);
-                        }
+                        $item['available_qty'] = $this->getAvailableStock($match, $size, $deliveryDate);
                     }
                 }
             }
@@ -425,22 +419,7 @@ class AgentPortalController extends Controller
             if (!$match) return $qtyRequested;
             
             $size = $variant->size ?? '';
-            $availableQty = 0;
-            
-            if (empty($deliveryDate)) {
-                $availableQty = max(0, (int)($match['current_stock'][$size] ?? 0));
-            } else {
-                $futureQty = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
-                if ($futureQty == 0 && !empty($match['future_stock'])) {
-                    $sumFuture = 0;
-                    foreach ($match['future_stock'] as $fDate => $fSizes) {
-                        $sumFuture += (int)($fSizes[$size] ?? 0);
-                    }
-                    $futureQty = $sumFuture;
-                }
-                $currentQty = (int)($match['current_stock'][$size] ?? 0);
-                $availableQty = max(0, $futureQty + $currentQty);
-            }
+            $availableQty = $this->getAvailableStock($match, $size, $deliveryDate);
             
             $totalRequestedQty = $currentCartQty + $qtyRequested;
             
@@ -621,22 +600,7 @@ class AgentPortalController extends Controller
             if ($match) {
                 $size = $item['size'] ?? '';
                 $deliveryDate = $item['delivery_date'] ?? null;
-                $availableQty = 0;
-                
-                if (empty($deliveryDate)) {
-                    $availableQty = max(0, (int)($match['current_stock'][$size] ?? 0));
-                } else {
-                    $futureQty = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
-                    if ($futureQty == 0 && !empty($match['future_stock'])) {
-                        $sumFuture = 0;
-                        foreach ($match['future_stock'] as $fDate => $fSizes) {
-                            $sumFuture += (int)($fSizes[$size] ?? 0);
-                        }
-                        $futureQty = $sumFuture;
-                    }
-                    $currentQty = (int)($match['current_stock'][$size] ?? 0);
-                    $availableQty = max(0, $futureQty + $currentQty);
-                }
+                $availableQty = $this->getAvailableStock($match, $size, $deliveryDate);
                 
                 if ($newQty > $availableQty) {
                     $newQty = $availableQty;
@@ -1293,23 +1257,11 @@ class AgentPortalController extends Controller
                 continue;
             }
 
-            if (empty($deliveryDate)) {
-                $availableStock = max(0, (int)($match['current_stock'][$size] ?? 0));
-                if ($reqQty > $availableStock) {
+            $availableStock = $this->getAvailableStock($match, $size, $deliveryDate);
+            if ($reqQty > $availableStock) {
+                if (empty($deliveryDate)) {
                     $insufficientItems[] = "{$product->name} (Taglia {$size}): Richiesti {$reqQty} pz, Disponibilità immediata in magazzino {$availableStock} pz.";
-                }
-            } else {
-                $futureQty = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
-                if ($futureQty == 0 && !empty($match['future_stock'])) {
-                    $sumFuture = 0;
-                    foreach ($match['future_stock'] as $fDate => $fSizes) {
-                        $sumFuture += (int)($fSizes[$size] ?? 0);
-                    }
-                    $futureQty = $sumFuture;
-                }
-                $currentQty = (int)($match['current_stock'][$size] ?? 0);
-                $availableStock = max(0, $futureQty + $currentQty);
-                if ($reqQty > $availableStock) {
+                } else {
                     $insufficientItems[] = "{$product->name} (Taglia {$size}): Richiesti {$reqQty} pz, Disponibilità per la data {$deliveryDate}: {$availableStock} pz.";
                 }
             }
@@ -1491,6 +1443,7 @@ class AgentPortalController extends Controller
             if (empty($code)) continue;
             
             $normCode = $this->normalizeCode($code);
+            $titolo = trim($row[6] ?? '');
             
             if (!isset($data[$code])) {
                 $data[$code] = [
@@ -1498,27 +1451,95 @@ class AgentPortalController extends Controller
                     'norm_code' => $normCode,
                     'name' => $name,
                     'price' => $priceFloat,
-                    'current_stock' => [], // sizes with no consegna
-                    'future_stock' => [],  // date => [ size => qty ]
+                    'warehouse_stock' => [],    // Giacenza fisica magazzino (es. 35)
+                    'ready_committed' => [],    // Impegnato pronta per taglia (es. 40)
+                    'current_stock' => [],      // Netto pronta = warehouse_stock - ready_committed (es. -5)
+                    'future_stock' => [],       // date => [ size => qty ]
+                    'future_committed' => [],   // size => qty (Impegnato Futuro)
                     'total_qty' => 0
                 ];
             }
             
-            if (empty($consegna)) {
+            $titoloLower = strtolower($titolo);
+            $isImpegnatoFuturo = str_contains($titoloLower, 'impegnato futuro');
+            $isImpegnatoPronta = str_contains($titoloLower, 'impegnato pronta') || ($titoloLower === 'impegnato' && empty($consegna));
+
+            if ($isImpegnatoFuturo) {
+                // Impegnato Futuro: non tocca la pronta consegna,
+                // ma viene sottratto dalla disponibilità futura
+                if (!isset($data[$code]['future_committed'][$size])) {
+                    $data[$code]['future_committed'][$size] = 0;
+                }
+                $data[$code]['future_committed'][$size] += abs($qty);
+                $data[$code]['total_qty'] -= abs($qty);
+            } elseif ($isImpegnatoPronta) {
+                // Impegnato Pronta: toglie dalla disponibilità pronta consegna
                 if (!isset($data[$code]['current_stock'][$size])) {
                     $data[$code]['current_stock'][$size] = 0;
                 }
-                $data[$code]['current_stock'][$size] += $qty;
-            } else {
-                if (!isset($data[$code]['future_stock'][$consegna][$size])) {
-                    $data[$code]['future_stock'][$consegna][$size] = 0;
+                $data[$code]['current_stock'][$size] -= abs($qty);
+
+                if (!isset($data[$code]['ready_committed'][$size])) {
+                    $data[$code]['ready_committed'][$size] = 0;
                 }
-                $data[$code]['future_stock'][$consegna][$size] += $qty;
+                $data[$code]['ready_committed'][$size] += abs($qty);
+                $data[$code]['total_qty'] -= abs($qty);
+            } else {
+                // Giacenza ordinaria di magazzino o arrivi futuri
+                if (empty($consegna)) {
+                    if (!isset($data[$code]['warehouse_stock'][$size])) {
+                        $data[$code]['warehouse_stock'][$size] = 0;
+                    }
+                    $data[$code]['warehouse_stock'][$size] += $qty;
+
+                    if (!isset($data[$code]['current_stock'][$size])) {
+                        $data[$code]['current_stock'][$size] = 0;
+                    }
+                    $data[$code]['current_stock'][$size] += $qty;
+                } else {
+                    if (!isset($data[$code]['future_stock'][$consegna][$size])) {
+                        $data[$code]['future_stock'][$consegna][$size] = 0;
+                    }
+                    $data[$code]['future_stock'][$consegna][$size] += $qty;
+                }
+                $data[$code]['total_qty'] += $qty;
             }
-            $data[$code]['total_qty'] += $qty;
         }
         fclose($file);
         return $data;
+    }
+
+    /**
+     * Calcola la disponibilità effettiva per taglia e tipo consegna:
+     * - Pronta consegna (deliveryDate vuota): current_stock netto (giacenza fisica magazzino - impegnato pronta)
+     * - Consegna futura: visualizza semplicemente la quantità corrispondente dell'arrivo futuro (meno eventuale Impegnato Futuro)
+     */
+    public function getAvailableStock($match, $size, $deliveryDate = null): int
+    {
+        if (!$match) {
+            return 0;
+        }
+
+        if (empty($deliveryDate)) {
+            return max(0, (int)($match['current_stock'][$size] ?? 0));
+        }
+
+        $future = 0;
+        if (!empty($deliveryDate) && isset($match['future_stock'][$deliveryDate][$size])) {
+            $future = (int)$match['future_stock'][$deliveryDate][$size];
+        } elseif (!empty($match['future_stock'])) {
+            foreach ($match['future_stock'] as $fDate => $fSizes) {
+                $future += (int)($fSizes[$size] ?? 0);
+            }
+        }
+
+        if ($future <= 0) {
+            return 0;
+        }
+
+        $futCommitted = (int)($match['future_committed'][$size] ?? 0);
+
+        return max(0, $future - $futCommitted);
     }
 
     public function normalizeCode($code)
