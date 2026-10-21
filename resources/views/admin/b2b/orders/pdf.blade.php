@@ -11,13 +11,24 @@
     $logoDataUri = file_exists($logoFile) 
         ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) 
         : ($siteLogo ? asset($siteLogo) : asset('storage/logo-bicap.png'));
+
+    $groupOrders = $groupOrders ?? ($order->order_group_id ? $order->groupOrders() : collect([$order]));
+    foreach ($groupOrders as $gO) {
+        $gO->loadMissing(['agent', 'customer.priceList', 'customer.paymentCondition', 'items.product.brand', 'items.variant']);
+    }
+    $isGroup = $groupOrders->count() > 1;
+    $orderIdsDisplay = $isGroup 
+        ? '#' . implode(', #', $groupOrders->pluck('id')->toArray()) 
+        : '#' . $order->id;
+    $itemsList = $allItems ?? $groupOrders->flatMap(fn($o) => $o->items);
+    $finalTotal = $totalAmount ?? $groupOrders->sum('total_amount');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $isEn ? 'en' : 'it' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $order->status === 'confirmed' ? ($isEn ? "Order Confirmation" : "Conferma d'Ordine") : ($isEn ? "Order Summary (Pending)" : "Proposta d'Ordine (In Attesa)") }} #{{ $order->id }} - BICAP</title>
+    <title>{{ $order->status === 'confirmed' ? ($isEn ? "Order Confirmation" : "Conferma d'Ordine") : ($isEn ? "Order Summary (Pending)" : "Proposta d'Ordine (In Attesa)") }} {{ $orderIdsDisplay }} - BICAP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media print {
@@ -37,7 +48,7 @@
             <span class="text-xl">📄</span>
             <div>
                 <h1 class="font-black text-sm uppercase tracking-wider text-yellow-400">
-                    {{ $isEn ? 'Order Print Preview' : 'Anteprima Stampa Ordine' }} #{{ $order->id }}
+                    {{ $isEn ? 'Order Print Preview' : 'Anteprima Stampa Ordine' }} {{ $orderIdsDisplay }}
                     @if($order->status !== 'confirmed')
                         <span class="text-amber-300 text-xs font-bold lowercase">({{ $order->status_label }} - {{ $isEn ? 'Not Confirmed' : 'Non Confermato' }})</span>
                     @endif
@@ -98,7 +109,7 @@
                         ⏳ {{ $isEn ? 'ORDER PROPOSAL — PENDING CONFIRMATION' : "PROPOSTA D'ORDINE — IN ATTESA CONFERMA" }}
                     </span>
                 @endif
-                <h2 class="text-3xl font-black text-slate-900">#{{ $order->id }}</h2>
+                <h2 class="text-3xl font-black text-slate-900">{{ $orderIdsDisplay }}</h2>
                 @if($order->internal_reference)
                     <p class="text-xs text-indigo-700 font-black mt-1">
                         {{ $isEn ? 'Internal Ref:' : 'Rif. Ordine Interno:' }}
@@ -202,8 +213,8 @@
             $assignedPriceList = $order->customer ? $order->customer->priceList : null;
         @endphp
 
-        <!-- Details Grid (3 Colonne) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <!-- Details Grid (2 Colonne) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8">
             <!-- 1. Dati Cliente -->
             <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ $isEn ? 'BILL TO (B2B CUSTOMER)' : 'INTESTATO A (CLIENTE B2B)' }}</p>
@@ -224,6 +235,9 @@
                     @if($order->customer && $order->customer->email)
                         <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'EMAIL:' : 'EMAIL:' }}</span> {{ $order->customer->email }}</p>
                     @endif
+                    @if($order->customer && !empty($order->customer->porto))
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'PORT / FREIGHT:' : 'PORTO:' }}</span> <span class="font-bold text-slate-900 uppercase">{{ $order->customer->porto }}</span></p>
+                    @endif
                 </div>
             </div>
 
@@ -241,33 +255,15 @@
                     <p class="font-bold text-indigo-700 uppercase">{{ $order->payment_method ?: ($order->customer->paymentCondition->name ?? ($isEn ? 'Standard Terms' : 'Da concordare / Standard')) }}</p>
                 </div>
             </div>
-
-            <!-- 3. Condizioni Listino Prezzi -->
-            <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
-                <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">{{ $isEn ? 'APPLIED PRICE LIST' : 'LISTINO PREZZI APPLICATO' }}</p>
-                <h3 class="text-base font-black text-indigo-950 uppercase">
-                    {{ $assignedPriceList ? $assignedPriceList->name : ($isEn ? 'Standard Price List' : 'Listino Prezzi Standard') }}
-                </h3>
-                <div class="mt-2 space-y-1 text-xs text-gray-700">
-                    @if($assignedPriceList && $assignedPriceList->general_discount_percent > 0)
-                        <p><span class="font-bold text-indigo-500 uppercase">{{ $isEn ? 'GENERAL DISCOUNT:' : 'SCONTO GENERALE:' }}</span> <span class="font-black text-indigo-900">-{{ floatval($assignedPriceList->general_discount_percent) }}%</span></p>
-                    @else
-                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'TERMS TYPE:' : 'TIPO LISTINO:' }}</span> <span class="font-semibold text-gray-800">{{ $isEn ? 'Dedicated B2B Pricing & Discounts' : 'Prezzi & Sconti Dedicati B2B' }}</span></p>
-                    @endif
-                    <p class="pt-1 text-[11px] text-gray-500 font-medium">
-                        {{ $isEn ? 'Commercial terms reserved for' : 'Condizioni commerciali riservate per' }} <span class="font-bold text-slate-900 uppercase">{{ $order->customer->business_name ?? ($isEn ? 'Customer' : 'Cliente') }}</span>
-                    </p>
-                </div>
-            </div>
         </div>
 
         @php
             $totalGross = 0;
-            foreach ($order->items as $item) {
+            foreach ($itemsList as $item) {
                 $baseP = $item->product ? (float)$item->product->price : (float)$item->price;
                 $totalGross += $baseP * $item->quantity;
             }
-            $totalSavings = max(0, $totalGross - $order->total_amount);
+            $totalSavings = max(0, $totalGross - $finalTotal);
         @endphp
 
         <!-- Items Table -->
@@ -286,12 +282,15 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 text-xs">
-                    @forelse($order->items as $index => $item)
+                    @php
+                        $orderTotalQuantity = (int) $itemsList->sum('quantity');
+                    @endphp
+                    @forelse($itemsList as $index => $item)
                         @php
                             $product = $item->product;
                             $customer = $order->customer;
                             $basePrice = $product ? (float)$product->price : (float)$item->price;
-                            $priceDetails = $product ? $product->getPriceDetailsForCustomer($customer, $item->quantity) : null;
+                            $priceDetails = $product ? $product->getPriceDetailsForCustomer($customer, $orderTotalQuantity) : null;
                             
                             $isProductException = !empty($priceDetails['is_product_exception']);
                             $isFixedPrice = ($priceDetails['discount_type'] ?? '') === 'fixed_price';
@@ -388,7 +387,7 @@
         </div>
 
         @php
-            $uniqueProducts = $order->items->pluck('product')->filter()->unique('id');
+            $uniqueProducts = $itemsList->pluck('product')->filter()->unique('id');
         @endphp
 
         <!-- Card Dettaglio Listino Prezzi & Fasce per Articoli in Ordine -->
@@ -532,7 +531,7 @@
             <div class="w-full sm:w-80 space-y-2 bg-gray-50 p-5 rounded-2xl border border-gray-200 text-right">
                 <div class="flex justify-between text-xs text-gray-600">
                     <span>{{ $isEn ? 'Total Pairs / Pieces:' : 'Totale Capi / Paia:' }}</span>
-                    <span class="font-bold text-slate-900">{{ $order->items->sum('quantity') }} {{ $isEn ? 'pcs' : 'pz' }}</span>
+                    <span class="font-bold text-slate-900">{{ $itemsList->sum('quantity') }} {{ $isEn ? 'pcs' : 'pz' }}</span>
                 </div>
                 @if($totalSavings > 0)
                     <div class="flex justify-between text-xs text-gray-600">
@@ -546,12 +545,12 @@
                 @else
                     <div class="flex justify-between text-xs text-gray-600 border-b border-gray-200 pb-2">
                         <span>{{ $isEn ? 'Taxable Amount:' : 'Imponibile Merce:' }}</span>
-                        <span class="font-bold text-slate-900">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
+                        <span class="font-bold text-slate-900">€ {{ number_format($finalTotal, 2, ',', '.') }}</span>
                     </div>
                 @endif
                 <div class="flex justify-between text-base font-black text-slate-900 pt-1">
                     <span class="uppercase">{{ $isEn ? 'ORDER TOTAL:' : 'TOTALE ORDINE:' }}</span>
-                    <span class="text-indigo-600">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
+                    <span class="text-indigo-600">€ {{ number_format($finalTotal, 2, ',', '.') }}</span>
                 </div>
             </div>
         </div>

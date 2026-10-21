@@ -153,6 +153,7 @@ class B2bCustomerController extends Controller
             'business_name' => 'required|string|max:255',
             'vat_number' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
+            'porto' => 'nullable|string|max:255',
             'contact_name' => 'nullable|string|max:255',
             'contact_surname' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
@@ -192,7 +193,7 @@ class B2bCustomerController extends Controller
         $customer->update(array_merge(
             $request->only([
                 'code', 'business_name', 'vat_number', 'contact_name', 
-                'contact_surname', 'phone', 'email', 'payment_condition_id', 'b2b_price_list_id'
+                'contact_surname', 'phone', 'email', 'porto', 'payment_condition_id', 'b2b_price_list_id'
             ]),
             ['locale' => $selectedLocale]
         ));

@@ -93,7 +93,16 @@
                                 <tr>
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-bold text-gray-900">{{ $item->product->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $item->product->brand->name }}</div>
+                                        <div class="text-xs text-gray-500 mb-1">{{ $item->product->brand->name }}</div>
+                                        @if(!empty($item->delivery_date))
+                                            <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded">
+                                                📅 Consegna dal: {{ $item->delivery_date }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded">
+                                                ⚡ Disp. Immediata
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 text-center text-sm text-gray-600">
                                         {{ $item->variant->color }} / {{ $item->variant->size }}

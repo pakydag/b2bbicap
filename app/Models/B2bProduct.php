@@ -30,7 +30,15 @@ class B2bProduct extends Model
 
     public static function getPhpCliBinary(): string
     {
-        if (defined('PHP_BINARY') && !str_contains(PHP_BINARY, 'fpm') && file_exists(PHP_BINARY)) {
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            foreach (['C:\\xampp\\php\\php.exe', 'C:\\php\\php.exe'] as $winCandidate) {
+                if (file_exists($winCandidate)) {
+                    return $winCandidate;
+                }
+            }
+        }
+
+        if (defined('PHP_BINARY') && !str_contains(PHP_BINARY, 'fpm') && !str_contains(strtolower(PHP_BINARY), 'httpd') && !str_contains(strtolower(PHP_BINARY), 'apache') && file_exists(PHP_BINARY)) {
             return PHP_BINARY;
         }
         foreach (['/usr/bin/php', '/usr/bin/php8.3', '/usr/bin/php8.4', '/usr/bin/php8.2', '/usr/bin/php8.1', '/usr/local/bin/php'] as $candidate) {

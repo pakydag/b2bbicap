@@ -147,8 +147,8 @@ class SyncB2bAll extends Command
             // Solo Pronta consegna (Colonna C)
             $dispValue = trim($data['DISPONIBILITA'] ?? $data['DISPONIBILITÀ'] ?? $row[2] ?? '');
             if (strcasecmp($dispValue, 'Pronta consegna') !== 0) {
-                if (!empty($codice)) {
-                    B2bProduct::where('code', $codice)->update(['is_active' => false]);
+                if (!empty($codice) && !empty($nome)) {
+                    B2bProduct::where('code', $codice)->where('name', $nome)->update(['is_active' => false]);
                 }
                 continue;
             }
@@ -182,10 +182,13 @@ class SyncB2bAll extends Command
             }
 
             // Create or update B2bProduct: prezzo iniziale impostato a 0
+            // Identificato univocamente dalla combinazione di codice E nome (diversi modelli condividono lo stesso codice base)
             $product = B2bProduct::updateOrCreate(
-                ['code' => $codice],
                 [
+                    'code' => $codice,
                     'name' => $nome,
+                ],
+                [
                     'b2b_brand_id' => $brand->id,
                     'description' => $data['descrizione-articolo-it'] ?? '',
                     'image' => $data['FOTO-PRINCIPALE-PRODOTTO-WEB'] ?? null,

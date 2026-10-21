@@ -299,21 +299,18 @@ class AgentPortalController extends Controller
 
     private function recalculateCartPrices(array $cart, $customer)
     {
-        $groupedQuantities = [];
+        // Essendo un ordine unico, la quantità totale dell'intero carrello determina lo sconto/listino per tutti gli articoli
+        $totalQuantity = 0;
         foreach ($cart as $item) {
-            $key = empty($item['delivery_date']) ? 'immediate' : $item['delivery_date'];
-            $groupedQuantities[$key] = ($groupedQuantities[$key] ?? 0) + $item['quantity'];
+            $totalQuantity += (int)($item['quantity'] ?? 0);
         }
 
         foreach ($cart as $index => $item) {
             if (!empty($item['product_id'])) {
                 $product = B2bProduct::find($item['product_id']);
                 if ($product) {
-                    $key = empty($item['delivery_date']) ? 'immediate' : $item['delivery_date'];
-                    $groupQuantity = $groupedQuantities[$key] ?? 0;
-                    
-                    // Prezzo scontato in base alla quantità
-                    $details = $product->getPriceDetailsForCustomer($customer, $groupQuantity);
+                    // Prezzo scontato in base alla quantità totale dell'ordine (a prescindere dalle date di consegna)
+                    $details = $product->getPriceDetailsForCustomer($customer, $totalQuantity);
                     $cart[$index]['price'] = $details['unit_price'];
                     $cart[$index]['original_price'] = $details['original_price'];
                     $cart[$index]['price_details'] = [
@@ -682,7 +679,7 @@ class AgentPortalController extends Controller
         $request->validate([
             'internal_reference' => 'required|string|max:100',
             'notes' => 'nullable|string',
-            'delivery_group' => 'required|string',
+            'delivery_group' => 'nullable|string',
         ], [
             'internal_reference.required' => 'Il campo Riferimento Ordine Interno è obbligatorio prima dell\'invio.',
         ]);
@@ -690,7 +687,7 @@ class AgentPortalController extends Controller
         $cart = session()->get('b2b_cart', []);
         if (empty($cart)) return redirect()->route('agent.catalog');
 
-        $deliveryGroup = $request->input('delivery_group');
+        $deliveryGroup = $request->input('delivery_group', 'all');
 
         $b2bCustomer = B2bCustomer::find($customerId);
 
@@ -721,22 +718,9 @@ class AgentPortalController extends Controller
             $contactId = $contact->id;
         }
 
-        // Raggruppa i prodotti per data di consegna
-        $groupedCart = [];
-        $totalCartQuantity = 0;
-        foreach ($cart as $index => $item) {
-            $key = empty($item['delivery_date']) ? 'immediate' : $item['delivery_date'];
-            $groupedCart[$key][$index] = $item;
-            $totalCartQuantity += $item['quantity'];
-        }
-
-        if (!isset($groupedCart[$deliveryGroup])) {
-            return redirect()->back()->with('error', 'L\'ordine selezionato non è più presente nel carrello.');
-        }
-
-        $itemsToProcess = $groupedCart[$deliveryGroup];
-        
+        // Creazione di UN UNICO ordine nel portale/database contenente tutti gli articoli del carrello
         $order = B2bOrder::create([
+            'order_group_id' => null,
             'agent_id' => $agentId,
             'b2b_customer_id' => $customerId,
             'internal_reference' => $request->internal_reference,
@@ -750,14 +734,13 @@ class AgentPortalController extends Controller
         }
 
         $total = 0;
-        $groupQuantity = array_sum(array_column($itemsToProcess, 'quantity'));
+        $totalCartQuantity = array_sum(array_column($cart, 'quantity'));
 
-        foreach ($itemsToProcess as $index => $item) {
+        foreach ($cart as $item) {
             $product = B2bProduct::find($item['product_id']);
             $finalUnitPrice = $item['price'];
             if ($product) {
-                // Calcoliamo lo sconto basandoci sulla quantità del gruppo di consegna
-                $details = $product->getPriceDetailsForCustomer($b2bCustomer, $groupQuantity);
+                $details = $product->getPriceDetailsForCustomer($b2bCustomer, $totalCartQuantity);
                 $finalUnitPrice = $details['unit_price'];
             }
 
@@ -772,17 +755,15 @@ class AgentPortalController extends Controller
                 'delivery_date' => $item['delivery_date'] ?? null,
             ]);
             $total += $finalUnitPrice * $item['quantity'];
-            
-            // Rimuoviamo l'articolo processato dal carrello principale
-            unset($cart[$index]);
         }
 
         $order->update(['total_amount' => $total]);
         
-        // Genera ed invia subito via FTP il file CSV dell'ordine
+        // Genera ed invia via FTP i file CSV per l'ordine (37.csv se 1 sola data, oppure 37_1.csv, 37_2.csv, ... per il gestionale)
         $csvResult = $this->exportOrderToFtpCsv($order);
+        $uploadedCsvFiles = $csvResult['uploaded_files'] ?? [];
 
-        // Invio notifica ricezione e conferma ordine a Cliente e Agente
+        // Invio di UNA SOLA notifica email a Cliente e Agente per l'ordine unico
         try {
             $order->loadMissing('customer.user', 'customer.agents', 'agent', 'items.product.brand', 'items.variant');
             $custEmail = $order->customer?->user?->email ?: $order->customer?->email;
@@ -791,43 +772,41 @@ class AgentPortalController extends Controller
             $custLocale = $order->customer?->locale ?: ($order->customer?->user?->locale ?: 'it');
             $custIsEn = $custLocale === 'en';
 
+            $titleCust = $custIsEn 
+                ? "B2B Order Confirmation #{$order->id}" 
+                : "Conferma Ordine B2B #{$order->id}";
+
+            $titleAgent = $custIsEn 
+                ? "New Confirmed B2B Order #{$order->id}" 
+                : "Nuovo Ordine B2B Confermato #{$order->id}";
+
             if (!empty($custEmail)) {
-                $subj = $custIsEn ? 'B2B Order Confirmation #' . $order->id : 'Conferma Ordine B2B #' . $order->id;
                 \Illuminate\Support\Facades\Mail::to($custEmail)
-                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', $subj));
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', $titleCust));
             }
             if (!empty($agentEmail)) {
                 \Illuminate\Support\Facades\Mail::to($agentEmail)
-                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', 'Nuovo Ordine B2B Confermato #' . $order->id));
+                    ->send(new \App\Mail\B2bOrderCopy($order, null, 'none', $titleAgent));
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning("[OrderCreatedMail] Errore invio notifica ordine #{$order->id}: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning("[OrderCreatedMail] Errore invio notifica email ordine #{$order->id}: " . $e->getMessage());
         }
 
-        // Aggiorniamo la sessione con i restanti prodotti non inviati
-        $cart = array_values($cart);
-        
+        // Svuota completamente il carrello dopo l'invio
+        session()->forget('b2b_cart');
+        $this->persistCart([]);
+
         $isEn = app()->getLocale() === 'en';
         $msg = $isEn
             ? "Order #{$order->id} submitted and confirmed successfully."
             : "Ordine #{$order->id} inviato e confermato con successo.";
-        if (!empty($csvResult['uploaded'])) {
+
+        if (!empty($uploadedCsvFiles)) {
+            $filesStr = implode(', ', $uploadedCsvFiles);
             $msg .= $isEn 
-                ? " File {$csvResult['filename']} transmitted to FTP Input folder."
-                : " File {$csvResult['filename']} trasmesso nella cartella Input dell'FTP.";
+                ? " " . count($uploadedCsvFiles) . " CSV file(s) ({$filesStr}) transmitted to FTP Input folder."
+                : " " . count($uploadedCsvFiles) . " file CSV ({$filesStr}) trasmessi nella cartella Input dell'FTP.";
         }
-
-        if (count($cart) > 0) {
-            $cart = $this->recalculateCartPrices($cart, $b2bCustomer);
-            session()->put('b2b_cart', $cart);
-            $this->persistCart($cart);
-
-            $moreMsg = $isEn ? ' There are still remaining items in your cart to send.' : ' Nel carrello sono ancora presenti articoli da inviare.';
-            return redirect()->route('agent.cart')->with('success', $msg . $moreMsg);
-        }
-
-        session()->put('b2b_cart', $cart);
-        $this->persistCart($cart);
 
         return redirect()->route('agent.orders')->with('success', $msg);
     }
@@ -836,15 +815,15 @@ class AgentPortalController extends Controller
     {
         $user = auth()->user();
         if ($user->role === 'admin') {
-            $orders = B2bOrder::with('customer', 'agent')->latest()->get();
+            $orders = B2bOrder::with('customer', 'agent', 'items')->latest()->get();
         } elseif ($user->role === 'customer') {
-            $orders = B2bOrder::where('b2b_customer_id', $user->b2b_customer_id)->with('customer')->latest()->get();
+            $orders = B2bOrder::where('b2b_customer_id', $user->b2b_customer_id)->with('customer', 'items')->latest()->get();
         } else {
             $customerIds = $user->b2bCustomers()->pluck('b2b_customers.id');
             $orders = B2bOrder::where(function($q) use ($user, $customerIds) {
                 $q->where('agent_id', $user->id)
                   ->orWhereIn('b2b_customer_id', $customerIds);
-            })->with('customer')->latest()->get();
+            })->with('customer', 'items')->latest()->get();
         }
         return view('agent.orders', compact('orders'));
     }
@@ -979,6 +958,9 @@ class AgentPortalController extends Controller
         $orderModified = false;
 
         if ($request->has('items') && is_array($request->items)) {
+            $totalOrderQty = (int) array_sum(array_column($request->items, 'quantity'));
+            $oldTotalOrderQty = (int) $order->items()->sum('quantity');
+
             foreach ($request->items as $itemId => $itemData) {
                 $orderItem = \App\Models\B2bOrderItem::where('b2b_order_id', $order->id)->where('id', $itemId)->first();
                 if ($orderItem) {
@@ -992,12 +974,12 @@ class AgentPortalController extends Controller
 
                     $finalPrice = $inputPrice;
 
-                    // Se la quantità è cambiata, ricalcola il prezzo da listino se l'agente non ha inserito un prezzo manuale personalizzato
-                    if ($newQty !== $oldQty) {
+                    // Se la quantità è cambiata, ricalcola il prezzo da listino sulla base della quantità totale dell'ordine
+                    if ($newQty !== $oldQty || $totalOrderQty !== $oldTotalOrderQty) {
                         $product = B2bProduct::find($orderItem->b2b_product_id);
                         if ($product && $order->customer) {
-                            $expectedOldPrice = $product->getPriceDetailsForCustomer($order->customer, $oldQty)['unit_price'];
-                            $expectedNewPrice = $product->getPriceDetailsForCustomer($order->customer, $newQty)['unit_price'];
+                            $expectedOldPrice = $product->getPriceDetailsForCustomer($order->customer, $oldTotalOrderQty)['unit_price'];
+                            $expectedNewPrice = $product->getPriceDetailsForCustomer($order->customer, $totalOrderQty)['unit_price'];
 
                             if (abs($inputPrice - $oldPrice) < 0.001 || abs($inputPrice - $expectedOldPrice) < 0.001) {
                                 $finalPrice = $expectedNewPrice;
@@ -1318,76 +1300,129 @@ class AgentPortalController extends Controller
 
     public function exportOrderToFtpCsv(B2bOrder $order)
     {
-        $order->load('customer', 'items.product', 'items.variant');
+        $order->loadMissing('customer', 'items.product', 'items.variant');
         $giacenzaData = $this->getGiacenzaData();
         
-        $filename = "{$order->id}.csv";
         $storageDir = storage_path('app/orders');
         if (!file_exists($storageDir)) {
             @mkdir($storageDir, 0777, true);
         }
-        $localPath = $storageDir . '/' . $filename;
-        
-        $file = @fopen($localPath, 'w');
-        if (!$file) {
-            \Illuminate\Support\Facades\Log::error("[ExportOrderCsv] Impossibile creare/aprire file {$localPath}");
-            return ['uploaded' => false, 'filename' => $filename, 'error' => 'Errore scrittura file'];
-        }
 
-        // Intestazione con codice articolo dal file giacenze e codice cliente
-        fputcsv($file, ['CODICE_ARTICOLO', 'DESCRIZIONE', 'TAGLIA', 'QUANTITA', 'DATA_CONSEGNA', 'PREZZO_UNITARIO', 'CODICE_CLIENTE', 'CLIENTE', 'NUMERO_ORDINE', 'RIFERIMENTO_ORDINE_INTERNO'], ';', '"', "\\");
-        
+        // Raggruppa gli articoli dell'ordine per data di consegna
+        $itemsByDate = [];
         foreach ($order->items as $item) {
-            $code = 'N/D';
-            if ($item->product) {
-                $match = $this->findGiacenzaMatch($item->product, $giacenzaData);
-                $code = ($match && !empty($match['raw_code'])) ? $match['raw_code'] : ($item->product->code ?? $item->product->name);
-            }
-            $name = $item->product ? $item->product->name : 'N/D';
-            $size = $item->variant ? $item->variant->size : '';
-            $qty = $item->quantity;
-            $deliveryDate = !empty($item->delivery_date) ? $item->delivery_date : 'Pronta consegna';
-            $price = number_format($item->price, 2, '.', '');
-            $customerCode = $order->customer ? ($order->customer->code ?? '') : '';
-            $customerName = $order->customer ? $order->customer->business_name : 'N/D';
-            $internalRef = $order->internal_reference ?? '';
-            
-            fputcsv($file, [$code, $name, $size, $qty, $deliveryDate, $price, $customerCode, $customerName, $order->id, $internalRef], ';', '"', "\\");
+            $dKey = !empty($item->delivery_date) ? trim($item->delivery_date) : 'immediate';
+            $itemsByDate[$dKey][] = $item;
         }
-        fclose($file);
 
-        $uploaded = false;
+        // Ordina: 'immediate' per prima, poi le date future in ordine cronologico
+        uksort($itemsByDate, function ($a, $b) {
+            if ($a === 'immediate') return -1;
+            if ($b === 'immediate') return 1;
+            return strcmp($a, $b);
+        });
+
+        $groupCount = count($itemsByDate);
+        $fileIndex = 1;
+        $uploadedFiles = [];
+        $filenames = [];
+        $localPaths = [];
+        $allUploaded = true;
+
         $host = env('FTPS_GIACENZE_HOST', '51.75.145.169');
         $username = env('FTPS_GIACENZE_USERNAME', 'bicapb2b');
         $password = env('FTPS_GIACENZE_PASSWORD', 'lB24RiL=^D');
-        $remotePath = "Input/{$filename}";
 
+        $ftpConn = null;
         try {
-            $conn = @ftp_ssl_connect($host, 21, 15);
-            if (!$conn) {
-                $conn = @ftp_connect($host, 21, 15);
+            $ftpConn = @ftp_ssl_connect($host, 21, 15);
+            if (!$ftpConn) {
+                $ftpConn = @ftp_connect($host, 21, 15);
             }
-            if ($conn) {
-                if (@ftp_login($conn, $username, $password)) {
-                    ftp_pasv($conn, true);
-                    $uploadOk = @ftp_put($conn, $remotePath, $localPath, FTP_BINARY);
-                    if ($uploadOk) {
-                        $uploaded = true;
-                        \Illuminate\Support\Facades\Log::info("[ExportOrderCsv] File {$remotePath} inviato con successo su FTP per Ordine #{$order->id}");
-                    } else {
-                        \Illuminate\Support\Facades\Log::error("[ExportOrderCsv] Fallito il caricamento FTP del file {$remotePath}");
-                    }
+            if ($ftpConn) {
+                if (@ftp_login($ftpConn, $username, $password)) {
+                    @ftp_pasv($ftpConn, true);
+                } else {
+                    @ftp_close($ftpConn);
+                    $ftpConn = null;
                 }
-                ftp_close($conn);
             }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("[ExportOrderCsv] Errore invio FTP per Ordine #{$order->id}: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("[ExportOrderCsv] Connessione FTP fallita: " . $e->getMessage());
+            $ftpConn = null;
+        }
+
+        foreach ($itemsByDate as $groupKey => $groupItems) {
+            // Se vi sono più date di consegna, genera 37_1.csv, 37_2.csv, ...
+            // Se la data è unica, genera semplicemente 37.csv
+            $filename = ($groupCount > 1) ? "{$order->id}_{$fileIndex}.csv" : "{$order->id}.csv";
+            $orderNumberForCsv = ($groupCount > 1) ? "{$order->id}_{$fileIndex}" : (string)$order->id;
+            $localPath = $storageDir . '/' . $filename;
+
+            $file = @fopen($localPath, 'w');
+            if ($file) {
+                // Intestazione con codice articolo dal file giacenze e codice cliente
+                fputcsv($file, ['CODICE_ARTICOLO', 'DESCRIZIONE', 'TAGLIA', 'QUANTITA', 'DATA_CONSEGNA', 'PREZZO_UNITARIO', 'CODICE_CLIENTE', 'CLIENTE', 'NUMERO_ORDINE', 'RIFERIMENTO_ORDINE_INTERNO'], ';', '"', "\\");
+
+                foreach ($groupItems as $item) {
+                    $code = 'N/D';
+                    if ($item->product) {
+                        $match = $this->findGiacenzaMatch($item->product, $giacenzaData);
+                        $code = ($match && !empty($match['raw_code'])) ? $match['raw_code'] : ($item->product->code ?? $item->product->name);
+                    }
+                    $name = $item->product ? $item->product->name : 'N/D';
+                    $size = $item->variant ? $item->variant->size : '';
+                    $qty = $item->quantity;
+                    $deliveryDate = !empty($item->delivery_date) ? $item->delivery_date : 'Pronta consegna';
+                    $price = number_format($item->price, 2, '.', '');
+                    $customerCode = $order->customer ? ($order->customer->code ?? '') : '';
+                    $customerName = $order->customer ? $order->customer->business_name : 'N/D';
+                    $internalRef = $order->internal_reference ?? '';
+
+                    fputcsv($file, [$code, $name, $size, $qty, $deliveryDate, $price, $customerCode, $customerName, $orderNumberForCsv, $internalRef], ';', '"', "\\");
+                }
+                fclose($file);
+
+                $filenames[] = $filename;
+                $localPaths[] = $localPath;
+
+                // Invio FTP nella cartella Input
+                $remotePath = "Input/{$filename}";
+                if ($ftpConn) {
+                    try {
+                        if (@ftp_put($ftpConn, $remotePath, $localPath, FTP_BINARY)) {
+                            $uploadedFiles[] = $filename;
+                            \Illuminate\Support\Facades\Log::info("[ExportOrderCsv] File {$remotePath} inviato con successo su FTP per Ordine #{$order->id}");
+                        } else {
+                            $allUploaded = false;
+                            \Illuminate\Support\Facades\Log::error("[ExportOrderCsv] Fallito caricamento FTP del file {$remotePath}");
+                        }
+                    } catch (\Throwable $e) {
+                        $allUploaded = false;
+                        \Illuminate\Support\Facades\Log::error("[ExportOrderCsv] Eccezione caricamento FTP del file {$remotePath}: " . $e->getMessage());
+                    }
+                } else {
+                    $allUploaded = false;
+                }
+            } else {
+                $allUploaded = false;
+                \Illuminate\Support\Facades\Log::error("[ExportOrderCsv] Impossibile creare/aprire file {$localPath}");
+            }
+
+            $fileIndex++;
+        }
+
+        if ($ftpConn) {
+            @ftp_close($ftpConn);
         }
 
         return [
-            'local_path' => $localPath,
-            'filename' => $filename,
-            'uploaded' => $uploaded,
+            'local_path' => $localPaths[0] ?? null,
+            'local_paths' => $localPaths,
+            'filename' => count($filenames) === 1 ? ($filenames[0] ?? '') : implode(', ', $filenames),
+            'filenames' => $filenames,
+            'uploaded' => $allUploaded && !empty($uploadedFiles),
+            'uploaded_files' => $uploadedFiles,
         ];
     }
 
@@ -1455,7 +1490,7 @@ class AgentPortalController extends Controller
                     'ready_committed' => [],    // Impegnato pronta per taglia (es. 40)
                     'current_stock' => [],      // Netto pronta = warehouse_stock - ready_committed (es. -5)
                     'future_stock' => [],       // date => [ size => qty ]
-                    'future_committed' => [],   // size => qty (Impegnato Futuro)
+                    'future_committed' => [],   // date => [ size => qty ] (Impegnato Futuro per data di consegna)
                     'total_qty' => 0
                 ];
             }
@@ -1465,13 +1500,16 @@ class AgentPortalController extends Controller
             $isImpegnatoPronta = str_contains($titoloLower, 'impegnato pronta') || ($titoloLower === 'impegnato' && empty($consegna));
 
             if ($isImpegnatoFuturo) {
-                // Impegnato Futuro: non tocca la pronta consegna,
-                // ma viene sottratto dalla disponibilità futura
-                if (!isset($data[$code]['future_committed'][$size])) {
-                    $data[$code]['future_committed'][$size] = 0;
+                // Impegnato Futuro: non tocca la pronta consegna.
+                // Se non ha data di consegna, non viene sottratta alcuna quantità.
+                // Se ha data di consegna, viene legato e sottratto solo da quella data.
+                if (!empty($consegna)) {
+                    if (!isset($data[$code]['future_committed'][$consegna][$size])) {
+                        $data[$code]['future_committed'][$consegna][$size] = 0;
+                    }
+                    $data[$code]['future_committed'][$consegna][$size] += abs($qty);
+                    $data[$code]['total_qty'] -= abs($qty);
                 }
-                $data[$code]['future_committed'][$size] += abs($qty);
-                $data[$code]['total_qty'] -= abs($qty);
             } elseif ($isImpegnatoPronta) {
                 // Impegnato Pronta: toglie dalla disponibilità pronta consegna
                 if (!isset($data[$code]['current_stock'][$size])) {
@@ -1525,19 +1563,15 @@ class AgentPortalController extends Controller
         }
 
         $future = 0;
-        if (!empty($deliveryDate) && isset($match['future_stock'][$deliveryDate][$size])) {
-            $future = (int)$match['future_stock'][$deliveryDate][$size];
-        } elseif (!empty($match['future_stock'])) {
-            foreach ($match['future_stock'] as $fDate => $fSizes) {
-                $future += (int)($fSizes[$size] ?? 0);
-            }
+        if (!empty($deliveryDate)) {
+            $future = (int)($match['future_stock'][$deliveryDate][$size] ?? 0);
         }
 
         if ($future <= 0) {
             return 0;
         }
 
-        $futCommitted = (int)($match['future_committed'][$size] ?? 0);
+        $futCommitted = (int)($match['future_committed'][$deliveryDate][$size] ?? 0);
 
         return max(0, $future - $futCommitted);
     }

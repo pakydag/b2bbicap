@@ -50,6 +50,7 @@ class CustomerImportService
         $codeCol = -1;
         $nameCol = -1;
         $vatCol = -1;
+        $portoCol = -1;
 
         foreach ($headerLower as $idx => $name) {
             if (in_array($name, ['cf_codicecf', 'codicecf', 'codice_cliente', 'codice', 'code', 'id_cliente'])) {
@@ -58,6 +59,8 @@ class CustomerImportService
                 $nameCol = $idx;
             } elseif (in_array($name, ['piva', 'vat', 'partita_iva', 'vat_number', 'cf_piva'])) {
                 $vatCol = $idx;
+            } elseif (in_array($name, ['porto', 'cf_porto', 'tipo_porto', 'porto_tipo', 'porto_merce', 'porto_franco', 'condizioni_porto', 'spese_porto']) || str_contains($name, 'porto')) {
+                $portoCol = $idx;
             }
         }
 
@@ -90,6 +93,7 @@ class CustomerImportService
             $code = isset($row[$codeCol]) ? trim((string)$row[$codeCol]) : '';
             $name = isset($row[$nameCol]) ? trim((string)$row[$nameCol]) : '';
             $vat = ($vatCol !== -1 && isset($row[$vatCol])) ? trim((string)$row[$vatCol]) : null;
+            $porto = ($portoCol !== -1 && isset($row[$portoCol])) ? trim((string)$row[$portoCol]) : null;
 
             if (empty($code) && empty($name)) {
                 continue;
@@ -113,18 +117,26 @@ class CustomerImportService
                 }
 
                 if ($customer) {
-                    $customer->update([
+                    $updateData = [
                         'code' => $code ?: $customer->code,
                         'business_name' => $name ?: $customer->business_name,
                         'vat_number' => $vat ?: $customer->vat_number,
-                    ]);
+                    ];
+                    if ($portoCol !== -1 && $porto !== null && $porto !== '') {
+                        $updateData['porto'] = $porto;
+                    }
+                    $customer->update($updateData);
                     $updated++;
                 } else {
-                    B2bCustomer::create([
+                    $createData = [
                         'code' => $code,
                         'business_name' => $name ?: "Cliente {$code}",
                         'vat_number' => $vat,
-                    ]);
+                    ];
+                    if ($portoCol !== -1 && $porto !== null && $porto !== '') {
+                        $createData['porto'] = $porto;
+                    }
+                    B2bCustomer::create($createData);
                     $created++;
                 }
             } catch (\Throwable $e) {

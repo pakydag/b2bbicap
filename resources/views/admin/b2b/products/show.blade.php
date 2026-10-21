@@ -92,7 +92,10 @@
     foreach ($futureStockGrouped as $d => $sizesArr) {
         $totArrivo += array_sum($sizesArr);
     }
-    $totFuturoImpegnato = array_sum($futureCommitted);
+    $totFuturoImpegnato = 0;
+    foreach ($futureCommitted as $d => $sizesArr) {
+        $totFuturoImpegnato += array_sum($sizesArr);
+    }
     
     if (empty($giacenzaMatch)) {
         $totProntaDisponibile = $product->variants->sum('stock');
@@ -105,8 +108,13 @@
 
     $totGiacenzaGlobale = $totProntaNetto + $totArrivo - $totFuturoImpegnato;
 
+    $futCommittedSizes = [];
+    foreach ($futureCommitted as $d => $sArr) {
+        $futCommittedSizes = array_merge($futCommittedSizes, array_keys($sArr));
+    }
+
     $allSizes = $product->variants->pluck('size')->toArray();
-    $allSizes = array_unique(array_merge($allSizes, array_keys($warehouseStock), array_keys($currentStock), array_keys($futureCommitted), array_keys($readyCommitted)));
+    $allSizes = array_unique(array_merge($allSizes, array_keys($warehouseStock), array_keys($currentStock), $futCommittedSizes, array_keys($readyCommitted)));
     foreach ($futureStockGrouped as $d => $sArr) {
         $allSizes = array_merge($allSizes, array_keys($sArr));
     }
@@ -214,15 +222,25 @@
                                         </div>
 
                                         @foreach($futureEntries as $fEntry)
+                                            @php $fImp = $futureCommitted[$fEntry['date']][$size] ?? 0; @endphp
                                             <div class="text-[10px] font-bold text-amber-800 bg-amber-100/90 rounded py-0.5 px-1 leading-tight shadow-sm" title="In arrivo il {{ $fEntry['date'] }}">
                                                 🚚 +{{ $fEntry['qty'] }}
+                                                @if($fImp > 0)
+                                                    <span class="block text-[8px] font-bold text-purple-700 leading-none mt-0.5" title="Impegnato su questo arrivo">(-{{ $fImp }} imp.)</span>
+                                                @endif
                                                 <span class="block text-[8px] font-semibold text-amber-900 leading-none mt-0.5">{{ $fEntry['date'] }}</span>
                                             </div>
                                         @endforeach
 
-                                        @if($futImp > 0)
+                                        @php
+                                            $totFutImpSize = 0;
+                                            foreach ($futureCommitted as $d => $sArr) {
+                                                $totFutImpSize += ($sArr[$size] ?? 0);
+                                            }
+                                        @endphp
+                                        @if($totFutImpSize > 0 && empty($futureEntries))
                                             <div class="text-[10px] font-bold text-purple-800 bg-purple-100/90 rounded py-0.5 px-1 leading-tight shadow-sm" title="Impegnato su ordini futuri">
-                                                📅 -{{ $futImp }} imp.
+                                                📅 -{{ $totFutImpSize }} imp.
                                             </div>
                                         @endif
                                     </div>

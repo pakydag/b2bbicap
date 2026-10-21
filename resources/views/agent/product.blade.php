@@ -508,7 +508,10 @@
                     foreach ($giacenzaMatch['future_stock'] ?? [] as $date => $stocks) {
                         $futureSizes = array_merge($futureSizes, array_keys($stocks));
                     }
-                    $futCommittedSizes = array_keys($giacenzaMatch['future_committed'] ?? []);
+                    $futCommittedSizes = [];
+                    foreach ($giacenzaMatch['future_committed'] ?? [] as $date => $cSizes) {
+                        $futCommittedSizes = array_merge($futCommittedSizes, array_keys($cSizes));
+                    }
                     $readyCommittedSizes = array_keys($giacenzaMatch['ready_committed'] ?? []);
                     $allCsvSizes = array_unique(array_merge($currentSizes, $warehouseSizes, $futureSizes, $futCommittedSizes, $readyCommittedSizes));
                     $sizes = collect($allCsvSizes)
@@ -527,17 +530,15 @@
                     @csrf
 
                     @php
-                        // Aggregazione giacenze future per la griglia immediata
-                        $summedFutureStock = [];
-                        if(!empty($giacenzaMatch['future_stock'])) {
-                            foreach ($giacenzaMatch['future_stock'] as $date => $stocks) {
-                                foreach ($stocks as $s => $q) {
-                                    if (!isset($summedFutureStock[$s])) {
-                                        $summedFutureStock[$s] = 0;
-                                    }
-                                    $summedFutureStock[$s] += $q;
+                        if (!empty($giacenzaMatch['future_stock']) && is_array($giacenzaMatch['future_stock'])) {
+                            uksort($giacenzaMatch['future_stock'], function($a, $b) {
+                                $timeA = \DateTime::createFromFormat('d/m/Y', trim($a));
+                                $timeB = \DateTime::createFromFormat('d/m/Y', trim($b));
+                                if ($timeA && $timeB) {
+                                    return $timeA <=> $timeB;
                                 }
-                            }
+                                return strcmp($a, $b);
+                            });
                         }
                     @endphp
                     
@@ -615,87 +616,91 @@
                         </div>
                     </div>
 
-                    <!-- 2. Griglia Disponibilità Future Aggregate (Prenotazione) -->
+                    <!-- 2. Griglie Disponibilità Future per singola data (Prenotazione) -->
                     @if(!empty($giacenzaMatch['future_stock']))
-                        @php
-                            $futureDates = array_keys($giacenzaMatch['future_stock']);
-                            $datesListText = implode(', ', $futureDates);
-                            $defaultFutureDate = $futureDates[0] ?? '';
-                        @endphp
-                        
-                        <div class="mt-16 border-t border-gray-100 pt-12">
-                            <div class="bg-indigo-50/40 rounded-3xl p-8 border border-indigo-100">
-                                <h4 class="font-black text-sm uppercase tracking-widest text-indigo-800 mb-2 flex items-center gap-3">
-                                    <span class="w-3 h-3 rounded-full bg-indigo-600 animate-pulse"></span>
-                                    {{ $isEn ? 'Pre-Order Future Availability' : 'Prenotazione Disponibilità Future' }}
-                                </h4>
-                                <p class="text-xs font-bold text-indigo-600/80 uppercase tracking-widest mb-6">
-                                    {{ $isEn ? 'Expected arrivals:' : 'Arrivi previsti:' }} {{ $datesListText }}
-                                </p>
-                                
-                                <div class="overflow-x-auto pb-4">
-                                    <table class="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr class="text-base font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                                                <th class="py-6 px-4 whitespace-nowrap">{{ $isEn ? 'Variant / Color' : 'Variante / Colore' }}</th>
-                                                @foreach($sizes as $size)
-                                                    <th class="py-6 px-3 text-center whitespace-nowrap">{{ $size }}</th>
-                                                @endforeach
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-indigo-100/50">
-                                            @foreach($groupedVariants as $color => $variants)
-                                                <tr class="group hover:bg-indigo-50/50 transition">
-                                                    <td class="py-8 px-4">
-                                                        <div class="flex items-center">
-                                                            <div class="w-3 h-3 rounded-full mr-4 bg-indigo-400"></div>
-                                                            <span class="text-base font-black text-gray-900 uppercase">{{ (strtoupper($color) === 'UNICO') ? ($isEn ? 'UNIQUE' : 'UNICO') : $color }}</span>
-                                                        </div>
-                                                    </td>
+                        <div class="mt-16 border-t border-gray-100 pt-12 space-y-10">
+                            @foreach($giacenzaMatch['future_stock'] as $deliveryDate => $futureStocks)
+                                <div class="bg-indigo-50/40 rounded-3xl p-8 border border-indigo-100">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                                        <div>
+                                            <h4 class="font-black text-sm uppercase tracking-widest text-indigo-800 flex items-center gap-3">
+                                                <span class="w-3 h-3 rounded-full bg-indigo-600 animate-pulse"></span>
+                                                {{ $isEn ? 'Pre-Order Future Availability' : 'Prenotazione Disponibilità Future' }}
+                                            </h4>
+                                            <p class="text-xs font-bold text-indigo-600/80 uppercase tracking-widest mt-1">
+                                                {{ $isEn ? 'Expected arrival:' : 'Arrivo previsto:' }} <span class="text-indigo-950 font-black">{{ $deliveryDate }}</span>
+                                            </p>
+                                        </div>
+                                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/90 rounded-2xl border border-indigo-200 text-xs font-black text-indigo-700 shadow-sm self-start sm:self-auto">
+                                            <span>🚚 {{ $isEn ? 'Arrival' : 'Arrivo' }}:</span>
+                                            <span class="text-indigo-950 font-black">{{ $deliveryDate }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="overflow-x-auto pb-4">
+                                        <table class="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr class="text-base font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                                    <th class="py-6 px-4 whitespace-nowrap">{{ $isEn ? 'Variant / Color' : 'Variante / Colore' }}</th>
                                                     @foreach($sizes as $size)
-                                                        <td class="py-6 px-2 text-center">
-                                                            @php 
-                                                                $variant = $variants->where('size', $size)->first(); 
-                                                                $future = (int)($summedFutureStock[$size] ?? 0);
-                                                                $futCommitted = (int)($giacenzaMatch['future_committed'][$size] ?? 0);
-                                                                $qtyFuture = ($future > 0) ? max(0, $future - $futCommitted) : 0;
-                                                            @endphp
-                                                            @if($variant)
-                                                                <div class="relative inline-block">
-                                                                    <input type="hidden" name="items[{{ $inputIndex }}][variant_id]" value="{{ $variant->id }}">
-                                                                    <input type="hidden" name="items[{{ $inputIndex }}][delivery_date]" value="{{ $defaultFutureDate }}">
-                                                                    <input type="number" 
-                                                                           name="items[{{ $inputIndex }}][quantity]" 
-                                                                           min="0" 
-                                                                           max="{{ $qtyFuture > 0 ? $qtyFuture : 0 }}" 
-                                                                           value="0" 
-                                                                           placeholder="0"
-                                                                           {{ $qtyFuture <= 0 ? 'disabled' : '' }}
-                                                                           class="qty-input w-20 text-center text-base font-black rounded-xl focus:ring-2 focus:ring-indigo-500 transition p-3 {{ $qtyFuture <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-white border-indigo-200 text-gray-900' }} disabled:cursor-not-allowed">
-                                                                    @if($qtyFuture > 0)
-                                                                        <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-indigo-600 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-indigo-100">
-                                                                            +{{ $qtyFuture }}
-                                                                        </span>
-                                                                    @else
-                                                                        <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-rose-400 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-rose-50 mb-1">
-                                                                            {{ $isEn ? 'OOS' : 'ESAU.' }}
-                                                                        </span>
-                                                                    @endif
-                                                                </div>
-                                                                @php $inputIndex++; @endphp
-                                                            @else
-                                                                <div class="w-20 mx-auto h-12 bg-gray-50 rounded-xl flex items-center justify-center opacity-20">
-                                                                    <div class="w-1.5 h-6 bg-gray-300 rotate-45"></div>
-                                                                </div>
-                                                            @endif
-                                                        </td>
+                                                        <th class="py-6 px-3 text-center whitespace-nowrap">{{ $size }}</th>
                                                     @endforeach
                                                 </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody class="divide-y divide-indigo-100/50">
+                                                @foreach($groupedVariants as $color => $variants)
+                                                    <tr class="group hover:bg-indigo-50/50 transition">
+                                                        <td class="py-8 px-4">
+                                                            <div class="flex items-center">
+                                                                <div class="w-3 h-3 rounded-full mr-4 bg-indigo-400"></div>
+                                                                <span class="text-base font-black text-gray-900 uppercase">{{ (strtoupper($color) === 'UNICO') ? ($isEn ? 'UNIQUE' : 'UNICO') : $color }}</span>
+                                                            </div>
+                                                        </td>
+                                                        @foreach($sizes as $size)
+                                                            <td class="py-6 px-2 text-center">
+                                                                @php 
+                                                                    $variant = $variants->where('size', $size)->first(); 
+                                                                    $future = (int)($futureStocks[$size] ?? 0);
+                                                                    $futCommitted = (int)($giacenzaMatch['future_committed'][$deliveryDate][$size] ?? 0);
+                                                                    $qtyFuture = ($future > 0) ? max(0, $future - $futCommitted) : 0;
+                                                                @endphp
+                                                                @if($variant)
+                                                                    <div class="relative inline-block">
+                                                                        <input type="hidden" name="items[{{ $inputIndex }}][variant_id]" value="{{ $variant->id }}">
+                                                                        <input type="hidden" name="items[{{ $inputIndex }}][delivery_date]" value="{{ $deliveryDate }}">
+                                                                        <input type="number" 
+                                                                               name="items[{{ $inputIndex }}][quantity]" 
+                                                                               min="0" 
+                                                                               max="{{ $qtyFuture > 0 ? $qtyFuture : 0 }}" 
+                                                                               value="0" 
+                                                                               placeholder="0"
+                                                                               {{ $qtyFuture <= 0 ? 'disabled' : '' }}
+                                                                               class="qty-input w-20 text-center text-base font-black rounded-xl focus:ring-2 focus:ring-indigo-500 transition p-3 {{ $qtyFuture <= 0 ? 'bg-red-50 border-red-200 text-red-400' : 'bg-white border-indigo-200 text-gray-900' }} disabled:cursor-not-allowed">
+                                                                        @if($qtyFuture > 0)
+                                                                            <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-indigo-600 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-indigo-100">
+                                                                                +{{ $qtyFuture }}
+                                                                            </span>
+                                                                        @else
+                                                                            <span class="absolute -top-7 left-1/2 -translate-x-1/2 text-[11px] font-black text-rose-400 whitespace-nowrap bg-white px-2 shadow-sm rounded-full border border-rose-50 mb-1">
+                                                                                {{ $isEn ? 'OOS' : 'ESAU.' }}
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                    @php $inputIndex++; @endphp
+                                                                @else
+                                                                    <div class="w-20 mx-auto h-12 bg-gray-50 rounded-xl flex items-center justify-center opacity-20">
+                                                                        <div class="w-1.5 h-6 bg-gray-300 rotate-45"></div>
+                                                                    </div>
+                                                                @endif
+                                                            </td>
+                                                        @endforeach
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                            </div>
+                            @endforeach
                         </div>
                     @endif
 

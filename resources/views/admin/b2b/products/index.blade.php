@@ -181,7 +181,10 @@
                             foreach ($futStock as $sizes) {
                                 $totArrivo += array_sum($sizes);
                             }
-                            $totFutCommitted = array_sum($futCommitted);
+                            $totFutCommitted = 0;
+                            foreach ($futCommitted as $cSizes) {
+                                $totFutCommitted += array_sum($cSizes);
+                            }
                         } else {
                             $totPronta = $product->variants->sum('quantity');
                             $totArrivo = 0;
@@ -276,7 +279,10 @@
                                     foreach ($futStock as $sizes) {
                                         $totArrivo += array_sum($sizes);
                                     }
-                                    $totFutCommitted = array_sum($futCommitted);
+                                    $totFutCommitted = 0;
+                                    foreach ($futCommitted as $cSizes) {
+                                        $totFutCommitted += array_sum($cSizes);
+                                    }
                                 } else {
                                     $totPronta = $product->variants->sum('quantity');
                                     $totArrivo = 0;

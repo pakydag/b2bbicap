@@ -12,7 +12,7 @@ class B2bOrderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = \App\Models\B2bOrder::with('agent', 'customer');
+        $query = \App\Models\B2bOrder::with('agent', 'customer', 'items');
 
         if ($request->filled('agent_id')) {
             $query->where('agent_id', $request->agent_id);

@@ -213,8 +213,8 @@ class B2bProductController extends Controller
 
             if (strcasecmp($dispValue, 'Pronta consegna') !== 0) {
                 // Se il prodotto era stato importato in precedenza ma ora è "Su commessa", lo disattiviamo (non eliminiamo per preservare storico ordini)
-                if (!empty($codice)) {
-                    \App\Models\B2bProduct::where('code', $codice)->update(['is_active' => false]);
+                if (!empty($codice) && !empty($nome)) {
+                    \App\Models\B2bProduct::where('code', $codice)->where('name', $nome)->update(['is_active' => false]);
                 }
                 continue;
             }
@@ -250,10 +250,13 @@ class B2bProductController extends Controller
 
             // Create or update B2bProduct: il prezzo iniziale viene impostato a 0.
             // Verrà aggiornato esclusivamente se presente nel file delle giacenze (Giacenza.csv).
+            // Identificato univocamente dalla combinazione di codice E nome (diversi modelli condividono lo stesso codice base)
             $product = \App\Models\B2bProduct::updateOrCreate(
-                ['code' => $codice],
                 [
+                    'code' => $codice,
                     'name' => $nome,
+                ],
+                [
                     'b2b_brand_id' => $brand->id,
                     'description' => $data['descrizione-articolo-it'] ?? '',
                     'image' => $data['FOTO-PRINCIPALE-PRODOTTO-WEB'] ?? null,

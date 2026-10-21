@@ -480,37 +480,57 @@
                                     @endif
 
                                     <div class="bg-black border border-zinc-950 rounded-3xl p-6 text-white shadow-xl space-y-4">
-                                        <div class="border-b border-zinc-800 pb-4 mb-4">
+                                        <div class="border-b border-zinc-800 pb-4">
                                             <div class="flex justify-between items-center mb-1">
-                                                <span class="text-[10px] font-bold uppercase text-zinc-400">{{ $isEn ? 'Total Cart (' . collect($cart)->sum('quantity') . ' pcs)' : 'Totale Carrello (' . collect($cart)->sum('quantity') . ' pz)' }}</span>
-                                                <span class="text-sm font-black text-zinc-300">€ {{ number_format(collect($cart)->sum(fn($i) => $i['price'] * $i['quantity']), 2, ',', '.') }}</span>
+                                                <span class="text-[10px] font-bold uppercase text-zinc-400">{{ $isEn ? 'Cart Summary' : 'Riepilogo Carrello' }}</span>
+                                                <span class="text-sm font-black text-yellow-400">€ {{ number_format(collect($cart)->sum(fn($i) => $i['price'] * $i['quantity']), 2, ',', '.') }}</span>
                                             </div>
-                                            <p class="text-[9px] text-zinc-500 italic">{{ $isEn ? 'The total includes all items currently in the cart.' : 'Il totale include tutti gli articoli attualmente nel carrello.' }}</p>
+                                            @if(count($groupedCart) > 1)
+                                                <p class="text-[9px] text-zinc-500 italic">{{ $isEn ? 'Deliveries separated by date:' : 'Consegne suddivise per data:' }}</p>
+                                            @endif
                                         </div>
 
-                                        @foreach($groupedCart as $key => $items)
-                                            @php
-                                                $groupTitle = $key === 'immediate' ? ($isEn ? 'Immediate Delivery' : 'Pronta Consegna') : ($isEn ? 'Delivery from ' . $key : 'Consegna dal ' . $key);
-                                                $groupQty = collect($items)->sum('quantity');
-                                                $groupTotal = collect($items)->sum(fn($i) => $i['price'] * $i['quantity']);
-                                            @endphp
-                                            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-                                                <h5 class="text-xs font-black text-white uppercase tracking-tight mb-2 flex items-center gap-2">
-                                                    <span class="{{ $key === 'immediate' ? 'text-emerald-400' : 'text-amber-400' }}">●</span> {{ $groupTitle }}
-                                                </h5>
-                                                <div class="flex justify-between items-center mb-1 text-xs">
-                                                    <span class="text-zinc-400 font-bold">{{ $isEn ? 'Pieces' : 'Pezzi' }}</span>
-                                                    <span class="font-black text-white">{{ $groupQty }}</span>
-                                                </div>
-                                                <div class="flex justify-between items-center mb-4">
-                                                    <span class="text-xs text-zinc-400 font-bold">{{ $isEn ? 'Total' : 'Totale' }}</span>
-                                                    <span class="text-lg font-black text-yellow-400">€ {{ number_format($groupTotal, 2, ',', '.') }}</span>
-                                                </div>
-                                                <button type="submit" name="delivery_group" value="{{ $key }}" class="w-full bg-white text-black hover:bg-yellow-400 hover:text-black py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition duration-300">
-                                                    {{ $isEn ? 'Submit this Order' : 'Invia questo Ordine' }}
-                                                </button>
+                                        @if(count($groupedCart) > 1)
+                                            <div class="space-y-3">
+                                                @foreach($groupedCart as $key => $items)
+                                                    @php
+                                                        $groupTitle = $key === 'immediate' ? ($isEn ? 'Immediate Delivery' : 'Pronta Consegna') : ($isEn ? 'Delivery from ' . $key : 'Consegna dal ' . $key);
+                                                        $groupQty = collect($items)->sum('quantity');
+                                                        $groupTotal = collect($items)->sum(fn($i) => $i['price'] * $i['quantity']);
+                                                    @endphp
+                                                    <div class="bg-zinc-900 border border-zinc-800/80 rounded-2xl p-3.5">
+                                                        <div class="flex items-center justify-between mb-1.5">
+                                                            <h5 class="text-xs font-black text-white uppercase tracking-tight flex items-center gap-2">
+                                                                <span class="{{ $key === 'immediate' ? 'text-emerald-400' : 'text-amber-400' }}">●</span> {{ $groupTitle }}
+                                                            </h5>
+                                                            <span class="text-[10px] font-bold text-zinc-300 bg-zinc-800 px-2 py-0.5 rounded-full">{{ $groupQty }} {{ $isEn ? 'pcs' : 'pz' }}</span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-[11px] text-zinc-400 font-medium">{{ $isEn ? 'Subtotal:' : 'Subtotale:' }}</span>
+                                                            <span class="text-sm font-black text-yellow-400">€ {{ number_format($groupTotal, 2, ',', '.') }}</span>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
                                             </div>
-                                        @endforeach
+                                        @endif
+
+                                        <div class="pt-3 border-t border-zinc-800 space-y-3">
+                                            <div class="flex justify-between items-baseline">
+                                                <span class="text-xs font-black uppercase text-zinc-300">{{ $isEn ? 'Total (' . collect($cart)->sum('quantity') . ' pcs)' : 'Totale (' . collect($cart)->sum('quantity') . ' pz)' }}</span>
+                                                <span class="text-2xl font-black text-yellow-400">€ {{ number_format(collect($cart)->sum(fn($i) => $i['price'] * $i['quantity']), 2, ',', '.') }}</span>
+                                            </div>
+
+                                            <button type="submit" class="w-full bg-yellow-400 hover:bg-yellow-300 text-slate-950 py-4 px-4 rounded-2xl text-xs font-black uppercase tracking-widest transition duration-300 shadow-xl shadow-yellow-400/20 flex items-center justify-center gap-2 cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                                <span>{{ $isEn ? 'SUBMIT ORDER' : 'INVIA ORDINE' }}</span>
+                                            </button>
+
+                                            <p class="text-[10px] text-zinc-400 text-center leading-tight">
+                                                {{ $isEn 
+                                                    ? (count($groupedCart) > 1 ? 'A single order will be created. ' . count($groupedCart) . ' separate CSV files will be transmitted to FTPS for ERP import.' : '1 order and 1 FTP CSV file will be generated.') 
+                                                    : (count($groupedCart) > 1 ? 'Verrà creato un unico ordine a sistema. Verranno inviati su FTP ' . count($groupedCart) . ' file CSV separati per l\'importazione nel gestionale aziendale.' : 'Verrà generato ed inviato via FTP 1 ordine e il relativo file CSV.') }}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </form>

@@ -6,7 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class B2bOrder extends Model
 {
-    protected $fillable = ['agent_id', 'b2b_customer_id', 'internal_reference', 'contact_id', 'total_amount', 'status', 'payment_method', 'notes', 'admin_notes', 'is_modified'];
+    protected $fillable = ['order_group_id', 'agent_id', 'b2b_customer_id', 'internal_reference', 'contact_id', 'total_amount', 'status', 'payment_method', 'notes', 'admin_notes', 'is_modified'];
+
+    public function groupOrders()
+    {
+        if (empty($this->order_group_id)) {
+            return collect([$this]);
+        }
+        return self::where('order_group_id', $this->order_group_id)->orderBy('id')->get();
+    }
 
     public function agent()
     {

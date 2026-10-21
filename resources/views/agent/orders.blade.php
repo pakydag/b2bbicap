@@ -43,13 +43,28 @@
                                 @endif
                                 <span class="text-xs text-gray-400 font-bold">• {{ $order->created_at->format('d/m/Y') }}</span>
                             </div>
-                            @if($order->internal_reference)
-                                <div class="mt-0.5">
+                            @php
+                                $uniqueDeliveryDates = $order->items->pluck('delivery_date')->unique();
+                                $hasImmediate = $uniqueDeliveryDates->contains(fn($d) => empty($d));
+                                $futureDates = $uniqueDeliveryDates->filter(fn($d) => !empty($d))->values();
+                            @endphp
+                            <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                @if($order->internal_reference)
                                     <span class="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-800 border border-slate-200 px-1.5 py-0.5 rounded font-mono font-black">
                                         🏷️ {{ $isEn ? 'Ref: ' : 'Rif: ' }}{{ $order->internal_reference }}
                                     </span>
-                                </div>
-                            @endif
+                                @endif
+                                @if($hasImmediate)
+                                    <span class="inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-900 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
+                                        ⚡ {{ $isEn ? 'Ready' : 'Pronta Consegna' }}
+                                    </span>
+                                @endif
+                                @foreach($futureDates as $fDate)
+                                    <span class="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded font-bold">
+                                        📅 {{ $fDate }}
+                                    </span>
+                                @endforeach
+                            </div>
                         </div>
                         <span class="text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider border {{ $statusClasses[$order->status] ?? 'bg-gray-100 text-gray-800' }}">
                             {{ $statusLabels[$order->status] ?? $order->status }}
@@ -118,13 +133,28 @@
                         <tr class="group hover:bg-gray-50/60 transition">
                             <td class="px-3 lg:px-5 py-3.5 text-sm font-black text-gray-900 uppercase leading-none whitespace-nowrap">
                                 <div>#{{ $order->id }}</div>
-                                @if($order->internal_reference)
-                                    <div class="mt-1">
+                                @php
+                                    $uniqueDeliveryDates = $order->items->pluck('delivery_date')->unique();
+                                    $hasImmediate = $uniqueDeliveryDates->contains(fn($d) => empty($d));
+                                    $futureDates = $uniqueDeliveryDates->filter(fn($d) => !empty($d))->values();
+                                @endphp
+                                <div class="mt-1 flex flex-wrap items-center gap-1">
+                                    @if($order->internal_reference)
                                         <span class="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-800 border border-slate-200 px-1.5 py-0.5 rounded font-mono font-bold" title="{{ $isEn ? 'Internal Order Reference' : 'Riferimento Ordine Interno' }}">
                                             🏷️ {{ $order->internal_reference }}
                                         </span>
-                                    </div>
-                                @endif
+                                    @endif
+                                    @if($hasImmediate)
+                                        <span class="inline-flex items-center gap-1 text-[9px] bg-emerald-50 text-emerald-900 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
+                                            ⚡ {{ $isEn ? 'Ready' : 'Pronta' }}
+                                        </span>
+                                    @endif
+                                    @foreach($futureDates as $fDate)
+                                        <span class="inline-flex items-center gap-1 text-[9px] bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded font-bold">
+                                            📅 {{ $fDate }}
+                                        </span>
+                                    @endforeach
+                                </div>
                                 @if($order->is_modified)
                                     <span class="inline-block mt-1 text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider" title="{{ $isEn ? 'Order modified by agent' : 'Ordine modificato dall\'agente' }}">
                                         {{ $isEn ? '✏️ Mod' : '✏️ Mod' }}

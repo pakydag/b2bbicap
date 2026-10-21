@@ -57,6 +57,12 @@
             $hasLocalLogo = file_exists($logoLocalPath);
             $agent = $order->agent ?: ($order->customer && $order->customer->agents ? $order->customer->agents->first() : null);
             $isAgentRecipient = str_contains($title ?? '', 'Cliente') || str_contains($title ?? '', 'Agente') || str_contains($title ?? '', 'Registrato');
+
+            $groupOrders = $groupOrders ?? ($order->order_group_id ? $order->groupOrders() : collect([$order]));
+            $isGroup = $groupOrders->count() > 1;
+            $orderIdsStr = $isGroup ? '#' . implode(', #', $groupOrders->pluck('id')->toArray()) : '#' . $order->id;
+            $itemsList = $allItems ?? $groupOrders->flatMap(fn($o) => $o->items);
+            $finalTotal = $totalAmount ?? $groupOrders->sum('total_amount');
         @endphp
         <div class="header">
             @if($hasLocalLogo && isset($message))
@@ -64,7 +70,7 @@
             @elseif($hasLocalLogo)
                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoLocalPath)) }}" alt="BICAP">
             @endif
-            <p>{{ $title ?? ($isEnglish ? 'B2B Order Confirmation' : 'Riepilogo Ordine B2B') }}</p>
+            <p>{{ $title ?? ($isEnglish ? ($isGroup ? "B2B Orders Confirmation {$orderIdsStr}" : "B2B Order Confirmation {$orderIdsStr}") : ($isGroup ? "Riepilogo Ordini B2B {$orderIdsStr}" : "Riepilogo Ordine B2B {$orderIdsStr}")) }}</p>
         </div>
         
         <div class="content">
@@ -72,12 +78,12 @@
                 @if($isAgentRecipient && $agent)
                     <p class="greeting">Dear <strong>{{ $agent->name }} {{ $agent->surname }}</strong>,</p>
                     <p class="text-lead">
-                        Below are the order details for <strong>B2B Order #{{ $order->id }}</strong> placed by <strong>{{ $order->customer->business_name ?? 'Customer' }}</strong> on <strong>{{ $companyName }}</strong>.
+                        Below are the order details for <strong>B2B Order(s) {{ $orderIdsStr }}</strong> placed by <strong>{{ $order->customer->business_name ?? 'Customer' }}</strong> on <strong>{{ $companyName }}</strong>.
                     </p>
                 @else
                     <p class="greeting">Dear <strong>{{ $order->customer->business_name ?? 'Customer' }}</strong>,</p>
                     <p class="text-lead">
-                        Below is the summary of your <strong>B2B Order #{{ $order->id }}</strong> placed on the <strong>{{ $companyName }}</strong> portal.
+                        Below is the summary of your <strong>B2B Order(s) {{ $orderIdsStr }}</strong> placed on the <strong>{{ $companyName }}</strong> portal.
                     </p>
                 @endif
 
@@ -143,8 +149,8 @@
                     <table class="order-banner-grid">
                         <tr>
                             <td style="width: 50%;">
-                                <span class="order-banner-label">Order Number:</span><br>
-                                <span class="order-banner-val" style="font-size: 15px; color: #000;">#{{ $order->id }}</span>
+                                <span class="order-banner-label">{{ $isGroup ? 'Order Numbers:' : 'Order Number:' }}</span><br>
+                                <span class="order-banner-val" style="font-size: 15px; color: #000;">{{ $orderIdsStr }}</span>
                             </td>
                             <td style="width: 50%;">
                                 <span class="order-banner-label">Date & Time:</span><br>
@@ -226,7 +232,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($order->items as $item)
+                            @foreach($itemsList as $item)
                                 @php
                                     $qtyChanged = $item->original_quantity && $item->original_quantity != $item->quantity;
                                     $priceChanged = $item->original_price && abs($item->original_price - $item->price) >= 0.01;
@@ -282,7 +288,7 @@
                         </tbody>
                     </table>
                     <div class="total-box">
-                        ORDER TOTAL: <span style="color: #000000; font-size: 18px; margin-left: 8px;">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
+                        ORDER TOTAL: <span style="color: #000000; font-size: 18px; margin-left: 8px;">€ {{ number_format($finalTotal, 2, ',', '.') }}</span>
                     </div>
                 </div>
 
@@ -313,12 +319,12 @@
                 @if($isAgentRecipient && $agent)
                     <p class="greeting">Gentile <strong>{{ $agent->name }} {{ $agent->surname }}</strong>,</p>
                     <p class="text-lead">
-                        Di seguito trovi i dettagli dell'aggiornamento per l'<strong>Ordine B2B #{{ $order->id }}</strong> del cliente <strong>{{ $order->customer->business_name ?? 'Cliente' }}</strong> su <strong>{{ $companyName }}</strong>.
+                        Di seguito trovi i dettagli dell'aggiornamento per {{ $isGroup ? 'gli <strong>Ordini B2B ' . $orderIdsStr . '</strong>' : "l'<strong>Ordine B2B #" . $order->id . '</strong>' }} del cliente <strong>{{ $order->customer->business_name ?? 'Cliente' }}</strong> su <strong>{{ $companyName }}</strong>.
                     </p>
                 @else
                     <p class="greeting">Gentile <strong>{{ $order->customer->business_name ?? 'Cliente' }}</strong>,</p>
                     <p class="text-lead">
-                        Di seguito trovi il riepilogo dettagliato del tuo <strong>Ordine B2B #{{ $order->id }}</strong> trasmesso sul portale <strong>{{ $companyName }}</strong>.
+                        Di seguito trovi il riepilogo dettagliato {{ $isGroup ? 'dei tuoi <strong>Ordini B2B ' . $orderIdsStr . '</strong>' : 'del tuo <strong>Ordine B2B #' . $order->id . '</strong>' }} trasmesso sul portale <strong>{{ $companyName }}</strong>.
                     </p>
                 @endif
 
@@ -393,8 +399,8 @@
                     <table class="order-banner-grid">
                         <tr>
                             <td style="width: 50%;">
-                                <span class="order-banner-label">Numero Ordine:</span><br>
-                                <span class="order-banner-val" style="font-size: 15px; color: #000;">#{{ $order->id }}</span>
+                                <span class="order-banner-label">{{ $isGroup ? 'Numeri Ordine:' : 'Numero Ordine:' }}</span><br>
+                                <span class="order-banner-val" style="font-size: 15px; color: #000;">{{ $orderIdsStr }}</span>
                             </td>
                             <td style="width: 50%;">
                                 <span class="order-banner-label">Data e Ora:</span><br>
@@ -476,7 +482,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($order->items as $item)
+                            @foreach($itemsList as $item)
                                 @php
                                     $qtyChanged = $item->original_quantity && $item->original_quantity != $item->quantity;
                                     $priceChanged = $item->original_price && abs($item->original_price - $item->price) >= 0.01;
@@ -532,7 +538,7 @@
                         </tbody>
                     </table>
                     <div class="total-box">
-                        TOTALE ORDINE: <span style="color: #000000; font-size: 18px; margin-left: 8px;">€ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
+                        TOTALE ORDINE: <span style="color: #000000; font-size: 18px; margin-left: 8px;">€ {{ number_format($finalTotal, 2, ',', '.') }}</span>
                     </div>
                 </div>
 

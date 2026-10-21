@@ -92,13 +92,28 @@
                                     <span class="text-sm font-black text-gray-900">Ordine #{{ $order->id }}</span>
                                     <span class="text-[10px] text-gray-400 font-bold">• {{ $order->created_at->format('d/m/Y H:i') }}</span>
                                 </div>
-                                @if($order->internal_reference)
-                                    <div class="mt-0.5">
+                                @php
+                                    $uniqueDates = $order->items->pluck('delivery_date')->unique();
+                                    $hasImm = $uniqueDates->contains(fn($d) => empty($d));
+                                    $futDates = $uniqueDates->filter(fn($d) => !empty($d))->values();
+                                @endphp
+                                <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                    @if($order->internal_reference)
                                         <span class="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-800 border border-slate-200 px-1.5 py-0.5 rounded font-mono font-black">
                                             🏷️ Rif: {{ $order->internal_reference }}
                                         </span>
-                                    </div>
-                                @endif
+                                    @endif
+                                    @if($hasImm)
+                                        <span class="inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-900 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
+                                            ⚡ Pronta Consegna
+                                        </span>
+                                    @endif
+                                    @foreach($futDates as $fDate)
+                                        <span class="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded font-bold">
+                                            📅 {{ $fDate }}
+                                        </span>
+                                    @endforeach
+                                </div>
                             </div>
                             <span class="px-2 py-0.5 rounded text-[10px] uppercase font-black border {{ $statusClasses[$order->status] ?? 'bg-gray-100 text-gray-800 border-gray-200' }}">
                                 {{ $order->status_label }}
@@ -161,13 +176,28 @@
                             <tr class="hover:bg-gray-50/60 transition">
                                 <td class="px-4 py-3.5 whitespace-nowrap text-sm font-black text-gray-900 border-l-4 {{ $order->status == 'pending' ? 'border-yellow-400' : ($order->status == 'confirmed' ? 'border-emerald-500' : 'border-slate-300') }}">
                                     <div>#{{ $order->id }}</div>
-                                    @if($order->internal_reference)
-                                        <div class="mt-0.5">
+                                    @php
+                                        $uniqueDates = $order->items->pluck('delivery_date')->unique();
+                                        $hasImm = $uniqueDates->contains(fn($d) => empty($d));
+                                        $futDates = $uniqueDates->filter(fn($d) => !empty($d))->values();
+                                    @endphp
+                                    <div class="mt-0.5 flex flex-wrap items-center gap-1">
+                                        @if($order->internal_reference)
                                             <span class="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-800 border border-slate-200 px-1.5 py-0.5 rounded font-mono font-bold" title="Riferimento Ordine Interno">
                                                 🏷️ {{ $order->internal_reference }}
                                             </span>
-                                        </div>
-                                    @endif
+                                        @endif
+                                        @if($hasImm)
+                                            <span class="inline-flex items-center gap-1 text-[9px] bg-emerald-50 text-emerald-900 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
+                                                ⚡ Pronta
+                                            </span>
+                                        @endif
+                                        @foreach($futDates as $fDate)
+                                            <span class="inline-flex items-center gap-1 text-[9px] bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded font-bold">
+                                                📅 {{ $fDate }}
+                                            </span>
+                                        @endforeach
+                                    </div>
                                 </td>
                                 <td class="px-3 py-3.5 whitespace-nowrap text-xs text-gray-500 font-medium">
                                     {{ $order->created_at->format('d/m/Y H:i') }}

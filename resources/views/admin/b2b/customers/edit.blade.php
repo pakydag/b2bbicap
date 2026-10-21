@@ -60,6 +60,11 @@
                     </div>
 
                     <div>
+                        <label for="porto" class="block text-xs font-black text-gray-700 uppercase tracking-wider mb-1">Porto</label>
+                        <input type="text" name="porto" id="porto" value="{{ old('porto', $customer->porto) }}" placeholder="es. Franco / Assegnato" class="block w-full border-gray-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-yellow-400 focus:border-yellow-400 shadow-sm">
+                    </div>
+
+                    <div>
                         <label for="payment_condition_id" class="block text-xs font-black text-gray-700 uppercase tracking-wider mb-1">Condizioni di Pagamento</label>
                         <select name="payment_condition_id" id="payment_condition_id" class="block w-full border-gray-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-yellow-400 focus:border-yellow-400 shadow-sm">
                             <option value="">Seleziona condizione...</option>

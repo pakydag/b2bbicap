@@ -14,6 +14,9 @@ class B2bOrderCopy extends Mailable
     use Queueable, SerializesModels;
 
     public $order;
+    public $groupOrders;
+    public $allItems;
+    public $totalAmount;
     public $paymentLink;
     public $paymentMethod;
     public $title;
@@ -24,14 +27,45 @@ class B2bOrderCopy extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct($order, $paymentLink = null, $paymentMethod = 'none', $title = null)
+    public function __construct($order, $paymentLink = null, $paymentMethod = 'none', $title = null, $groupOrders = null)
     {
         $this->order = $order;
         $this->order->loadMissing('agent', 'customer.agents', 'customer.user', 'items.product.brand', 'items.variant');
+
+        if ($groupOrders instanceof \Illuminate\Support\Collection) {
+            $this->groupOrders = $groupOrders;
+        } elseif (is_array($groupOrders)) {
+            $this->groupOrders = collect($groupOrders);
+        } elseif (!empty($order->order_group_id)) {
+            $this->groupOrders = $order->groupOrders();
+        } else {
+            $this->groupOrders = collect([$order]);
+        }
+
+        foreach ($this->groupOrders as $gO) {
+            $gO->loadMissing('agent', 'customer.agents', 'customer.user', 'items.product.brand', 'items.variant');
+        }
+
+        $this->allItems = $this->groupOrders->flatMap(fn($o) => $o->items);
+        $this->totalAmount = $this->groupOrders->sum('total_amount');
+
         $this->paymentLink = $paymentLink;
         $this->paymentMethod = $paymentMethod;
         $this->isEn = ($order->customer?->user?->locale ?? $order->customer?->locale ?? app()->getLocale()) === 'en';
-        $this->title = $title ?: ($this->isEn ? 'B2B Order Confirmation' : 'Riepilogo Ordine B2B');
+        
+        $orderCount = $this->groupOrders->count();
+        $orderIdsStr = $orderCount > 1 
+            ? '#' . implode(', #', $this->groupOrders->pluck('id')->toArray())
+            : "#{$order->id}";
+
+        if ($title) {
+            $this->title = $title;
+        } else {
+            $this->title = $orderCount > 1
+                ? ($this->isEn ? "B2B Orders Confirmation {$orderIdsStr}" : "Riepilogo Ordini B2B {$orderIdsStr}")
+                : ($this->isEn ? "B2B Order Confirmation {$orderIdsStr}" : "Riepilogo Ordine B2B {$orderIdsStr}");
+        }
+
         $this->companyName = Setting::where('key', 'mail_from_name')->value('value') ?? config('mail.from.name') ?? 'Calzaturificio 5b';
 
         if (request() && request()->getHost() && request()->getHost() !== 'localhost') {
@@ -46,8 +80,14 @@ class B2bOrderCopy extends Mailable
      */
     public function envelope(): Envelope
     {
+        $orderCount = $this->groupOrders ? $this->groupOrders->count() : 1;
+        $orderIdsStr = $orderCount > 1 
+            ? '#' . implode(', #', $this->groupOrders->pluck('id')->toArray())
+            : "#{$this->order->id}";
+
         $prefix = $this->title ?? ($this->isEn ? 'B2B Order Confirmation' : 'Riepilogo Ordine B2B');
-        $subject = "{$prefix} #{$this->order->id}";
+        $subject = str_contains($prefix, '#') ? $prefix : "{$prefix} {$orderIdsStr}";
+        
         if (!empty($this->order->internal_reference)) {
             $subject .= ($this->isEn ? " (Ref: " : " (Rif: ") . "{$this->order->internal_reference})";
         }
