@@ -289,11 +289,12 @@
                                     $priceChanged = $item->original_price && abs($item->original_price - $item->price) >= 0.01;
                                     $itemProd = $item->product;
                                     $itemImg = $itemProd && $itemProd->image ? (\Illuminate\Support\Str::startsWith($itemProd->image, ['http://', 'https://']) ? $itemProd->image : asset('storage/' . $itemProd->image)) : null;
-                                    $productName = $itemProd ? ($itemProd->localized_description ?: $itemProd->name) : 'N/A';
+                                    $productName = $item->display_name;
+                                    $brandName = $item->display_brand_name;
                                 @endphp
                                 <tr class="hover:bg-gray-50 transition {{ $item->is_modified || $qtyChanged || $priceChanged ? 'bg-amber-50/40' : '' }}">
                                     <td class="px-6 sm:px-8 py-6">
-                                        <a href="{{ route('agent.product', $item->b2b_product_id) }}" class="flex items-center space-x-4 group/item">
+                                        <a href="{{ $item->b2b_product_id ? route('agent.product', $item->b2b_product_id) : '#' }}" class="flex items-center space-x-4 group/item">
                                             <div class="w-14 h-14 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center p-1.5 overflow-hidden shrink-0 group-hover/item:border-indigo-500 group-hover/item:shadow-md transition">
                                                 @if($itemImg)
                                                     <img src="{{ $itemImg }}" alt="{{ $productName }}" class="max-w-full max-h-full object-contain group-hover/item:scale-105 transition duration-300">
@@ -303,7 +304,9 @@
                                             </div>
                                             <div>
                                                 <p class="font-black text-gray-900 group-hover/item:text-indigo-600 transition uppercase text-sm leading-tight">{{ $productName }}</p>
-                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-tight mb-1">{{ $item->product->brand->name }}</p>
+                                                @if($brandName)
+                                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-tight mb-1">{{ $brandName }}</p>
+                                                @endif
                                                 @if(!empty($item->delivery_date))
                                                     <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-100 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider">
                                                         📅 {{ $isEn ? 'Delivery from:' : 'Consegna dal:' }} {{ $item->delivery_date }}
@@ -316,8 +319,8 @@
                                             </div>
                                         </a>
                                     </td>
-                                    <td class="px-4 sm:px-8 py-6 text-center text-sm font-bold uppercase text-gray-600">{{ (!empty($item->variant->color) && strtoupper($item->variant->color) !== 'UNICO') ? $item->variant->color : ($isEn ? 'Unique' : 'Unico') }}</td>
-                                    <td class="px-4 sm:px-8 py-6 text-center text-sm font-black text-slate-900">{{ $item->variant->size }}</td>
+                                    <td class="px-4 sm:px-8 py-6 text-center text-sm font-bold uppercase text-gray-600">{{ (!empty($item->display_color) && strtoupper($item->display_color) !== 'UNICO') ? $item->display_color : ($isEn ? 'Unique' : 'Unico') }}</td>
+                                    <td class="px-4 sm:px-8 py-6 text-center text-sm font-black text-slate-900">{{ $item->display_size }}</td>
                                     <td class="px-4 sm:px-8 py-6 text-center">
                                         @if($qtyChanged)
                                             <span class="text-xs text-gray-400 line-through font-bold block">{{ $isEn ? 'Initial:' : 'Iniziale:' }} {{ $item->original_quantity }}</span>
@@ -401,11 +404,12 @@
                                     $priceChanged = $item->original_price && abs($item->original_price - $item->price) >= 0.01;
                                     $itemProd = $item->product;
                                     $itemImg = $itemProd && $itemProd->image ? (\Illuminate\Support\Str::startsWith($itemProd->image, ['http://', 'https://']) ? $itemProd->image : asset('storage/' . $itemProd->image)) : null;
-                                    $productName = $itemProd ? ($itemProd->localized_description ?: $itemProd->name) : 'N/A';
+                                    $productName = $item->display_name;
+                                    $brandName = $item->display_brand_name;
                                 @endphp
                                 <tr class="hover:bg-gray-50 transition {{ $item->is_modified || $qtyChanged || $priceChanged ? 'bg-amber-50/40' : '' }}">
                                     <td class="px-6 sm:px-8 py-6">
-                                        <a href="{{ route('agent.product', $item->b2b_product_id) }}" class="flex items-center space-x-4 group/item">
+                                        <a href="{{ $item->b2b_product_id ? route('agent.product', $item->b2b_product_id) : '#' }}" class="flex items-center space-x-4 group/item">
                                             <div class="w-14 h-14 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center p-1.5 overflow-hidden shrink-0 group-hover/item:border-indigo-500 group-hover/item:shadow-md transition">
                                                 @if($itemImg)
                                                     <img src="{{ $itemImg }}" alt="{{ $productName }}" class="max-w-full max-h-full object-contain group-hover/item:scale-105 transition duration-300">
@@ -415,7 +419,9 @@
                                             </div>
                                             <div>
                                                 <p class="font-black text-gray-900 group-hover/item:text-indigo-600 transition uppercase text-sm leading-tight">{{ $productName }}</p>
-                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-tight mb-1">{{ $item->product->brand->name }}</p>
+                                                @if($brandName)
+                                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-tight mb-1">{{ $brandName }}</p>
+                                                @endif
                                                 @if(!empty($item->delivery_date))
                                                     <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-100 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider">
                                                         📅 {{ $isEn ? 'Delivery from:' : 'Consegna dal:' }} {{ $item->delivery_date }}
@@ -428,8 +434,8 @@
                                             </div>
                                         </a>
                                     </td>
-                                    <td class="px-4 sm:px-8 py-6 text-center text-sm font-bold uppercase text-gray-600">{{ (!empty($item->variant->color) && strtoupper($item->variant->color) !== 'UNICO') ? $item->variant->color : ($isEn ? 'Unique' : 'Unico') }}</td>
-                                    <td class="px-4 sm:px-8 py-6 text-center text-sm font-black text-slate-900">{{ $item->variant->size }}</td>
+                                    <td class="px-4 sm:px-8 py-6 text-center text-sm font-bold uppercase text-gray-600">{{ (!empty($item->display_color) && strtoupper($item->display_color) !== 'UNICO') ? $item->display_color : ($isEn ? 'Unique' : 'Unico') }}</td>
+                                    <td class="px-4 sm:px-8 py-6 text-center text-sm font-black text-slate-900">{{ $item->display_size }}</td>
                                     <td class="px-4 sm:px-8 py-6 text-center">
                                         @if($qtyChanged)
                                             <span class="text-xs text-gray-400 line-through font-bold block">{{ $isEn ? 'Initial:' : 'Iniziale:' }} {{ $item->original_quantity }}</span>
@@ -517,7 +523,8 @@
                                         $priceChanged = $item->original_price && abs($item->original_price - $item->price) >= 0.01;
                                         $itemProd = $item->product;
                                         $itemImg = $itemProd && $itemProd->image ? (\Illuminate\Support\Str::startsWith($itemProd->image, ['http://', 'https://']) ? $itemProd->image : asset('storage/' . $itemProd->image)) : null;
-                                        $productName = $itemProd ? ($itemProd->localized_description ?: $itemProd->name) : 'N/A';
+                                        $productName = $item->display_name;
+                                        $brandName = $item->display_brand_name;
                                     @endphp
                                     <tr class="hover:bg-gray-50/50 transition {{ $item->is_modified || $qtyChanged || $priceChanged ? 'bg-amber-50/30' : '' }}" 
                                         x-data="{
@@ -525,7 +532,7 @@
                                             price: {{ number_format($item->price, 2, '.', '') }}
                                         }">
                                         <td class="px-6 sm:px-8 py-6">
-                                            <a href="{{ route('agent.product', $item->b2b_product_id) }}" class="flex items-center space-x-4 group/item">
+                                            <a href="{{ $item->b2b_product_id ? route('agent.product', $item->b2b_product_id) : '#' }}" class="flex items-center space-x-4 group/item">
                                                 <div class="w-14 h-14 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center p-1.5 overflow-hidden shrink-0 group-hover/item:border-indigo-500 group-hover/item:shadow-md transition">
                                                     @if($itemImg)
                                                         <img src="{{ $itemImg }}" alt="{{ $productName }}" class="max-w-full max-h-full object-contain group-hover/item:scale-105 transition duration-300">
@@ -535,7 +542,9 @@
                                                 </div>
                                                 <div>
                                                     <p class="font-black text-gray-900 group-hover/item:text-indigo-600 transition uppercase text-sm leading-tight">{{ $productName }}</p>
-                                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-tight mb-1">{{ $item->product->brand->name }}</p>
+                                                    @if($brandName)
+                                                        <p class="text-xs text-slate-400 font-bold uppercase tracking-tight mb-1">{{ $brandName }}</p>
+                                                    @endif
                                                     @if(!empty($item->delivery_date))
                                                         <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-100 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider">
                                                             📅 {{ $isEn ? 'Delivery from:' : 'Consegna dal:' }} {{ $item->delivery_date }}

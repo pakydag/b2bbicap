@@ -58,8 +58,8 @@
                                                 <tr>
                                                     <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                         <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
-                                                        <a href="{{ route('agent.product', $item->b2b_product_id) }}" target="_blank" class="hover:text-indigo-600 font-bold">
-                                                            {{ $item->product->name }}
+                                                        <a href="{{ $item->b2b_product_id ? route('agent.product', $item->b2b_product_id) : '#' }}" target="_blank" class="hover:text-indigo-600 font-bold">
+                                                            {{ $item->display_name }}
                                                         </a>
                                                         @if(!empty($item->delivery_date))
                                                             <span class="block text-[10px] text-amber-700 font-bold uppercase">
@@ -72,7 +72,7 @@
                                                         @endif
                                                     </td>
                                                     <td class="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                                        {{ $item->variant->size }} / {{ $item->variant->color ?? 'Unico' }}
+                                                        {{ $item->display_size }} / {{ $item->display_color ?? 'Unico' }}
                                                     </td>
                                                     <td class="px-4 py-4 whitespace-nowrap text-center">
                                                         <input type="number" name="items[{{ $index }}][quantity]" value="{{ $item->quantity }}" min="0" {{ $isConfirmed ? 'disabled' : '' }} class="w-20 text-sm border-gray-300 rounded-md shadow-sm {{ $isConfirmed ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : '' }}">

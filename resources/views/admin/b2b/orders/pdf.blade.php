@@ -208,35 +208,40 @@
                 </div>
             </div>
         @endif
-
-        @php
-            $assignedPriceList = $order->customer ? $order->customer->priceList : null;
-        @endphp
-
         <!-- Details Grid (2 Colonne) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8">
             <!-- 1. Dati Cliente -->
             <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ $isEn ? 'BILL TO (B2B CUSTOMER)' : 'INTESTATO A (CLIENTE B2B)' }}</p>
-                <h3 class="text-base font-black text-slate-900 uppercase">{{ $order->customer->business_name ?? ($isEn ? 'Customer N/A' : 'Cliente N.D.') }}</h3>
+                <h3 class="text-base font-black text-slate-900 uppercase">
+                    {{ $order->customer_business_name ?: ($order->customer->business_name ?? ($isEn ? 'Customer N/A' : 'Cliente N.D.')) }}
+                </h3>
                 <div class="mt-2 space-y-1 text-xs text-gray-700">
-                    @if($order->customer && $order->customer->code)
-                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'CUSTOMER CODE:' : 'CODICE CLIENTE:' }}</span> {{ $order->customer->code }}</p>
+                    @php
+                        $cCode = $order->customer_code ?: ($order->customer?->code ?? null);
+                        $cVat = $order->customer_vat_number ?: ($order->customer?->vat_number ?? null);
+                        $cContact = $order->customer_contact_name ?: trim(($order->customer?->contact_name ?? '') . ' ' . ($order->customer?->contact_surname ?? ''));
+                        $cPhone = $order->customer_phone ?: ($order->customer?->phone ?? null);
+                        $cEmail = $order->customer_email ?: ($order->customer?->email ?? null);
+                        $cPorto = $order->customer_porto ?: ($order->customer?->porto ?? null);
+                    @endphp
+                    @if($cCode)
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'CUSTOMER CODE:' : 'CODICE CLIENTE:' }}</span> {{ $cCode }}</p>
                     @endif
-                    @if($order->customer && $order->customer->vat_number)
-                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'VAT / TAX ID:' : 'P.IVA / C.F.:' }}</span> {{ $order->customer->vat_number }}</p>
+                    @if($cVat)
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'VAT / TAX ID:' : 'P.IVA / C.F.:' }}</span> {{ $cVat }}</p>
                     @endif
-                    @if($order->customer && ($order->customer->contact_name || $order->customer->contact_surname))
-                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'CONTACT:' : 'REFERENTE:' }}</span> {{ $order->customer->contact_name }} {{ $order->customer->contact_surname }}</p>
+                    @if(!empty($cContact))
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'CONTACT:' : 'REFERENTE:' }}</span> {{ $cContact }}</p>
                     @endif
-                    @if($order->customer && $order->customer->phone)
-                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'PHONE:' : 'TEL:' }}</span> {{ $order->customer->phone }}</p>
+                    @if($cPhone)
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'PHONE:' : 'TEL:' }}</span> {{ $cPhone }}</p>
                     @endif
-                    @if($order->customer && $order->customer->email)
-                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'EMAIL:' : 'EMAIL:' }}</span> {{ $order->customer->email }}</p>
+                    @if($cEmail)
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'EMAIL:' : 'EMAIL:' }}</span> {{ $cEmail }}</p>
                     @endif
-                    @if($order->customer && !empty($order->customer->porto))
-                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'PORT / FREIGHT:' : 'PORTO:' }}</span> <span class="font-bold text-slate-900 uppercase">{{ $order->customer->porto }}</span></p>
+                    @if(!empty($cPorto))
+                        <p><span class="font-bold text-gray-400 uppercase">{{ $isEn ? 'PORT / FREIGHT:' : 'PORTO:' }}</span> <span class="font-bold text-slate-900 uppercase">{{ $cPorto }}</span></p>
                     @endif
                 </div>
             </div>
@@ -245,7 +250,7 @@
             <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ $isEn ? 'SALES REPRESENTATIVE & PAYMENT' : 'AGENTE DI RIFERIMENTO & METODO' }}</p>
                 <h3 class="text-base font-black text-slate-900 uppercase">
-                    {{ $order->agent ? $order->agent->name . ' ' . $order->agent->surname : ($isEn ? 'Direct Assignment' : 'Assegnazione Diretta') }}
+                    {{ $order->agent_name ?: ($order->agent ? $order->agent->name . ' ' . $order->agent->surname : ($isEn ? 'Direct Assignment' : 'Assegnazione Diretta')) }}
                 </h3>
                 <div class="mt-2 space-y-1 text-xs text-gray-700">
                     @if($order->agent && $order->agent->email)
@@ -260,7 +265,7 @@
         @php
             $totalGross = 0;
             foreach ($itemsList as $item) {
-                $baseP = $item->product ? (float)$item->product->price : (float)$item->price;
+                $baseP = $item->base_price !== null ? (float)$item->base_price : ($item->product ? (float)$item->product->price : (float)$item->price);
                 $totalGross += $baseP * $item->quantity;
             }
             $totalSavings = max(0, $totalGross - $finalTotal);
@@ -289,8 +294,21 @@
                         @php
                             $product = $item->product;
                             $customer = $order->customer;
-                            $basePrice = $product ? (float)$product->price : (float)$item->price;
-                            $priceDetails = $product ? $product->getPriceDetailsForCustomer($customer, $orderTotalQuantity) : null;
+                            $prodName = $item->product_name ?: ($product?->name ?? ($isEn ? 'Product N/A' : 'Prodotto N.D.'));
+                            $prodCode = $item->product_code ?: ($product?->code ?? '-');
+                            $brandName = $item->brand_name ?: ($product?->brand?->name ?? null);
+                            $variantSize = $item->variant_size ?: ($item->variant?->size ?? '-');
+                            $variantColor = $item->variant_color ?: ($item->variant?->color ?? null);
+
+                            $basePrice = $item->base_price !== null 
+                                ? (float)$item->base_price 
+                                : ($product ? (float)$product->price : (float)$item->price);
+
+                            $savedRuleSummary = $item->discount_rule_summary;
+                            $priceDetails = null;
+                            if (!$savedRuleSummary && $product && $customer) {
+                                $priceDetails = $product->getPriceDetailsForCustomer($customer, $orderTotalQuantity);
+                            }
                             
                             $isProductException = !empty($priceDetails['is_product_exception']);
                             $isFixedPrice = ($priceDetails['discount_type'] ?? '') === 'fixed_price';
@@ -307,20 +325,24 @@
                         @endphp
                         <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50' }} page-break-inside-avoid">
                             <td class="py-3.5 px-3 sm:px-4 font-bold text-gray-400 align-top">{{ $index + 1 }}</td>
-                            <td class="py-3.5 px-3 sm:px-4 font-mono font-bold text-slate-800 align-top whitespace-nowrap">{{ $item->product->code ?? '-' }}</td>
+                            <td class="py-3.5 px-3 sm:px-4 font-mono font-bold text-slate-800 align-top whitespace-nowrap">{{ $prodCode }}</td>
                             <td class="py-3.5 px-3 sm:px-4 align-top">
                                 <div class="font-black text-slate-900 uppercase leading-snug">
-                                    {{ $item->product->name ?? ($isEn ? 'Product N/A' : 'Prodotto N.D.') }}
+                                    {{ $prodName }}
                                 </div>
-                                @if($item->product && $item->product->brand)
+                                @if($brandName)
                                     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">
-                                        {{ $item->product->brand->name }}
+                                        {{ $brandName }}
                                     </div>
                                 @endif
 
                                 <!-- Badge Regola Listino Applicata -->
                                 <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                    @if($isProductException)
+                                    @if($savedRuleSummary)
+                                        <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-800 border border-indigo-200 text-[9px] font-black uppercase px-2 py-0.5 rounded">
+                                            📉 {{ $savedRuleSummary }}
+                                        </span>
+                                    @elseif($isProductException)
                                         <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-2xs">
                                             ⭐ {{ $isEn ? 'Custom Price List:' : 'Listino Personalizzato:' }} @if($isFixedPrice) {{ $isEn ? 'Net Price' : 'Prezzo Netto' }} € {{ number_format($priceDetails['discount_value'], 2, ',', '.') }}{{ $extraStr }} @else {{ $priceDetails['rule_summary'] ?? ($isEn ? 'Dedicated Price' : 'Prezzo Dedicato') }} @endif
                                         </span>
@@ -354,9 +376,9 @@
                                 </div>
                             </td>
                             <td class="py-3.5 px-3 sm:px-4 text-center font-bold text-slate-700 align-top whitespace-nowrap">
-                                {{ $item->variant ? $item->variant->size : '-' }}
-                                @if($item->variant && $item->variant->color && $item->variant->color !== 'UNICO')
-                                    <span class="block text-[10px] text-gray-400 font-normal uppercase">{{ $item->variant->color }}</span>
+                                {{ $variantSize }}
+                                @if($variantColor && $variantColor !== 'UNICO')
+                                    <span class="block text-[10px] text-gray-400 font-normal uppercase">{{ $variantColor }}</span>
                                 @endif
                             </td>
                             <td class="py-3.5 px-3 sm:px-4 text-center font-black text-slate-900 bg-gray-100/50 align-top">
@@ -387,11 +409,18 @@
         </div>
 
         @php
+            $priceListSnap = $order->price_list_snapshot;
+            $hasSnap = !empty($priceListSnap) && !empty($priceListSnap['products']);
+            $assignedPriceListName = $order->price_list_name ?: ($order->customer?->priceList?->name ?? null);
+            $generalDiscPercent = $hasSnap 
+                ? (float)($priceListSnap['general_discount_percent'] ?? 0) 
+                : (float)($order->customer?->priceList?->general_discount_percent ?? 0);
+            $custBusName = $order->customer_business_name ?: ($order->customer?->business_name ?? null);
             $uniqueProducts = $itemsList->pluck('product')->filter()->unique('id');
         @endphp
 
         <!-- Card Dettaglio Listino Prezzi & Fasce per Articoli in Ordine -->
-        @if($assignedPriceList && $uniqueProducts->isNotEmpty())
+        @if($assignedPriceListName && ($hasSnap || $uniqueProducts->isNotEmpty()))
             <div class="mb-8 bg-gradient-to-br from-indigo-50/70 via-white to-amber-50/40 border border-indigo-100 rounded-2xl p-5 sm:p-6 print:border-gray-300 print:bg-white page-break-inside-avoid">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100/70 pb-3 mb-4">
                     <div class="flex items-center gap-2.5">
@@ -399,114 +428,196 @@
                         <div>
                             <span class="text-[9px] font-black text-indigo-500 uppercase tracking-widest block leading-none">{{ $isEn ? 'Reserved Commercial Terms' : 'Condizioni Listino Riservate' }}</span>
                             <h4 class="font-black text-indigo-950 uppercase tracking-tight text-sm mt-0.5">
-                                {{ $assignedPriceList->name }}
-                                @if($order->customer)
-                                    <span class="text-xs font-bold text-gray-400 lowercase">{{ $isEn ? 'for' : 'per' }}</span> <span class="text-xs font-black text-slate-900 uppercase">{{ $order->customer->business_name }}</span>
+                                {{ $assignedPriceListName }}
+                                @if($custBusName)
+                                    <span class="text-xs font-bold text-gray-400 lowercase">{{ $isEn ? 'for' : 'per' }}</span> <span class="text-xs font-black text-slate-900 uppercase">{{ $custBusName }}</span>
                                 @endif
                             </h4>
                         </div>
                     </div>
-                    @if($assignedPriceList->general_discount_percent > 0)
+                    @if($generalDiscPercent > 0)
                         <span class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full self-start sm:self-auto">
-                            {{ $isEn ? 'General Price List Discount:' : 'Sconto Generale Listino:' }} -{{ floatval($assignedPriceList->general_discount_percent) }}%
+                            {{ $isEn ? 'General Price List Discount:' : 'Sconto Generale Listino:' }} -{{ floatval($generalDiscPercent) }}%
                         </span>
                     @endif
                 </div>
 
                 <div class="space-y-4">
-                    @foreach($uniqueProducts as $uProd)
-                        @php
-                            $specificTiers = \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
-                                ->where('b2b_product_id', $uProd->id)
-                                ->orderBy('min_quantity', 'asc')
-                                ->get();
-
-                            $generalTiers = $specificTiers->isEmpty()
-                                ? \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
-                                    ->whereNull('b2b_product_id')
-                                    ->orderBy('min_quantity', 'asc')
-                                    ->get()
-                                : collect();
-                        @endphp
-
-                        @if($specificTiers->isNotEmpty() || $generalTiers->isNotEmpty())
-                            <div class="bg-white rounded-xl border border-gray-200 p-3.5 shadow-2xs">
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5 border-b border-gray-100 pb-2">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-black text-slate-900 text-xs uppercase">{{ $uProd->name }}</span>
-                                        @if($uProd->code)
-                                            <span class="text-[10px] font-mono font-bold text-gray-400">({{ $uProd->code }})</span>
-                                        @endif
-                                        @if($uProd->brand)
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase">- {{ $uProd->brand->name }}</span>
-                                        @endif
+                    @if($hasSnap)
+                        @foreach($priceListSnap['products'] as $snapProd)
+                            @php
+                                $specificTiers = $snapProd['specific_tiers'] ?? [];
+                                $generalTiers = $snapProd['general_tiers'] ?? [];
+                            @endphp
+                            @if(!empty($specificTiers) || !empty($generalTiers))
+                                <div class="bg-white rounded-xl border border-gray-200 p-3.5 shadow-2xs">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5 border-b border-gray-100 pb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-black text-slate-900 text-xs uppercase">{{ $snapProd['name'] }}</span>
+                                            @if(!empty($snapProd['code']))
+                                                <span class="text-[10px] font-mono font-bold text-gray-400">({{ $snapProd['code'] }})</span>
+                                            @endif
+                                            @if(!empty($snapProd['brand']))
+                                                <span class="text-[10px] font-bold text-gray-400 uppercase">- {{ $snapProd['brand'] }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] text-gray-500 font-bold uppercase">{{ $isEn ? 'Base List Price:' : 'Prezzo Base di Listino:' }} € {{ number_format($snapProd['price'], 2, ',', '.') }}</span>
+                                            @if(!empty($specificTiers))
+                                                <span class="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
+                                                    ⭐ {{ $isEn ? 'Item Custom Rule' : 'Regola Personalizzata Articolo' }}
+                                                </span>
+                                            @elseif(!empty($generalTiers))
+                                                <span class="text-[9px] font-black bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                                    📉 {{ $isEn ? 'Quantity Tiers' : 'Fasce Sconto Quantità' }}
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-[10px] text-gray-500 font-bold uppercase">{{ $isEn ? 'Base List Price:' : 'Prezzo Base di Listino:' }} € {{ number_format($uProd->price, 2, ',', '.') }}</span>
-                                        @if($specificTiers->isNotEmpty())
-                                            <span class="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
-                                                ⭐ {{ $isEn ? 'Item Custom Rule' : 'Regola Personalizzata Articolo' }}
-                                            </span>
-                                        @elseif($generalTiers->isNotEmpty())
-                                            <span class="text-[9px] font-black bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-0.5 rounded-full">
-                                                📉 {{ $isEn ? 'Quantity Tiers' : 'Fasce Sconto Quantità' }}
-                                            </span>
-                                        @endif
-                                    </div>
+
+                                    @if(!empty($specificTiers))
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                            @foreach($specificTiers as $sTier)
+                                                <div class="bg-amber-50/50 rounded-xl border border-amber-200 p-2.5 flex flex-col justify-between">
+                                                    <div class="flex justify-between items-start mb-1">
+                                                        <span class="text-[10px] font-black text-gray-600 uppercase">
+                                                            @if($sTier['min_quantity'] > 1 || !empty($sTier['max_quantity']))
+                                                                {{ $isEn ? 'From ' . $sTier['min_quantity'] . (!empty($sTier['max_quantity']) ? ' to ' . $sTier['max_quantity'] : ' pcs onwards') : 'Da ' . $sTier['min_quantity'] . (!empty($sTier['max_quantity']) ? ' a ' . $sTier['max_quantity'] : ' in poi') . ' pz' }}
+                                                            @else
+                                                                {{ $isEn ? 'All Quantities (1+ pcs)' : 'Tutte le Quantità (1+ pz)' }}
+                                                            @endif
+                                                        </span>
+                                                        <span class="text-[9px] font-black text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300">
+                                                            {{ $sTier['rule_summary'] }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-amber-200/50">
+                                                        <span class="text-[10px] text-gray-500 font-bold">{{ $isEn ? 'Reserved Price:' : 'Prezzo Riservato:' }}</span>
+                                                        <span class="text-xs font-black text-indigo-700">€ {{ number_format($sTier['tier_price'], 2, ',', '.') }}</span>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @elseif(!empty($generalTiers))
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                            @foreach($generalTiers as $gTier)
+                                                <div class="bg-indigo-50/40 rounded-xl border border-indigo-100 p-2.5 flex flex-col justify-between">
+                                                    <div class="flex justify-between items-start mb-1">
+                                                        <span class="text-[10px] font-black text-gray-600 uppercase">
+                                                            {{ $gTier['min_quantity'] }}{{ !empty($gTier['max_quantity']) ? '-' . $gTier['max_quantity'] : '+' }} {{ $isEn ? 'pcs' : 'pz' }}
+                                                        </span>
+                                                        <span class="text-[9px] font-black text-indigo-700 bg-indigo-100/80 px-1.5 py-0.5 rounded border border-indigo-200">
+                                                            {{ $gTier['rule_summary'] }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-indigo-100/60">
+                                                        <span class="text-[10px] text-gray-400 font-bold">{{ $isEn ? 'Price:' : 'Prezzo:' }}</span>
+                                                        <span class="text-xs font-black text-indigo-700">€ {{ number_format($gTier['tier_price'], 2, ',', '.') }}</span>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
+                            @endif
+                        @endforeach
+                    @else
+                        {{-- Fallback per ordini precedenti non ancora provvisti di snapshot --}}
+                        @foreach($uniqueProducts as $uProd)
+                            @php
+                                $assignedPriceList = $order->customer ? $order->customer->priceList : null;
+                                $specificTiers = $assignedPriceList ? \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
+                                    ->where('b2b_product_id', $uProd->id)
+                                    ->orderBy('min_quantity', 'asc')
+                                    ->get() : collect();
 
-                                @if($specificTiers->isNotEmpty())
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                        @foreach($specificTiers as $sTier)
-                                            @php
-                                                $tierPrice = $sTier->calculateUnitPrice($uProd->price);
-                                            @endphp
-                                            <div class="bg-amber-50/50 rounded-xl border border-amber-200 p-2.5 flex flex-col justify-between">
-                                                <div class="flex justify-between items-start mb-1">
-                                                    <span class="text-[10px] font-black text-gray-600 uppercase">
-                                                        @if($sTier->min_quantity > 1 || !empty($sTier->max_quantity))
-                                                            {{ $isEn ? 'From ' . $sTier->min_quantity . ($sTier->max_quantity ? ' to ' . $sTier->max_quantity : ' pcs onwards') : 'Da ' . $sTier->min_quantity . ($sTier->max_quantity ? ' a ' . $sTier->max_quantity : ' in poi') . ' pz' }}
-                                                        @else
-                                                            {{ $isEn ? 'All Quantities (1+ pcs)' : 'Tutte le Quantità (1+ pz)' }}
-                                                        @endif
-                                                    </span>
-                                                    <span class="text-[9px] font-black text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300">
-                                                        {{ $sTier->rule_summary }}
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-amber-200/50">
-                                                    <span class="text-[10px] text-gray-500 font-bold">{{ $isEn ? 'Reserved Price:' : 'Prezzo Riservato:' }}</span>
-                                                    <span class="text-xs font-black text-indigo-700">€ {{ number_format($tierPrice, 2, ',', '.') }}</span>
-                                                </div>
-                                            </div>
-                                        @endforeach
+                                $generalTiers = ($assignedPriceList && $specificTiers->isEmpty())
+                                    ? \App\Models\B2bPriceListItem::where('b2b_price_list_id', $assignedPriceList->id)
+                                        ->whereNull('b2b_product_id')
+                                        ->orderBy('min_quantity', 'asc')
+                                        ->get()
+                                    : collect();
+                            @endphp
+
+                            @if($specificTiers->isNotEmpty() || $generalTiers->isNotEmpty())
+                                <div class="bg-white rounded-xl border border-gray-200 p-3.5 shadow-2xs">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5 border-b border-gray-100 pb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-black text-slate-900 text-xs uppercase">{{ $uProd->name }}</span>
+                                            @if($uProd->code)
+                                                <span class="text-[10px] font-mono font-bold text-gray-400">({{ $uProd->code }})</span>
+                                            @endif
+                                            @if($uProd->brand)
+                                                <span class="text-[10px] font-bold text-gray-400 uppercase">- {{ $uProd->brand->name }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] text-gray-500 font-bold uppercase">{{ $isEn ? 'Base List Price:' : 'Prezzo Base di Listino:' }} € {{ number_format($uProd->price, 2, ',', '.') }}</span>
+                                            @if($specificTiers->isNotEmpty())
+                                                <span class="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
+                                                    ⭐ {{ $isEn ? 'Item Custom Rule' : 'Regola Personalizzata Articolo' }}
+                                                </span>
+                                            @elseif($generalTiers->isNotEmpty())
+                                                <span class="text-[9px] font-black bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                                    📉 {{ $isEn ? 'Quantity Tiers' : 'Fasce Sconto Quantità' }}
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
-                                @elseif($generalTiers->isNotEmpty())
-                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                        @foreach($generalTiers as $gTier)
-                                            @php
-                                                $gTierPrice = $gTier->calculateUnitPrice($uProd->price);
-                                            @endphp
-                                            <div class="bg-indigo-50/40 rounded-xl border border-indigo-100 p-2.5 flex flex-col justify-between">
-                                                <div class="flex justify-between items-start mb-1">
-                                                    <span class="text-[10px] font-black text-gray-600 uppercase">
-                                                        {{ $gTier->min_quantity }}{{ $gTier->max_quantity ? '-' . $gTier->max_quantity : '+' }} {{ $isEn ? 'pcs' : 'pz' }}
-                                                    </span>
-                                                    <span class="text-[9px] font-black text-indigo-700 bg-indigo-100/80 px-1.5 py-0.5 rounded border border-indigo-200">
-                                                        {{ $gTier->rule_summary }}
-                                                    </span>
+
+                                    @if($specificTiers->isNotEmpty())
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                            @foreach($specificTiers as $sTier)
+                                                @php
+                                                    $tierPrice = $sTier->calculateUnitPrice($uProd->price);
+                                                @endphp
+                                                <div class="bg-amber-50/50 rounded-xl border border-amber-200 p-2.5 flex flex-col justify-between">
+                                                    <div class="flex justify-between items-start mb-1">
+                                                        <span class="text-[10px] font-black text-gray-600 uppercase">
+                                                            @if($sTier->min_quantity > 1 || !empty($sTier->max_quantity))
+                                                                {{ $isEn ? 'From ' . $sTier->min_quantity . ($sTier->max_quantity ? ' to ' . $sTier->max_quantity : ' pcs onwards') : 'Da ' . $sTier->min_quantity . ($sTier->max_quantity ? ' a ' . $sTier->max_quantity : ' in poi') . ' pz' }}
+                                                            @else
+                                                                {{ $isEn ? 'All Quantities (1+ pcs)' : 'Tutte le Quantità (1+ pz)' }}
+                                                            @endif
+                                                        </span>
+                                                        <span class="text-[9px] font-black text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300">
+                                                            {{ $sTier->rule_summary }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-amber-200/50">
+                                                        <span class="text-[10px] text-gray-500 font-bold">{{ $isEn ? 'Reserved Price:' : 'Prezzo Riservato:' }}</span>
+                                                        <span class="text-xs font-black text-indigo-700">€ {{ number_format($tierPrice, 2, ',', '.') }}</span>
+                                                    </div>
                                                 </div>
-                                                <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-indigo-100/60">
-                                                    <span class="text-[10px] text-gray-400 font-bold">{{ $isEn ? 'Price:' : 'Prezzo:' }}</span>
-                                                    <span class="text-xs font-black text-indigo-700">€ {{ number_format($gTierPrice, 2, ',', '.') }}</span>
+                                            @endforeach
+                                        </div>
+                                    @elseif($generalTiers->isNotEmpty())
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                            @foreach($generalTiers as $gTier)
+                                                @php
+                                                    $gTierPrice = $gTier->calculateUnitPrice($uProd->price);
+                                                @endphp
+                                                <div class="bg-indigo-50/40 rounded-xl border border-indigo-100 p-2.5 flex flex-col justify-between">
+                                                    <div class="flex justify-between items-start mb-1">
+                                                        <span class="text-[10px] font-black text-gray-600 uppercase">
+                                                            {{ $gTier->min_quantity }}{{ $gTier->max_quantity ? '-' . $gTier->max_quantity : '+' }} {{ $isEn ? 'pcs' : 'pz' }}
+                                                        </span>
+                                                        <span class="text-[9px] font-black text-indigo-700 bg-indigo-100/80 px-1.5 py-0.5 rounded border border-indigo-200">
+                                                            {{ $gTier->rule_summary }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex items-baseline justify-between mt-1 pt-1 border-t border-indigo-100/60">
+                                                        <span class="text-[10px] text-gray-400 font-bold">{{ $isEn ? 'Price:' : 'Prezzo:' }}</span>
+                                                        <span class="text-xs font-black text-indigo-700">€ {{ number_format($gTierPrice, 2, ',', '.') }}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-                    @endforeach
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                        @endforeach
+                    @endif
                 </div>
             </div>
         @endif

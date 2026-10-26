@@ -240,18 +240,18 @@
                                 @endphp
                                 <tr style="{{ $isItemModified ? 'background-color: #fffdf0;' : '' }}">
                                     <td>
-                                        <strong>{{ $item->product->name ?? 'Product' }}</strong>
-                                        @if($item->product && $item->product->brand)
-                                            <span style="font-size: 10px; text-transform: uppercase; color: #64748b;">({{ $item->product->brand->name }})</span>
+                                        <strong>{{ $item->display_name }}</strong>
+                                        @if($item->display_brand_name)
+                                            <span style="font-size: 10px; text-transform: uppercase; color: #64748b;">({{ $item->display_brand_name }})</span>
                                         @endif
                                         @if($isItemModified)
                                             <span style="display: inline-block; background: #fef08a; color: #854d0e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 4px; border: 1px solid #fde047;">Modified</span>
                                         @endif
                                         <br>
                                         <small style="color: #64748b;">
-                                            Size: <strong>{{ $item->variant->size ?? 'N/D' }}</strong>
-                                            @if($item->variant && $item->variant->color)
-                                                • Color: {{ (strtoupper($item->variant->color) === 'UNICO') ? 'Unique' : $item->variant->color }}
+                                            Size: <strong>{{ $item->display_size }}</strong>
+                                            @if($item->display_color)
+                                                • Color: {{ (strtoupper($item->display_color) === 'UNICO') ? 'Unique' : $item->display_color }}
                                             @endif
                                         </small>
                                     </td>
@@ -490,18 +490,18 @@
                                 @endphp
                                 <tr style="{{ $isItemModified ? 'background-color: #fffdf0;' : '' }}">
                                     <td>
-                                        <strong>{{ $item->product->name ?? 'Articolo' }}</strong>
-                                        @if($item->product && $item->product->brand)
-                                            <span style="font-size: 10px; text-transform: uppercase; color: #64748b;">({{ $item->product->brand->name }})</span>
+                                        <strong>{{ $item->display_name }}</strong>
+                                        @if($item->display_brand_name)
+                                            <span style="font-size: 10px; text-transform: uppercase; color: #64748b;">({{ $item->display_brand_name }})</span>
                                         @endif
                                         @if($isItemModified)
                                             <span style="display: inline-block; background: #fef08a; color: #854d0e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 4px; border: 1px solid #fde047;">Modificato</span>
                                         @endif
                                         <br>
                                         <small style="color: #64748b;">
-                                            Taglia: <strong>{{ $item->variant->size ?? 'N/D' }}</strong>
-                                            @if($item->variant && $item->variant->color)
-                                                • Colore: {{ $item->variant->color }}
+                                            Taglia: <strong>{{ $item->display_size }}</strong>
+                                            @if($item->display_color)
+                                                • Colore: {{ $item->display_color }}
                                             @endif
                                         </small>
                                     </td>

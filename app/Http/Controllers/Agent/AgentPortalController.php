@@ -718,11 +718,24 @@ class AgentPortalController extends Controller
             $contactId = $contact->id;
         }
 
-        // Creazione di UN UNICO ordine nel portale/database contenente tutti gli articoli del carrello
+        $agentUser = \App\Models\User::find($agentId);
+        $agentName = $agentUser ? trim($agentUser->name . ' ' . $agentUser->surname) : null;
+        $custContactName = trim(($b2bCustomer->contact_name ?? '') . ' ' . ($b2bCustomer->contact_surname ?? ''));
+
+        // Creazione di UN UNICO ordine nel portale/database contenente tutti gli articoli del carrello con snapshot dati
         $order = B2bOrder::create([
             'order_group_id' => null,
             'agent_id' => $agentId,
+            'agent_name' => $agentName,
             'b2b_customer_id' => $customerId,
+            'customer_business_name' => $b2bCustomer->business_name,
+            'customer_code' => $b2bCustomer->code,
+            'customer_vat_number' => $b2bCustomer->vat_number,
+            'customer_contact_name' => $custContactName ?: null,
+            'customer_phone' => $b2bCustomer->phone,
+            'customer_email' => $b2bCustomer->email,
+            'customer_porto' => $b2bCustomer->porto,
+            'price_list_name' => $b2bCustomer->priceList?->name,
             'internal_reference' => $request->internal_reference,
             'status' => 'confirmed',
             'notes' => $request->notes,
@@ -735,10 +748,16 @@ class AgentPortalController extends Controller
 
         $total = 0;
         $totalCartQuantity = array_sum(array_column($cart, 'quantity'));
+        $orderProducts = [];
 
         foreach ($cart as $item) {
-            $product = B2bProduct::find($item['product_id']);
+            $product = B2bProduct::with('brand')->find($item['product_id']);
+            $variant = B2bProductVariant::find($item['variant_id']);
+            if ($product) {
+                $orderProducts[] = $product;
+            }
             $finalUnitPrice = $item['price'];
+            $details = null;
             if ($product) {
                 $details = $product->getPriceDetailsForCustomer($b2bCustomer, $totalCartQuantity);
                 $finalUnitPrice = $details['unit_price'];
@@ -747,6 +766,15 @@ class AgentPortalController extends Controller
             $order->items()->create([
                 'b2b_product_id' => $item['product_id'],
                 'b2b_product_variant_id' => $item['variant_id'],
+                'product_name' => $product?->name,
+                'product_code' => $product?->code,
+                'brand_name' => $product?->brand?->name,
+                'variant_size' => $variant?->size,
+                'variant_color' => $variant?->color,
+                'base_price' => $product ? (float)$product->price : (float)$finalUnitPrice,
+                'discount_rule_summary' => $details['rule_summary'] ?? null,
+                'discount_type' => $details['discount_type'] ?? null,
+                'discount_value' => $details['discount_value'] ?? null,
                 'quantity' => $item['quantity'],
                 'price' => $finalUnitPrice,
                 'original_quantity' => $item['quantity'],
@@ -757,7 +785,10 @@ class AgentPortalController extends Controller
             $total += $finalUnitPrice * $item['quantity'];
         }
 
-        $order->update(['total_amount' => $total]);
+        $order->update([
+            'total_amount' => $total,
+            'price_list_snapshot' => $order->buildPriceListSnapshot($b2bCustomer, $orderProducts),
+        ]);
         
         // Genera ed invia via FTP i file CSV per l'ordine (37.csv se 1 sola data, oppure 37_1.csv, 37_2.csv, ... per il gestionale)
         $csvResult = $this->exportOrderToFtpCsv($order);
