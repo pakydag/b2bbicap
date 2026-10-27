@@ -6,9 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\Models\B2bProduct;
+use App\Models\B2bProductVariant;
 use App\Models\B2bOrder;
+use App\Models\B2bOrderItem;
 use App\Models\B2bCustomer;
 use App\Models\B2bBrand;
+use App\Models\B2bPriceList;
+use App\Models\B2bPriceListItem;
+use App\Models\B2bCart;
+use App\Models\Contact;
+use App\Models\User;
 
 class AgentPortalController extends Controller
 {
