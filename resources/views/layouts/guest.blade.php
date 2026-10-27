@@ -8,8 +8,8 @@
         @php
             $favicon = \App\Models\Setting::where('key', 'site_favicon')->value('value') ?: 'favicon.ico';
             $logo = \App\Models\Setting::where('key', 'site_logo')->value('value');
-            $seoTitle = \App\Models\Setting::where('key', 'home_seo_title')->value('value') ?: 'BICAP Official: Calzature di sicurezza Made in Italy | Portale B2B';
-            $seoDesc = \App\Models\Setting::where('key', 'home_seo_description')->value('value') ?: "Le calzature BICAP sono l'espressione del Made in Italy: un insieme armonico di esperienza, innovazione, passione e qualità delle materie prime utilizzate.";
+            $pageTitle = $title ?? (\App\Models\Setting::where('key', 'home_seo_title')->value('value') ?: 'BICAP Official: Calzature di sicurezza Made in Italy | Portale B2B');
+            $pageDesc = $description ?? (\App\Models\Setting::where('key', 'home_seo_description')->value('value') ?: "Le calzature BICAP sono l'espressione del Made in Italy: un insieme armonico di esperienza, innovazione, passione e qualità delle materie prime utilizzate.");
             $seoImg = \App\Models\Setting::where('key', 'home_seo_image')->value('value') ?: '/storage/seo/bicap-og-image.jpg';
             $isEn = app()->getLocale() === 'en';
         @endphp
@@ -17,22 +17,22 @@
         <link rel="icon" type="image/x-icon" href="{{ asset($favicon) }}">
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
-        <title>{{ $seoTitle }}</title>
-        <meta name="description" content="{{ $seoDesc }}">
+        <title>{{ $pageTitle }}</title>
+        <meta name="description" content="{{ $pageDesc }}">
         <meta name="keywords" content="calzature di sicurezza, calzature da lavoro, safety shoes, antinfortunistica, made in italy, workwear, bicap, calzaturificio 5bi, absolutely safe">
         <meta name="author" content="Calzaturificio 5BI s.r.l. - BICAP">
 
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">
         <meta property="og:url" content="{{ url()->current() }}">
-        <meta property="og:title" content="{{ $seoTitle }}">
-        <meta property="og:description" content="{{ $seoDesc }}">
+        <meta property="og:title" content="{{ $pageTitle }}">
+        <meta property="og:description" content="{{ $pageDesc }}">
         <meta property="og:image" content="{{ asset($seoImg) }}">
 
         <!-- Twitter -->
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="{{ $seoTitle }}">
-        <meta name="twitter:description" content="{{ $seoDesc }}">
+        <meta name="twitter:title" content="{{ $pageTitle }}">
+        <meta name="twitter:description" content="{{ $pageDesc }}">
         <meta name="twitter:image" content="{{ asset($seoImg) }}">
 
         <!-- Fonts -->

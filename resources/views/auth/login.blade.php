@@ -1,4 +1,4 @@
-<x-guest-layout>
+<x-guest-layout title="B2B Calzaturificio 5BI" description="B2B Calzaturificio 5BI">
     @php
         $isEn = app()->getLocale() === 'en';
     @endphp

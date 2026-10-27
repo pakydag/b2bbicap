@@ -67,8 +67,9 @@ class B2bCustomerController extends Controller
 
         $file = $request->file('file');
         $path = $file->getRealPath();
+        $ext = $file->getClientOriginalExtension();
 
-        $result = $importer->import($path);
+        $result = $importer->import($path, $ext);
 
         $msg = "Importazione completata: {$result['total']} clienti elaborati ({$result['created']} nuovi, {$result['updated']} aggiornati con codice gestionale).";
         if (!empty($result['errors'])) {

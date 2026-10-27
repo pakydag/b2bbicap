@@ -14,9 +14,22 @@ class CustomerImportService
      * @param string $filePath
      * @return array
      */
-    public function import(string $filePath): array
+    public function import(string $filePath, ?string $extension = null): array
     {
-        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $ext = strtolower($extension ?: pathinfo($filePath, PATHINFO_EXTENSION));
+
+        // Rilevamento automatico XLSX tramite magic bytes (file ZIP: PK\x03\x04)
+        // Utile soprattutto per i file caricati via HTTP che hanno estensione .tmp
+        if ($ext !== 'xlsx' && file_exists($filePath)) {
+            $handle = @fopen($filePath, 'rb');
+            if ($handle) {
+                $bytes = fread($handle, 4);
+                fclose($handle);
+                if ($bytes === "PK\x03\x04") {
+                    $ext = 'xlsx';
+                }
+            }
+        }
 
         if ($ext === 'xlsx') {
             $rows = $this->parseXlsx($filePath);
