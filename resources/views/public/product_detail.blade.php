@@ -3,6 +3,7 @@
 @section('title', $product->name . ' | BICAP Official Shop')
 
 @php
+    $isEn = app()->getLocale() === 'en';
     $c = $product->characteristics ?? [];
     $cat = $c['CAT-SICUREZZA'] ?? ($c['CAT-SICUREZZA-FILTRO'] ?? '');
     $price = $product->price ? (float)$product->price : 89.00;
@@ -52,21 +53,39 @@
         }
     }
 
-    // Downloads
-    $docConformita = $c['URL-DICHIARAZIONE-CONFORMITA-IT'] ?? ($c['URL-DICHIARAZIONE-CONFORMITA-EN'] ?? null);
-    $schedaTecnica = $c['URL-TDS IT'] ?? ($c['URL-TDS-EN'] ?? null);
-    $catalogo = $c['URL-CATALOGO-IT'] ?? ($c['URL-CATALOGO-EN'] ?? null);
+    // Downloads (EN / IT priority)
+    $docConformita = $isEn
+        ? ($c['URL-DICHIARAZIONE-CONFORMITA-EN'] ?? ($c['URL-DICHIARAZIONE-CONFORMITA-IT'] ?? null))
+        : ($c['URL-DICHIARAZIONE-CONFORMITA-IT'] ?? ($c['URL-DICHIARAZIONE-CONFORMITA-EN'] ?? null));
+    $schedaTecnica = $isEn
+        ? ($c['URL-TDS-EN'] ?? ($c['URL-TDS IT'] ?? null))
+        : ($c['URL-TDS IT'] ?? ($c['URL-TDS-EN'] ?? null));
+    $catalogo = $isEn
+        ? ($c['URL-CATALOGO-EN'] ?? ($c['URL-CATALOGO-IT'] ?? null))
+        : ($c['URL-CATALOGO-IT'] ?? ($c['URL-CATALOGO-EN'] ?? null));
 
-    // Specs
-    $tomaia = $c['tomaia-descrizione-it'] ?? ($c['MATERIALE-FILTRO-IT'] ?? null);
-    $fodera = $c['fodera-descrizione-it'] ?? null;
-    $puntale = $c['puntale-descrizione-it'] ?? ($c['PUNTALE-FILTRO-IT'] ?? null);
-    $lamina = $c['lamina-descrizione-it'] ?? null;
-    $suola = $c['suola-descrizione-it'] ?? ($c['SUOLA-FILTRO-IT'] ?? null);
+    // Specs (EN / IT priority)
+    $tomaia = $isEn
+        ? ($c['tomaia-descrizione-en'] ?? ($c['MATERIALE-FILTRO-EN'] ?? ($c['tomaia-descrizione-it'] ?? ($c['MATERIALE-FILTRO-IT'] ?? null))))
+        : ($c['tomaia-descrizione-it'] ?? ($c['MATERIALE-FILTRO-IT'] ?? ($c['tomaia-descrizione-en'] ?? null)));
+    $fodera = $isEn
+        ? ($c['fodera-descrizione-en'] ?? ($c['fodera-descrizione-it'] ?? null))
+        : ($c['fodera-descrizione-it'] ?? ($c['fodera-descrizione-en'] ?? null));
+    $puntale = $isEn
+        ? ($c['puntale-descrizione-en'] ?? ($c['PUNTALE-FILTRO-EN'] ?? ($c['puntale-descrizione-it'] ?? ($c['PUNTALE-FILTRO-IT'] ?? null))))
+        : ($c['puntale-descrizione-it'] ?? ($c['PUNTALE-FILTRO-IT'] ?? ($c['puntale-descrizione-en'] ?? null)));
+    $lamina = $isEn
+        ? ($c['lamina-descrizione-en'] ?? ($c['lamina-descrizione-it'] ?? null))
+        : ($c['lamina-descrizione-it'] ?? ($c['lamina-descrizione-en'] ?? null));
+    $suola = $isEn
+        ? ($c['suola-descrizione-en'] ?? ($c['SUOLA-FILTRO-EN'] ?? ($c['suola-descrizione-it'] ?? ($c['SUOLA-FILTRO-IT'] ?? null))))
+        : ($c['suola-descrizione-it'] ?? ($c['SUOLA-FILTRO-IT'] ?? ($c['suola-descrizione-en'] ?? null)));
     $taglie = $c['RANGE-TAGLIE-VALORE'] ?? '36/48';
     $calzata = $c['CALZATA'] ?? 'Mondopoint 11';
     $norma = $c['NORMA'] ?? '20345:2022';
-    $settori = $c['SETTORE-DI-UTILIZZO-IT'] ?? null;
+    $settori = $isEn
+        ? ($c['SETTORE-DI-UTILIZZO-EN'] ?? ($c['SETTORE-DI-UTILIZZO-IT'] ?? null))
+        : ($c['SETTORE-DI-UTILIZZO-IT'] ?? ($c['SETTORE-DI-UTILIZZO-EN'] ?? null));
 
     // Barcodes
     $barcodes = [];
@@ -76,9 +95,13 @@
         }
     }
 
-    // Description
-    $approfondimento = $c['descrizione-articolo-it'] ?? $product->localized_description;
-    $descrizioneEstesa = $c['DESCRIZIONE ESTESA HTML IT'] ?? ($product->localized_extended_html ?? null);
+    // Description (Localizzato con fallback)
+    $approfondimento = $isEn
+        ? ($c['descrizione-articolo-en'] ?? ($c['descrizione-articolo-EN'] ?? ($product->localized_description ?: ($c['descrizione-articolo-it'] ?? null))))
+        : ($c['descrizione-articolo-it'] ?? ($product->localized_description ?: ($c['descrizione-articolo-en'] ?? null)));
+    $descrizioneEstesa = $isEn
+        ? ($c['DESCRIZIONE ESTESA HTML EN'] ?? ($product->localized_extended_html ?: ($c['DESCRIZIONE ESTESA HTML IT'] ?? null)))
+        : ($c['DESCRIZIONE ESTESA HTML IT'] ?? ($product->localized_extended_html ?: ($c['DESCRIZIONE ESTESA HTML EN'] ?? null)));
 @endphp
 
 @section('content')
@@ -99,7 +122,7 @@
                     <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                     <span>{{ session('success') }}</span>
                 </div>
-                <a href="{{ route('public.shop.cart.index') }}" class="underline hover:text-black font-extrabold uppercase text-xs tracking-wider">Vai al carrello &rarr;</a>
+                <a href="{{ route('public.shop.cart.index') }}" class="underline hover:text-black font-extrabold uppercase text-xs tracking-wider">{{ $isEn ? 'Go to cart →' : 'Vai al carrello →' }}</a>
             </div>
         @endif
         @if(session('error'))
@@ -112,7 +135,7 @@
         <!-- Top Breadcrumbs & Back Button (Exact Bicap Shop Style) -->
         <div class="flex items-center justify-between pb-5 mb-6 border-b border-gray-100">
             <a href="{{ route('public.home') }}" class="btn-prodotti">
-                PRODOTTI +
+                {{ $isEn ? 'PRODUCTS +' : 'PRODOTTI +' }}
             </a>
 
             <nav class="text-xs uppercase font-semibold tracking-wider text-zinc-500">
@@ -147,7 +170,7 @@
                                 @click="if (is360) { window.dispatchEvent(new CustomEvent('bicap-360-spin')); } else { is360 = true; }" 
                                 class="w-16 h-16 sm:w-18 sm:h-18 p-1 border rounded-none flex flex-col items-center justify-center transition-all bg-zinc-50 cursor-pointer relative"
                                 :class="is360 ? 'border-black ring-1 ring-black' : 'border-gray-200 hover:border-gray-400 opacity-80 hover:opacity-100'"
-                                title="Visualizza e ruota a 360°">
+                                title="{{ $isEn ? 'View and spin 360°' : 'Visualizza e ruota a 360°' }}">
                             <img src="https://bicap.it/images/360.png" alt="360 view" class="w-7 h-7 object-contain mb-0.5 pointer-events-none">
                             <span class="font-bebas text-[11px] leading-none text-black">360°</span>
                         </button>
@@ -174,19 +197,19 @@
                                  @touchmove="onDrag($event)"
                                  @touchend="stopDrag()"
                                  @wheel.prevent="onWheel($event)"
-                                 title="Trascina per ruotare">
+                                 title="{{ $isEn ? 'Drag to rotate' : 'Trascina per ruotare' }}">
 
                                 <!-- Loading Indicator -->
                                 <div x-show="!isLoaded && loadedCount === 0" class="absolute inset-0 flex items-center justify-center bg-white/80 z-20">
                                     <div class="flex items-center gap-2 text-xs font-semibold text-zinc-500 uppercase">
                                         <i class="fa fa-spinner fa-spin"></i>
-                                        <span>Caricamento 360°...</span>
+                                        <span>{{ $isEn ? 'Loading 360°...' : 'Caricamento 360°...' }}</span>
                                     </div>
                                 </div>
 
                                 <!-- Active 360 Frame Image -->
                                 <img :src="frames[currentFrame]" 
-                                     alt="{{ $product->name }} Rotazione 360°" 
+                                     alt="{{ $product->name }} {{ $isEn ? '360° Spin' : 'Rotazione 360°' }}" 
                                      class="max-h-[460px] max-w-full object-contain pointer-events-none transition-none"
                                      draggable="false">
 
@@ -204,7 +227,7 @@
                                 <button type="button" 
                                         @click="prevFrame()" 
                                         class="w-8 h-8 rounded-full border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-xs text-black cursor-pointer shadow-2xs transition-colors"
-                                        title="Ruota a sinistra">
+                                        title="{{ $isEn ? 'Rotate left' : 'Ruota a sinistra' }}">
                                     <i class="fa fa-chevron-left"></i>
                                 </button>
 
@@ -213,20 +236,20 @@
                                         @click="toggleAutoSpin()" 
                                         class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-xs font-bold text-black uppercase cursor-pointer shadow-2xs transition-colors">
                                     <i class="fa text-[11px]" :class="isAutoSpinning ? 'fa-pause' : 'fa-play'"></i>
-                                    <span x-text="isAutoSpinning ? 'Pausa' : 'Rotazione Automatica'"></span>
+                                    <span x-text="isAutoSpinning ? '{{ $isEn ? 'Pause' : 'Pausa' }}' : '{{ $isEn ? 'Auto Spin' : 'Rotazione Automatica' }}'"></span>
                                 </button>
 
                                 <!-- Rotate Right Button -->
                                 <button type="button" 
                                         @click="nextFrame()" 
                                         class="w-8 h-8 rounded-full border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-xs text-black cursor-pointer shadow-2xs transition-colors"
-                                        title="Ruota a destra">
+                                        title="{{ $isEn ? 'Rotate right' : 'Ruota a destra' }}">
                                     <i class="fa fa-chevron-right"></i>
                                 </button>
 
                                 <!-- Hint Text -->
                                 <div class="w-full text-center text-[12px] font-medium text-zinc-500 mt-1">
-                                    <i class="fa fa-arrows-h mr-1 text-[#e35205]"></i> Trascina con il mouse o tocca per ruotare a 360°
+                                    <i class="fa fa-arrows-h mr-1 text-[#e35205]"></i> {{ $isEn ? 'Drag with mouse or touch to rotate 360°' : 'Trascina con il mouse o tocca per ruotare a 360°' }}
                                 </div>
                             </div>
 
@@ -256,7 +279,7 @@
                 <div class="pt-1 pb-2">
                     <div class="font-bebas text-4xl sm:text-5xl text-black flex items-baseline gap-2">
                         € {{ number_format($price, 2, ',', '.') }}
-                        <span class="text-xs font-sans font-bold uppercase text-zinc-500 tracking-wider">IVA INC.</span>
+                        <span class="text-xs font-sans font-bold uppercase text-zinc-500 tracking-wider">{{ $isEn ? 'VAT INCL.' : 'IVA INC.' }}</span>
                     </div>
                 </div>
 
@@ -278,7 +301,7 @@
                     <div class="flex items-center gap-4">
                         <div>
                             <label for="size-select" class="block font-bebas text-lg uppercase text-black mb-1">
-                                TAGLIA
+                                {{ $isEn ? 'SIZE' : 'TAGLIA' }}
                             </label>
                             @if($hasAvailableSizes)
                                 <select id="size-select" name="taglia" class="w-24 h-10 bg-white border border-gray-300 rounded-none px-2 text-sm font-bold text-zinc-900 focus:ring-1 focus:ring-black focus:border-black outline-none cursor-pointer">
@@ -288,14 +311,14 @@
                                 </select>
                             @else
                                 <div class="h-10 flex items-center px-3 text-xs font-bold text-red-600 bg-red-50 border border-red-200 uppercase">
-                                    ESAURITO
+                                    {{ $isEn ? 'OUT OF STOCK' : 'ESAURITO' }}
                                 </div>
                             @endif
                         </div>
 
                         <div>
                             <label for="quantity-input" class="block font-bebas text-lg uppercase text-black mb-1">
-                                QUANTITÀ
+                                {{ $isEn ? 'QUANTITY' : 'QUANTITÀ' }}
                             </label>
                             <input id="quantity-input" name="quantita" type="number" min="1" max="99" value="1" {{ !$hasAvailableSizes ? 'disabled' : '' }} class="w-16 h-10 bg-white border border-gray-300 rounded-none px-2 text-sm font-bold text-center text-zinc-900 focus:ring-1 focus:ring-black focus:border-black outline-none">
                         </div>
@@ -305,11 +328,11 @@
                     <div>
                         @if($hasAvailableSizes)
                             <button type="submit" class="btn-bicap-orange w-full flex items-center justify-center cursor-pointer border-0">
-                                AGGIUNGI AL CARRELLO
+                                {{ $isEn ? 'ADD TO CART' : 'AGGIUNGI AL CARRELLO' }}
                             </button>
                         @else
                             <button type="button" disabled class="w-full py-3.5 bg-zinc-200 text-zinc-500 font-bebas text-xl uppercase tracking-wider cursor-not-allowed border-0 text-center">
-                                PRODOTTO NON DISPONIBILE
+                                {{ $isEn ? 'PRODUCT UNAVAILABLE' : 'PRODOTTO NON DISPONIBILE' }}
                             </button>
                         @endif
                     </div>
@@ -350,7 +373,13 @@
                         <svg class="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24">
                             <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
                         </svg>
-                        <span>SPEDIZIONE GRATUITA {{ $detailFreeScope === 'all' ? '' : 'ITALIA ' }}A PARTIRE DA € {{ (int)$detailFreeThreshold }}</span>
+                        <span>
+                            @if($isEn)
+                                FREE SHIPPING {{ $detailFreeScope === 'all' ? '' : 'IN ITALY ' }}FROM € {{ (int)$detailFreeThreshold }}
+                            @else
+                                SPEDIZIONE GRATUITA {{ $detailFreeScope === 'all' ? '' : 'ITALIA ' }}A PARTIRE DA € {{ (int)$detailFreeThreshold }}
+                            @endif
+                        </span>
                     </div>
                 @endif
 
@@ -365,22 +394,22 @@
                 <!-- Caratteristiche Singole (Technical Specs List) -->
                 <div class="bicap-specs-list pt-3 border-t border-gray-200 space-y-1.5">
                     @if(!empty($tomaia))
-                        <div><strong>Tomaia:</strong> <span>{{ $tomaia }}</span></div>
+                        <div><strong>{{ $isEn ? 'Upper:' : 'Tomaia:' }}</strong> <span>{{ $tomaia }}</span></div>
                     @endif
                     @if(!empty($fodera))
-                        <div><strong>Fodera:</strong> <span>{{ $fodera }}</span></div>
+                        <div><strong>{{ $isEn ? 'Lining:' : 'Fodera:' }}</strong> <span>{{ $fodera }}</span></div>
                     @endif
                     @if(!empty($puntale))
-                        <div><strong>Puntale:</strong> <span>{{ $puntale }}</span></div>
+                        <div><strong>{{ $isEn ? 'Toe Cap:' : 'Puntale:' }}</strong> <span>{{ $puntale }}</span></div>
                     @endif
                     @if(!empty($lamina))
-                        <div><strong>Lamina:</strong> <span>{{ $lamina }}</span></div>
+                        <div><strong>{{ $isEn ? 'Midsole:' : 'Lamina:' }}</strong> <span>{{ $lamina }}</span></div>
                     @endif
                     @if(!empty($suola))
-                        <div><strong>Suola:</strong> <span>{{ $suola }}</span></div>
+                        <div><strong>{{ $isEn ? 'Sole:' : 'Suola:' }}</strong> <span>{{ $suola }}</span></div>
                     @endif
                     @if(!empty($taglie))
-                        <div><strong>Taglie:</strong> <span>{{ $taglie }}</span></div>
+                        <div><strong>{{ $isEn ? 'Sizes:' : 'Taglie:' }}</strong> <span>{{ $taglie }}</span></div>
                     @endif
                 </div>
 
@@ -431,17 +460,17 @@
                     <div class="flex flex-wrap items-center gap-2.5" x-data="{ showBarcodes: false }">
                         @if($docConformita)
                             <a href="{{ $docConformita }}" target="_blank" class="btn-bicap-download">
-                                DICHIARAZIONE DI CONFORMITÀ
+                                {{ $isEn ? 'DECLARATION OF CONFORMITY' : 'DICHIARAZIONE DI CONFORMITÀ' }}
                             </a>
                         @endif
                         @if($schedaTecnica)
                             <a href="{{ $schedaTecnica }}" target="_blank" class="btn-bicap-download">
-                                SCHEDA TECNICA
+                                {{ $isEn ? 'TECHNICAL DATA SHEET' : 'SCHEDA TECNICA' }}
                             </a>
                         @endif
                         @if($catalogo)
                             <a href="{{ $catalogo }}" target="_blank" class="btn-bicap-download">
-                                CATALOGO
+                                {{ $isEn ? 'CATALOGUE' : 'CATALOGO' }}
                             </a>
                         @endif
                         @if(!empty($barcodes))
@@ -451,10 +480,10 @@
                                     <span class="text-[9px]">▼</span>
                                 </button>
                                 <div x-show="showBarcodes" @click.away="showBarcodes = false" class="absolute left-0 top-full mt-1 bg-white border border-black shadow-lg p-3 z-50 min-w-[200px] max-h-60 overflow-y-auto text-xs" style="display: none;">
-                                    <div class="font-bold text-black uppercase mb-1.5 border-b pb-1">Codici EAN / GTIN</div>
+                                    <div class="font-bold text-black uppercase mb-1.5 border-b pb-1">{{ $isEn ? 'EAN / GTIN Codes' : 'Codici EAN / GTIN' }}</div>
                                     @foreach($barcodes as $sz => $code)
                                         <div class="py-1 flex justify-between gap-2 border-b border-gray-100 last:border-0 font-mono">
-                                            <span class="font-bold text-black">Tg {{ $sz }}:</span>
+                                            <span class="font-bold text-black">{{ $isEn ? 'Size' : 'Tg' }} {{ $sz }}:</span>
                                             <span class="text-zinc-700">{{ $code }}</span>
                                         </div>
                                     @endforeach
@@ -489,13 +518,19 @@
                         <!-- Fallback se non ci sono articoli nella sezione -->
                         <div>
                             <button type="button" @click="accordionOpen = (accordionOpen === 'condizioni' ? null : 'condizioni')" class="bicap-accordion-btn">
-                                <span>CONDIZIONI DI VENDITA</span>
+                                <span>{{ $isEn ? 'TERMS OF SALE' : 'CONDIZIONI DI VENDITA' }}</span>
                                 <span class="font-bold text-lg" x-text="accordionOpen === 'condizioni' ? '−' : '+'"></span>
                             </button>
                             <div x-show="accordionOpen === 'condizioni'" x-collapse class="bicap-accordion-content">
-                                <p class="mb-2"><strong>Acquisto on-line dei prodotti:</strong> Per poter acquistare on-line gli articoli del negozio, il Cliente deve accedere al catalogo prodotti dal menù "SHOP".</p>
-                                <p class="mb-2"><strong>Prezzo di vendita:</strong> Per ogni articolo è indicato il prezzo unitario espresso in EURO (€), I.V.A. compresa e al netto dei costi di spedizione.</p>
-                                <p><strong>Modalità di pagamento:</strong> Carta di credito (VISA, MASTERCARD, STRIPE), Bonifico bancario, Circuito PAYPAL.</p>
+                                @if($isEn)
+                                    <p class="mb-2"><strong>Online purchase of products:</strong> To purchase items online, the Customer must access the product catalogue from the "SHOP" menu.</p>
+                                    <p class="mb-2"><strong>Sale price:</strong> For each item the unit price is indicated in EURO (€), VAT included and excluding shipping costs.</p>
+                                    <p><strong>Payment methods:</strong> Credit card (VISA, MASTERCARD, STRIPE), Bank transfer, PAYPAL.</p>
+                                @else
+                                    <p class="mb-2"><strong>Acquisto on-line dei prodotti:</strong> Per poter acquistare on-line gli articoli del negozio, il Cliente deve accedere al catalogo prodotti dal menù "SHOP".</p>
+                                    <p class="mb-2"><strong>Prezzo di vendita:</strong> Per ogni articolo è indicato il prezzo unitario espresso in EURO (€), I.V.A. compresa e al netto dei costi di spedizione.</p>
+                                    <p><strong>Modalità di pagamento:</strong> Carta di credito (VISA, MASTERCARD, STRIPE), Bonifico bancario, Circuito PAYPAL.</p>
+                                @endif
                             </div>
                         </div>
                     @endif
@@ -527,11 +562,11 @@
                 <hr class="simboli-hr">
                 <div class="simboli-row">
                     <div class="simboli-label">
-                        <strong>COMPONENTI</strong>
+                        <strong>{{ $isEn ? 'COMPONENTS' : 'COMPONENTI' }}</strong>
                     </div>
                     <div class="simboli-content simboli-content-componenti">
                         @foreach($componenti as $comp)
-                            <img src="{{ $comp }}" alt="Componente" onerror="this.remove()">
+                            <img src="{{ $comp }}" alt="{{ $isEn ? 'Component' : 'Componente' }}" onerror="this.remove()">
                         @endforeach
                     </div>
                 </div>
@@ -542,11 +577,11 @@
                 <hr class="simboli-hr">
                 <div class="simboli-row">
                     <div class="simboli-label">
-                        <strong>SICUREZZA</strong>
+                        <strong>{{ $isEn ? 'SAFETY' : 'SICUREZZA' }}</strong>
                     </div>
                     <div class="simboli-content simboli-content-sicurezza">
                         @foreach($safetyIcons as $icon)
-                            <img src="{{ $icon }}" alt="Sicurezza" onerror="this.remove()">
+                            <img src="{{ $icon }}" alt="{{ $isEn ? 'Safety' : 'Sicurezza' }}" onerror="this.remove()">
                         @endforeach
                     </div>
                 </div>
@@ -557,7 +592,7 @@
                 <hr class="simboli-hr">
                 <div class="simboli-row">
                     <div class="simboli-label">
-                        <strong>SETTORI DI UTILIZZO</strong>
+                        <strong>{{ $isEn ? 'SECTORS OF USE' : 'SETTORI DI UTILIZZO' }}</strong>
                     </div>
                     <div class="simboli-content">
                         <span class="simboli-settori-text">
@@ -572,7 +607,7 @@
                 <hr class="simboli-hr">
                 <div class="simboli-row-start">
                     <div class="simboli-label pt-0.5">
-                        <strong>DESCRIZIONE</strong>
+                        <strong>{{ $isEn ? 'DESCRIPTION' : 'DESCRIZIONE' }}</strong>
                     </div>
                     <div class="flex-1 overflow-hidden">
                         <div class="simboli-descrizione" :class="descExpanded ? 'expanded' : ''">
@@ -581,7 +616,7 @@
                         <button type="button" 
                                 class="simboli-toggle-descrizione" 
                                 @click="descExpanded = !descExpanded">
-                            <span x-text="descExpanded ? 'Leggi meno' : 'Leggi di più'"></span>
+                            <span x-text="descExpanded ? '{{ $isEn ? 'Read less' : 'Leggi meno' }}' : '{{ $isEn ? 'Read more' : 'Leggi di più' }}'"></span>
                             <i class="fa ml-1.5 text-xs" :class="descExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                         </button>
                     </div>
@@ -598,7 +633,7 @@
         <div class="bicap-correlati-banner">
             <div class="max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8">
                 <h3 class="bicap-correlati-titolo">
-                    POTREBBE INTERESSARTI
+                    {{ $isEn ? 'YOU MAY ALSO LIKE' : 'POTREBBE INTERESSARTI' }}
                 </h3>
             </div>
         </div>

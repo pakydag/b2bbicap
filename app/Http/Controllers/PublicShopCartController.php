@@ -54,14 +54,16 @@ class PublicShopCartController extends Controller
                 $availableStock = max(0, (int)$variant->quantity);
             }
 
+            $isEn = app()->getLocale() === 'en';
             if (!$variant || $availableStock <= 0) {
+                $errMsg = $isEn ? "Size {$taglia} is currently out of stock." : "La taglia {$taglia} non è al momento disponibile in magazzino.";
                 if ($request->wantsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => "La taglia {$taglia} non è al momento disponibile in magazzino."
+                        'message' => $errMsg
                     ], 422);
                 }
-                return redirect()->back()->with('error', "La taglia {$taglia} non è al momento disponibile in magazzino.");
+                return redirect()->back()->with('error', $errMsg);
             }
 
             $cartKey = 'b2b_' . $b2bProduct->id . '_' . $taglia;
@@ -69,13 +71,16 @@ class PublicShopCartController extends Controller
             if (($currentInCart + $quantita) > $availableStock) {
                 $quantita = max(1, $availableStock - $currentInCart);
                 if ($currentInCart >= $availableStock) {
+                    $maxMsg = $isEn 
+                        ? "Maximum available stock ({$availableStock} pairs) already in cart for size {$taglia}."
+                        : "Disponibilità massima ({$availableStock} paia) già raggiunta nel carrello per la taglia {$taglia}.";
                     if ($request->wantsJson()) {
                         return response()->json([
                             'success' => false,
-                            'message' => "Hai già aggiunto la disponibilità massima ({$availableStock} paia) per la taglia {$taglia}."
+                            'message' => $maxMsg
                         ], 422);
                     }
-                    return redirect()->back()->with('error', "Disponibilità massima ({$availableStock} paia) già raggiunta nel carrello per la taglia {$taglia}.");
+                    return redirect()->back()->with('error', $maxMsg);
                 }
             }
 
@@ -104,12 +109,12 @@ class PublicShopCartController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Prodotto aggiunto al carrello!',
+                    'message' => $isEn ? 'Product added to cart!' : 'Prodotto aggiunto al carrello!',
                     'cart_count' => array_sum(array_column($cart, 'quantita'))
                 ]);
             }
 
-            return redirect()->route('public.shop.cart.index')->with('success', 'Prodotto aggiunto al carrello con successo!');
+            return redirect()->route('public.shop.cart.index')->with('success', $isEn ? 'Product successfully added to cart!' : 'Prodotto aggiunto al carrello con successo!');
         }
 
         // 2. Fallback per prodotti legacy ShopVariant
