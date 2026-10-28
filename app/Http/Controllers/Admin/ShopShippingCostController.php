@@ -14,8 +14,9 @@ class ShopShippingCostController extends Controller
         $costs = ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
         $freeThreshold = Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89;
         $freeShippingScope = Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
+        $contrassegnoFee = Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 5.00;
         
-        return view('admin.shop.shipping_costs.index', compact('costs', 'freeThreshold', 'freeShippingScope'));
+        return view('admin.shop.shipping_costs.index', compact('costs', 'freeThreshold', 'freeShippingScope', 'contrassegnoFee'));
     }
 
     public function store(Request $request)
@@ -105,7 +106,8 @@ class ShopShippingCostController extends Controller
     {
         $request->validate([
             'shop_free_shipping_threshold' => 'nullable|numeric|min:0',
-            'shop_free_shipping_scope' => 'required|in:italy,all'
+            'shop_free_shipping_scope' => 'required|in:italy,all',
+            'payment_contrassegno_fee' => 'nullable|numeric|min:0'
         ]);
 
         Setting::updateOrCreate(
@@ -118,8 +120,15 @@ class ShopShippingCostController extends Controller
             ['value' => $request->shop_free_shipping_scope ?? 'italy']
         );
 
+        if ($request->has('payment_contrassegno_fee')) {
+            Setting::updateOrCreate(
+                ['key' => 'payment_contrassegno_fee'],
+                ['value' => $request->payment_contrassegno_fee ?? 0]
+            );
+        }
+
         $scopeLabel = $request->shop_free_shipping_scope === 'all' ? 'Tutte le nazioni' : 'Solo Italia';
-        return redirect()->back()->with('success', "Soglia spedizione gratuita aggiornata con successo (Destinazioni: {$scopeLabel}).");
+        return redirect()->back()->with('success', "Impostazioni spedizione gratuita e contrassegno aggiornate con successo (Spedizione gratuita: {$scopeLabel}).");
     }
 
     public function destroy(ShopShippingCost $shippingCost)

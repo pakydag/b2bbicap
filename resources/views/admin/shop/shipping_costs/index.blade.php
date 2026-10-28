@@ -86,10 +86,24 @@
                                         </div>
                                     </label>
                                 </div>
+                            <div class="pt-4 border-t border-slate-100">
+                                <label for="payment_contrassegno_fee" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                    <span>Supplemento Contrassegno (€)</span>
+                                    <span class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Solo Italia 🇮🇹</span>
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <span class="text-slate-400 font-bold">€</span>
+                                    </div>
+                                    <input type="number" step="0.01" min="0" name="payment_contrassegno_fee" id="payment_contrassegno_fee" value="{{ $contrassegnoFee ?? '5.00' }}" class="bg-slate-50 border-slate-200 text-slate-900 text-lg font-bold rounded-xl focus:ring-black focus:border-black block w-full pl-10 p-3.5 transition-all" placeholder="5.00">
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-1.5">
+                                    Costo fisso addizionale per chi sceglie il pagamento alla consegna (valido solo per l'Italia).
+                                </p>
                             </div>
 
                             <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-3.5 px-6 rounded-xl shadow transition-all flex items-center justify-center cursor-pointer">
-                                Salva Soglia e Ambito
+                                Salva Impostazioni
                             </button>
                         </form>
                     </div>
