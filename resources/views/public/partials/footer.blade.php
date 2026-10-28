@@ -1,3 +1,6 @@
+@php
+    $isEn = app()->getLocale() === 'en';
+@endphp
 <!-- ================= 1. NEWSLETTER SECTION (1-to-1 bicap.shop) ================= -->
 <section class="newsletter-centro" style="position: relative; background-image: url('{{ asset('storage/images/newsletter-bg.jpg') }}'); background-size: cover; background-position: center; width: 100%;">
     <!-- Dark overlay for readability -->
@@ -10,16 +13,16 @@
                     NEWSLETTER
                 </h4>
                 <p style="font-family: 'Montserrat', sans-serif !important; font-size: 14px !important; line-height: 1.6 !important; color: #ffffff !important; margin: 0 0 14px 0 !important;">
-                    Aggiornati sugli ultimi prodotti ed ottieni subito uno sconto del 5% da usare per il tuo prossimo acquisto!
+                    {{ $isEn ? 'Stay updated on the latest products and get a 5% discount on your next purchase!' : 'Aggiornati sugli ultimi prodotti ed ottieni subito uno sconto del 5% da usare per il tuo prossimo acquisto!' }}
                 </p>
                 <p style="font-family: 'Montserrat', sans-serif !important; font-size: 13px !important; line-height: 1.5 !important; color: #cccccc !important; margin: 0 !important;">
-                    Sconto utilizzabile su una spesa minima del valore di 100€.
+                    {{ $isEn ? 'Discount valid on a minimum order of €100.' : 'Sconto utilizzabile su una spesa minima del valore di 100€.' }}
                 </p>
             </div>
 
             <!-- Right Form Column -->
             <div style="flex: 1 1 380px; max-width: 440px; width: 100%;">
-                <form onsubmit="event.preventDefault(); alert('Grazie per esserti iscritto alla nostra Newsletter!');" style="width: 100%; display: flex; flex-direction: column;">
+                <form onsubmit="event.preventDefault(); alert('{{ $isEn ? 'Thank you for subscribing to our newsletter!' : 'Grazie per esserti iscritto alla nostra Newsletter!' }}');" style="width: 100%; display: flex; flex-direction: column;">
                     
                     <!-- Email input -->
                     <input type="email" 
@@ -32,13 +35,13 @@
                             style="width: 100%; height: 44px; background-color: #fedb00 !important; color: #000000 !important; font-family: 'Bebas Neue', sans-serif !important; font-size: 22px !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; border: 1px solid #fedb00 !important; cursor: pointer !important; display: flex; align-items: center; justify-content: center; margin: 0 0 10px 0; transition: opacity 0.2s;"
                             onmouseover="this.style.opacity='0.9'" 
                             onmouseout="this.style.opacity='1'">
-                        ISCRIVITI
+                        {{ $isEn ? 'SUBSCRIBE' : 'ISCRIVITI' }}
                     </button>
 
                     <!-- Informativa Newsletter link -->
                     <div style="margin-bottom: 8px;">
                         <a href="https://www.bicap.it/bicap-Informativa-Newsletter" target="_blank" rel="noopener noreferrer" style="color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 11.5px; text-decoration: underline;">
-                            <u>Informativa Newsletter</u>
+                            <u>{{ $isEn ? 'Newsletter Information Notice' : 'Informativa Newsletter' }}</u>
                         </a>
                     </div>
 
@@ -46,11 +49,11 @@
                     <div style="display: flex; align-items: center; gap: 20px; color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600;">
                         <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
                             <input type="radio" name="nl_op" value="IN" checked style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
-                            <span>Iscriviti</span>
+                            <span>{{ $isEn ? 'Subscribe' : 'Iscriviti' }}</span>
                         </label>
                         <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
                             <input type="radio" name="nl_op" value="OUT" style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
-                            <span>Cancellati</span>
+                            <span>{{ $isEn ? 'Unsubscribe' : 'Cancellati' }}</span>
                         </label>
                     </div>
                 </form>
@@ -68,13 +71,13 @@
             <!-- Colonna 1: MENÙ -->
             <div>
                 <h4 style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 14px !important; letter-spacing: 1px !important; text-transform: uppercase !important; margin: 0 0 24px 0 !important;">
-                    MENÙ
+                    {{ $isEn ? 'MENU' : 'MENÙ' }}
                 </h4>
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
                     <li><a href="{{ url('/mission-vision') }}">MISSION &amp; VISION</a></li>
-                    <li><a href="{{ url('/condizioni-di-vendita') }}">SUPPORTO</a></li>
+                    <li><a href="{{ url('/condizioni-di-vendita') }}">{{ $isEn ? 'SUPPORT' : 'SUPPORTO' }}</a></li>
                     <li><a href="{{ route('public.home') }}">SHOP</a></li>
-                    <li><a href="{{ route('public.account.dashboard') }}" style="color: #ffffff !important; font-weight: 700;">AREA PERSONALE</a></li>
+                    <li><a href="{{ route('public.account.dashboard') }}" style="color: #ffffff !important; font-weight: 700;">{{ $isEn ? 'PERSONAL AREA' : 'AREA PERSONALE' }}</a></li>
                     <li><a href="{{ route('login') }}" style="color: #fedb00 !important; font-weight: 700;">PORTALE B2B</a></li>
                 </ul>
             </div>
@@ -82,27 +85,27 @@
             <!-- Colonna 2: AREA LEGALE -->
             <div>
                 <h4 style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 14px !important; letter-spacing: 1px !important; text-transform: uppercase !important; margin: 0 0 24px 0 !important;">
-                    AREA LEGALE
+                    {{ $isEn ? 'LEGAL AREA' : 'AREA LEGALE' }}
                 </h4>
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
                     <li><a href="https://www.bicap.it/bicap-Privacy-Policy" target="_blank" rel="noopener noreferrer">PRIVACY POLICY</a></li>
-                    <li><a href="https://www.bicap.it/bicap-Informativa-Form-Contatti" target="_blank" rel="noopener noreferrer">INFORMATIVA FORM CONTATTI</a></li>
-                    <li><a href="https://www.bicap.it/bicap-Informativa-Newsletter" target="_blank" rel="noopener noreferrer">INFORMATIVA NEWSLETTER</a></li>
-                    <li><a href="https://www.bicap.it/bicap-Informativa-Cookie" target="_blank" rel="noopener noreferrer">INFORMATIVA COOKIE</a></li>
-                    <li><a href="https://www.bicap.it/bicap-Informativa-Form-Registrazione" target="_blank" rel="noopener noreferrer">INFORMATIVA FORM REGISTRAZIONE</a></li>
+                    <li><a href="https://www.bicap.it/bicap-Informativa-Form-Contatti" target="_blank" rel="noopener noreferrer">{{ $isEn ? 'CONTACT FORM NOTICE' : 'INFORMATIVA FORM CONTATTI' }}</a></li>
+                    <li><a href="https://www.bicap.it/bicap-Informativa-Newsletter" target="_blank" rel="noopener noreferrer">{{ $isEn ? 'NEWSLETTER NOTICE' : 'INFORMATIVA NEWSLETTER' }}</a></li>
+                    <li><a href="https://www.bicap.it/bicap-Informativa-Cookie" target="_blank" rel="noopener noreferrer">{{ $isEn ? 'COOKIE NOTICE' : 'INFORMATIVA COOKIE' }}</a></li>
+                    <li><a href="https://www.bicap.it/bicap-Informativa-Form-Registrazione" target="_blank" rel="noopener noreferrer">{{ $isEn ? 'REGISTRATION FORM NOTICE' : 'INFORMATIVA FORM REGISTRAZIONE' }}</a></li>
                 </ul>
             </div>
 
             <!-- Colonna 3: SUPPORTO -->
             <div>
                 <h4 style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 14px !important; letter-spacing: 1px !important; text-transform: uppercase !important; margin: 0 0 24px 0 !important;">
-                    SUPPORTO
+                    {{ $isEn ? 'SUPPORT' : 'SUPPORTO' }}
                 </h4>
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
-                    <li><a href="{{ url('/condizioni-di-vendita') }}">CONDIZIONI DI VENDITA</a></li>
-                    <li><a href="{{ url('/resi-e-rimborsi') }}">RESI E RIMBORSI</a></li>
-                    <li><a href="{{ url('/spedizioni') }}">SPEDIZIONI</a></li>
-                    <li><a href="{{ url('/guida-taglie') }}">GUIDA ALLE TAGLIE</a></li>
+                    <li><a href="{{ url('/condizioni-di-vendita') }}">{{ $isEn ? 'TERMS OF SALE' : 'CONDIZIONI DI VENDITA' }}</a></li>
+                    <li><a href="{{ url('/resi-e-rimborsi') }}">{{ $isEn ? 'RETURNS & REFUNDS' : 'RESI E RIMBORSI' }}</a></li>
+                    <li><a href="{{ url('/spedizioni') }}">{{ $isEn ? 'SHIPPING' : 'SPEDIZIONI' }}</a></li>
+                    <li><a href="{{ url('/guida-taglie') }}">{{ $isEn ? 'SIZE GUIDE' : 'GUIDA ALLE TAGLIE' }}</a></li>
                     <li><a href="{{ url('/faq') }}">FAQ</a></li>
                 </ul>
             </div>

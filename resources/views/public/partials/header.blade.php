@@ -1,6 +1,6 @@
 @php
     $siteLogo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?: 'storage/logo/logo-bicap.png';
-    $currentLocale = session('locale', 'it');
+    $currentLocale = app()->getLocale();
     $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89);
     $freeScope = \App\Models\Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
 @endphp
@@ -8,9 +8,9 @@
 <!-- Top Announcement Bar (Yellow Banner - Scrolls away naturally when page scrolls) -->
 <div class="bicap-top-banner" style="background-color: #fedb00 !important; color: #000000 !important; width: 100% !important; text-align: center !important; padding: 7px 16px !important; font-family: 'Montserrat', sans-serif !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.5px !important; text-transform: uppercase !important; border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; user-select: none !important; position: relative !important; z-index: 40 !important; box-sizing: border-box !important;">
     @if($freeThreshold > 0)
-        SPEDIZIONE GRATUITA {{ $freeScope === 'all' ? '' : 'ITALIA ' }}a partire da € {{ (int)$freeThreshold }}
+        {{ $currentLocale === 'en' ? ('FREE SHIPPING ' . ($freeScope === 'all' ? '' : 'IN ITALY ') . 'FROM € ' . (int)$freeThreshold) : ('SPEDIZIONE GRATUITA ' . ($freeScope === 'all' ? '' : 'ITALIA ') . 'A PARTIRE DA € ' . (int)$freeThreshold) }}
     @else
-        SPEDIZIONI VELOCI IN TUTTA ITALIA ED EUROPA
+        {{ $currentLocale === 'en' ? 'FAST SHIPPING THROUGHOUT ITALY AND EUROPE' : 'SPEDIZIONI VELOCI IN TUTTA ITALIA ED EUROPA' }}
     @endif
 </div>
 
@@ -46,13 +46,13 @@
                     SHOP
                 </a>
                 <a href="{{ url('/condizioni-di-vendita') }}" class="bicap-nav-link">
-                    CONDIZIONI DI VENDITA
+                    {{ $currentLocale === 'en' ? 'TERMS OF SALE' : 'CONDIZIONI DI VENDITA' }}
                 </a>
                 <a href="{{ url('/resi-e-rimborsi') }}" class="bicap-nav-link">
-                    RESI E RIMBORSI
+                    {{ $currentLocale === 'en' ? 'RETURNS & REFUNDS' : 'RESI E RIMBORSI' }}
                 </a>
                 <a href="{{ url('/spedizioni') }}" class="bicap-nav-link">
-                    SPEDIZIONI
+                    {{ $currentLocale === 'en' ? 'SHIPPING' : 'SPEDIZIONI' }}
                 </a>
                 <a href="{{ url('/faq') }}" class="bicap-nav-link">
                     FAQ
@@ -205,20 +205,20 @@
          x-transition:leave-end="opacity-0 -translate-y-2">
         <a href="{{ url('/mission-vision') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">MISSION & VISION</a>
         <a href="{{ route('public.home') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-[#fedb00]">SHOP</a>
-        <a href="{{ url('/condizioni-di-vendita') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">CONDIZIONI DI VENDITA</a>
-        <a href="{{ url('/resi-e-rimborsi') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">RESI E RIMBORSI</a>
-        <a href="{{ url('/spedizioni') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">SPEDIZIONI</a>
+        <a href="{{ url('/condizioni-di-vendita') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">{{ $currentLocale === 'en' ? 'TERMS OF SALE' : 'CONDIZIONI DI VENDITA' }}</a>
+        <a href="{{ url('/resi-e-rimborsi') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">{{ $currentLocale === 'en' ? 'RETURNS & REFUNDS' : 'RESI E RIMBORSI' }}</a>
+        <a href="{{ url('/spedizioni') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">{{ $currentLocale === 'en' ? 'SHIPPING' : 'SPEDIZIONI' }}</a>
         <a href="{{ url('/faq') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">FAQ</a>
         <a href="https://www.bicap.it" target="_blank" class="block py-2 text-sm font-bold uppercase tracking-wider text-[#fedb00]">BICAP.IT ↗</a>
         <div class="pt-3 border-t border-zinc-800 space-y-2">
             @auth
                 @if(in_array(auth()->user()->role, ['customer', 'user']) && !auth()->user()->b2b_customer_id)
-                    <div class="text-xs text-zinc-400 font-bold mb-1">AREA PERSONALE ({{ auth()->user()->name }})</div>
-                    <a href="{{ route('public.account.dashboard') }}" style="color: #ffffff !important;" class="block py-1.5 text-xs font-bold uppercase tracking-wider hover:text-[#fedb00]">I MIEI ORDINI</a>
-                    <a href="{{ route('public.account.profile') }}" style="color: #ffffff !important;" class="block py-1.5 text-xs font-bold uppercase tracking-wider hover:text-[#fedb00]">DATI PERSONALI & SPEDIZIONE</a>
+                    <div class="text-xs text-zinc-400 font-bold mb-1">{{ $currentLocale === 'en' ? 'PERSONAL AREA' : 'AREA PERSONALE' }} ({{ auth()->user()->name }})</div>
+                    <a href="{{ route('public.account.dashboard') }}" style="color: #ffffff !important;" class="block py-1.5 text-xs font-bold uppercase tracking-wider hover:text-[#fedb00]">{{ $currentLocale === 'en' ? 'MY ORDERS' : 'I MIEI ORDINI' }}</a>
+                    <a href="{{ route('public.account.profile') }}" style="color: #ffffff !important;" class="block py-1.5 text-xs font-bold uppercase tracking-wider hover:text-[#fedb00]">{{ $currentLocale === 'en' ? 'PERSONAL DATA & SHIPPING' : 'DATI PERSONALI & SPEDIZIONE' }}</a>
                     <form method="POST" action="{{ route('public.account.logout') }}" class="pt-1">
                         @csrf
-                        <button type="submit" class="text-xs font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 cursor-pointer">Esci dall'Account</button>
+                        <button type="submit" class="text-xs font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 cursor-pointer">{{ $currentLocale === 'en' ? 'Log out' : "Esci dall'Account" }}</button>
                     </form>
                 @else
                     <a href="{{ auth()->user()->role === 'admin' ? route('dashboard') : route('agent.dashboard') }}" class="inline-flex items-center gap-2 bg-[#fedb00] text-black px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider">

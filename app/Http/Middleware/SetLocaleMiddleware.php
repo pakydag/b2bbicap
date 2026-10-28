@@ -16,11 +16,13 @@ class SetLocaleMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Agenti e Amministrazione sono ESCLUSIVAMENTE in lingua Italiana
-        if ($request->user() && ($request->user()->role === 'admin' || $request->user()->role === 'agent')) {
-            $locale = 'it';
-            session(['locale' => 'it']);
-        } elseif ($request->has('lang') && in_array($request->query('lang'), ['it', 'en'])) {
+        // Il pannello di amministrazione e l'area agenti rimangono in lingua Italiana
+        if ($request->is('amministrazione*') || $request->is('agente*')) {
+            App::setLocale('it');
+            return $next($request);
+        }
+
+        if ($request->has('lang') && in_array($request->query('lang'), ['it', 'en'])) {
             $locale = $request->query('lang');
             session(['locale' => $locale]);
             if ($request->user()) {

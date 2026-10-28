@@ -3,6 +3,9 @@
 @section('title', 'BICAP Official SHOP | Scarpe Antinfortunistiche Made in Italy')
 
 @section('content')
+@php
+    $isEn = app()->getLocale() === 'en';
+@endphp
 <div class="bg-white text-black min-h-screen" x-data="bicapShopCatalog(@js($formattedProducts), @js($filterOptions))">
     
     <!-- Mobile Backdrop Overlay (only for < 1024px) -->
@@ -35,7 +38,7 @@
             <!-- 1. SETTORI Accordion -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.settori = !accordions.settori" class="bicap-filter-btn">
-                    <span>SETTORI</span>
+                    <span>{{ $isEn ? 'SECTORS' : 'SETTORI' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.settori ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.settori" x-collapse class="bicap-filter-content space-y-1 max-h-60 overflow-y-auto">
@@ -51,7 +54,7 @@
             <!-- 2. TIPOLOGIA CALZATURA Accordion -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.tipologia = !accordions.tipologia" class="bicap-filter-btn">
-                    <span>TIPOLOGIA CALZATURA</span>
+                    <span>{{ $isEn ? 'FOOTWEAR TYPE' : 'TIPOLOGIA CALZATURA' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.tipologia ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.tipologia" x-collapse class="bicap-filter-content space-y-1">
@@ -67,7 +70,7 @@
             <!-- 3. CATEGORIA DI SICUREZZA Accordion -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.cat_sicurezza = !accordions.cat_sicurezza" class="bicap-filter-btn">
-                    <span>CATEGORIA DI SICUREZZA</span>
+                    <span>{{ $isEn ? 'SAFETY CATEGORY' : 'CATEGORIA DI SICUREZZA' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.cat_sicurezza ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.cat_sicurezza" x-collapse class="bicap-filter-content space-y-1">
@@ -83,7 +86,7 @@
             <!-- 4. MATERIALE Accordion -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.materiale = !accordions.materiale" class="bicap-filter-btn">
-                    <span>MATERIALE</span>
+                    <span>{{ $isEn ? 'MATERIAL' : 'MATERIALE' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.materiale ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.materiale" x-collapse class="bicap-filter-content space-y-1">
@@ -99,7 +102,7 @@
             <!-- 5. PUNTALE Accordion -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.puntale = !accordions.puntale" class="bicap-filter-btn">
-                    <span>PUNTALE</span>
+                    <span>{{ $isEn ? 'TOE CAP' : 'PUNTALE' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.puntale ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.puntale" x-collapse class="bicap-filter-content space-y-1">
@@ -115,7 +118,7 @@
             <!-- 6. SUOLA Accordion -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.suola = !accordions.suola" class="bicap-filter-btn">
-                    <span>SUOLA</span>
+                    <span>{{ $isEn ? 'SOLE' : 'SUOLA' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.suola ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.suola" x-collapse class="bicap-filter-content space-y-1">
@@ -131,7 +134,7 @@
             <!-- 7. COLLEZIONE Accordion (OPEN BY DEFAULT - Identical to bicap.shop) -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.collezione = !accordions.collezione" class="bicap-filter-btn">
-                    <span>COLLEZIONE</span>
+                    <span>{{ $isEn ? 'COLLECTION' : 'COLLEZIONE' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.collezione ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.collezione" class="bicap-filter-content space-y-1">
@@ -147,7 +150,7 @@
             <!-- 8. CALZATA Accordion -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.calzata = !accordions.calzata" class="bicap-filter-btn">
-                    <span>CALZATA</span>
+                    <span>{{ $isEn ? 'FIT' : 'CALZATA' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.calzata ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.calzata" x-collapse class="bicap-filter-content space-y-1">
@@ -163,7 +166,7 @@
             <!-- 9. NORMA Accordion -->
             <div class="border-b border-[#dedede]">
                 <button @click="accordions.norma = !accordions.norma" class="bicap-filter-btn">
-                    <span>NORMA</span>
+                    <span>{{ $isEn ? 'STANDARD' : 'NORMA' }}</span>
                     <span class="bicap-filter-icon" x-text="accordions.norma ? '−' : '+'"></span>
                 </button>
                 <div x-show="accordions.norma" x-collapse class="bicap-filter-content space-y-1">
@@ -179,7 +182,7 @@
             <!-- Reset All Filters if Active -->
             <div x-show="activeFilterCount() > 0" class="p-4">
                 <button @click="resetFilters()" class="w-full py-2 border border-black text-black font-bold uppercase text-xs hover:bg-black hover:text-white transition">
-                    Resetta Filtri
+                    {{ $isEn ? 'RESET FILTERS' : 'RESETTA FILTRI' }}
                 </button>
             </div>
         </aside>
@@ -194,8 +197,8 @@
                         @click="sidebarOpen = true" 
                         style="background-color: #fedb00 !important; color: #000000 !important; font-family: 'Bebas Neue', sans-serif !important;"
                         class="inline-flex items-center justify-center px-6 py-1.5 text-[20px] font-bold tracking-wider uppercase cursor-pointer hover:opacity-90 active:scale-95 shadow-xs transition"
-                        title="Apri Filtri">
-                    FILTRO +
+                        title="{{ $isEn ? 'Open Filters' : 'Apri Filtri' }}">
+                    {{ $isEn ? 'FILTER +' : 'FILTRO +' }}
                 </button>
 
                 <!-- Active Filter Chips -->
@@ -212,7 +215,7 @@
                     <button x-show="activeFilterCount() > 0" 
                             @click="resetFilters()" 
                             class="text-xs text-red-600 font-bold uppercase tracking-wider hover:underline ml-2">
-                        Cancella tutti
+                        {{ $isEn ? 'Clear all' : 'Cancella tutti' }}
                     </button>
                 </div>
             </div>
@@ -240,7 +243,7 @@
 
                                 <!-- Product Subtitle (Code + Security Standard - Montserrat 13px regular uppercase) -->
                                 <p class="bicap-product-subtitle text-[13px] font-normal uppercase text-[#555555] tracking-[0.5px] text-center leading-normal"
-                                   x-text="product.subtitle">
+                                    x-text="product.subtitle">
                                 </p>
                             </a>
                         </article>
@@ -254,13 +257,13 @@
                         👟
                     </div>
                     <h3 class="text-base font-black uppercase tracking-tight text-zinc-800">
-                        Nessun prodotto trovato
+                        {{ $isEn ? 'No products found' : 'Nessun prodotto trovato' }}
                     </h3>
                     <p class="text-xs text-zinc-500 mt-1 max-w-md mx-auto">
-                        Nessuna scarpa corrisponde a tutti i filtri selezionati. Prova a rimuovere qualche filtro per visualizzare altri modelli.
+                        {{ $isEn ? 'No shoes match all selected filters. Try removing some filters to view other models.' : 'Nessuna scarpa corrisponde a tutti i filtri selezionati. Prova a rimuovere qualche filtro per visualizzare altri modelli.' }}
                     </p>
                     <button @click="resetFilters()" style="background-color: #fedb00 !important; color: #000000 !important;" class="mt-4 inline-flex items-center gap-2 font-black uppercase text-xs px-4 py-2 rounded-lg">
-                        Reimposta Filtri
+                        {{ $isEn ? 'Reset Filters' : 'Reimposta Filtri' }}
                     </button>
                 </div>
             </main>

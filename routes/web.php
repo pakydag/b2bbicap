@@ -40,17 +40,12 @@ Route::get('/prodotto/{product}', [PublicController::class, 'productDetail'])->n
 
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['it', 'en'])) {
-        if (auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->role === 'agent')) {
-            session(['locale' => 'it']);
-            \Illuminate\Support\Facades\App::setLocale('it');
-        } else {
-            session(['locale' => $locale]);
-            \Illuminate\Support\Facades\App::setLocale($locale);
-            if (auth()->check()) {
-                auth()->user()->update(['locale' => $locale]);
-                if (auth()->user()->b2bCustomer) {
-                    auth()->user()->b2bCustomer->update(['locale' => $locale]);
-                }
+        session(['locale' => $locale]);
+        \Illuminate\Support\Facades\App::setLocale($locale);
+        if (auth()->check()) {
+            auth()->user()->update(['locale' => $locale]);
+            if (auth()->user()->b2bCustomer) {
+                auth()->user()->b2bCustomer->update(['locale' => $locale]);
             }
         }
     }
