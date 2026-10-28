@@ -11,6 +11,7 @@ class PublicShopCartController extends Controller
         $cart = session()->get('cart', []);
         $shippingCosts = \App\Models\ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
         $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89.00);
+        $freeShippingScope = \App\Models\Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
         
         $totale = 0;
         if (is_array($cart)) {
@@ -19,7 +20,7 @@ class PublicShopCartController extends Controller
             }
         }
 
-        return view('public.shop.cart', compact('cart', 'shippingCosts', 'freeThreshold', 'totale'));
+        return view('public.shop.cart', compact('cart', 'shippingCosts', 'freeThreshold', 'freeShippingScope', 'totale'));
     }
 
     public function add(Request $request)
@@ -181,6 +182,7 @@ class PublicShopCartController extends Controller
 
         $shippingCosts = \App\Models\ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
         $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89.00);
+        $freeShippingScope = \App\Models\Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
 
         $totale = 0;
         if (is_array($cart)) {
@@ -189,7 +191,7 @@ class PublicShopCartController extends Controller
             }
         }
 
-        return view('public.shop.checkout', compact('cart', 'shippingCosts', 'freeThreshold', 'totale'));
+        return view('public.shop.checkout', compact('cart', 'shippingCosts', 'freeThreshold', 'freeShippingScope', 'totale'));
     }
 
     public function processCheckout(Request $request)
@@ -296,8 +298,10 @@ class PublicShopCartController extends Controller
         // Calcolo Dinamico Spedizione
         $costoSpedizione = (float)(\App\Models\ShopShippingCost::where('nazione', $request->nazione)->value('costo') ?? 20.00);
         $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89.00);
+        $freeShippingScope = \App\Models\Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
 
-        if (strtolower(trim($request->nazione)) === 'italia' && $freeThreshold > 0 && $totaleImponibile >= $freeThreshold) {
+        $isFreeEligible = ($freeShippingScope === 'all') || (strtolower(trim($request->nazione)) === 'italia');
+        if ($isFreeEligible && $freeThreshold > 0 && $totaleImponibile >= $freeThreshold) {
             $costoSpedizione = 0;
         }
 

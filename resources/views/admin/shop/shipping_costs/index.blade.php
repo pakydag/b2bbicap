@@ -47,14 +47,14 @@
                             Spedizione Gratuita
                         </h3>
                         <p class="text-sm text-slate-500 mb-6 leading-relaxed">
-                            Imposta la soglia minima dell'ordine per offrire la spedizione gratuita per l'Italia (predefinito € 89). Imposta a 0 per disabilitare.
+                            Imposta la soglia minima dell'ordine per offrire la spedizione gratuita e scegli se applicarla solo per le consegne in Italia o a tutte le nazioni. Imposta a 0 per disabilitare.
                         </p>
 
                         <form action="{{ route('admin.shop.shipping_costs.threshold') }}" method="POST" class="space-y-6">
                             @csrf
                             @method('PATCH')
                             <div>
-                                <label for="shop_free_shipping_threshold" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Soglia Ordine Spedizione Gratuita (€)</label>
+                                <label for="shop_free_shipping_threshold" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Soglia Minima Ordine (€)</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <span class="text-slate-400 font-bold">€</span>
@@ -62,8 +62,34 @@
                                     <input type="number" step="0.01" name="shop_free_shipping_threshold" id="shop_free_shipping_threshold" value="{{ $freeThreshold }}" class="bg-slate-50 border-slate-200 text-slate-900 text-lg font-bold rounded-xl focus:ring-black focus:border-black block w-full pl-10 p-3.5 transition-all" placeholder="Es. 89.00">
                                 </div>
                             </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Applica Spedizione Gratuita a</label>
+                                <div class="space-y-2.5">
+                                    <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50/60 cursor-pointer transition-all has-checked:border-slate-900 has-checked:bg-white has-checked:shadow-sm">
+                                        <input type="radio" name="shop_free_shipping_scope" value="italy" {{ ($freeShippingScope ?? 'italy') === 'italy' ? 'checked' : '' }} class="w-4 h-4 text-black focus:ring-black border-slate-300">
+                                        <div class="flex flex-col">
+                                            <span class="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                                                <span>🇮🇹</span> Solo Italia
+                                            </span>
+                                            <span class="text-[11px] text-slate-500">Solo per gli ordini con consegna in Italia</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50/60 cursor-pointer transition-all has-checked:border-slate-900 has-checked:bg-white has-checked:shadow-sm">
+                                        <input type="radio" name="shop_free_shipping_scope" value="all" {{ ($freeShippingScope ?? 'italy') === 'all' ? 'checked' : '' }} class="w-4 h-4 text-black focus:ring-black border-slate-300">
+                                        <div class="flex flex-col">
+                                            <span class="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                                                <span>🌍</span> Tutte le Nazioni
+                                            </span>
+                                            <span class="text-[11px] text-slate-500">Valida per tutte le 27 nazioni abilitate</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
                             <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-3.5 px-6 rounded-xl shadow transition-all flex items-center justify-center cursor-pointer">
-                                Salva Soglia
+                                Salva Soglia e Ambito
                             </button>
                         </form>
                     </div>

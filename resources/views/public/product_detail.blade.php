@@ -341,12 +341,18 @@
                 </form>
 
                 <!-- Free Shipping Banner (Green Truck) -->
-                <div class="flex items-center gap-2.5 text-xs font-bold uppercase text-[#008751] pt-1">
-                    <svg class="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24">
-                        <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-                    </svg>
-                    <span>SPEDIZIONE GRATUITA ITALIA A PARTIRE DA € 89</span>
-                </div>
+                @php
+                    $detailFreeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89);
+                    $detailFreeScope = \App\Models\Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
+                @endphp
+                @if($detailFreeThreshold > 0)
+                    <div class="flex items-center gap-2.5 text-xs font-bold uppercase text-[#008751] pt-1">
+                        <svg class="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24">
+                            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                        </svg>
+                        <span>SPEDIZIONE GRATUITA {{ $detailFreeScope === 'all' ? '' : 'ITALIA ' }}A PARTIRE DA € {{ (int)$detailFreeThreshold }}</span>
+                    </div>
+                @endif
 
                 <!-- Payment Methods Icons -->
                 <div class="flex items-center gap-3 pt-1 pb-3">

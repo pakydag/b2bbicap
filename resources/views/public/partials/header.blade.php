@@ -1,11 +1,17 @@
 @php
     $siteLogo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?: 'storage/logo/logo-bicap.png';
     $currentLocale = session('locale', 'it');
+    $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89);
+    $freeScope = \App\Models\Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
 @endphp
 
 <!-- Top Announcement Bar (Yellow Banner - Scrolls away naturally when page scrolls) -->
 <div class="bicap-top-banner" style="background-color: #fedb00 !important; color: #000000 !important; width: 100% !important; text-align: center !important; padding: 7px 16px !important; font-family: 'Montserrat', sans-serif !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.5px !important; text-transform: uppercase !important; border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; user-select: none !important; position: relative !important; z-index: 40 !important; box-sizing: border-box !important;">
-    SPEDIZIONE GRATUITA ITALIA a partire da € 89
+    @if($freeThreshold > 0)
+        SPEDIZIONE GRATUITA {{ $freeScope === 'all' ? '' : 'ITALIA ' }}a partire da € {{ (int)$freeThreshold }}
+    @else
+        SPEDIZIONI VELOCI IN TUTTA ITALIA ED EUROPA
+    @endif
 </div>
 
 <!-- Main Navigation Bar (Black Header - Sticks to top on scroll, edge-to-edge full width) -->

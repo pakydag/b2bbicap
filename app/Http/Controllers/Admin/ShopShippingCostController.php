@@ -13,8 +13,9 @@ class ShopShippingCostController extends Controller
     {
         $costs = ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
         $freeThreshold = Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89;
+        $freeShippingScope = Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
         
-        return view('admin.shop.shipping_costs.index', compact('costs', 'freeThreshold'));
+        return view('admin.shop.shipping_costs.index', compact('costs', 'freeThreshold', 'freeShippingScope'));
     }
 
     public function store(Request $request)
@@ -92,13 +93,19 @@ class ShopShippingCostController extends Controller
             ['value' => '89']
         );
 
-        return redirect()->back()->with('success', 'Nazioni UE (€ 20,00) e Italia (€ 8,00 con soglia spedizione gratuita a € 89) caricate con successo nel gestionale!');
+        Setting::updateOrCreate(
+            ['key' => 'shop_free_shipping_scope'],
+            ['value' => 'italy']
+        );
+
+        return redirect()->back()->with('success', 'Nazioni UE (€ 20,00) e Italia (€ 8,00 con soglia spedizione gratuita a € 89 solo Italia) caricate con successo nel gestionale!');
     }
 
     public function updateThreshold(Request $request)
     {
         $request->validate([
-            'shop_free_shipping_threshold' => 'nullable|numeric|min:0'
+            'shop_free_shipping_threshold' => 'nullable|numeric|min:0',
+            'shop_free_shipping_scope' => 'required|in:italy,all'
         ]);
 
         Setting::updateOrCreate(
@@ -106,7 +113,13 @@ class ShopShippingCostController extends Controller
             ['value' => $request->shop_free_shipping_threshold ?? 0]
         );
 
-        return redirect()->back()->with('success', 'Soglia spedizione gratuita aggiornata con successo.');
+        Setting::updateOrCreate(
+            ['key' => 'shop_free_shipping_scope'],
+            ['value' => $request->shop_free_shipping_scope ?? 'italy']
+        );
+
+        $scopeLabel = $request->shop_free_shipping_scope === 'all' ? 'Tutte le nazioni' : 'Solo Italia';
+        return redirect()->back()->with('success', "Soglia spedizione gratuita aggiornata con successo (Destinazioni: {$scopeLabel}).");
     }
 
     public function destroy(ShopShippingCost $shippingCost)

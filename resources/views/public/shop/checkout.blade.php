@@ -557,9 +557,9 @@
                                 <span x-show="shippingCost > 0">€ <span x-text="formatPrice(shippingCost)"></span></span>
                                 <span x-show="shippingCost == 0" class="text-emerald-600 font-bold uppercase tracking-wider text-xs">Gratis</span>
                                 
-                                <template x-if="nazione === 'Italia' && freeThreshold > 0 && subtotal < freeThreshold">
+                                <template x-if="isFreeEligible() && freeThreshold > 0 && subtotal < freeThreshold">
                                     <div class="absolute -top-10 right-0 bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Gratis con altri € <span x-text="formatPrice(freeThreshold - subtotal)"></span> in Italia
+                                        Gratis con altri € <span x-text="formatPrice(freeThreshold - subtotal)"></span><span x-text="freeShippingScope === 'all' ? '' : ' in Italia'"></span>
                                     </div>
                                 </template>
                             </dd>
@@ -596,6 +596,7 @@
             subtotal: {{ $totale ?? 0 }},
             shippingCost: 0,
             freeThreshold: {{ $freeThreshold }},
+            freeShippingScope: '{{ $freeShippingScope ?? "italy" }}',
             costs: @json($shippingCosts->pluck('costo', 'nazione')),
 
             password: '{{ old('password', '') }}',
@@ -668,10 +669,14 @@
                 this.updateShipping();
             },
             
+            isFreeEligible() {
+                return (this.freeShippingScope === 'all') || (this.nazione && this.nazione.toLowerCase() === 'italia');
+            },
+
             updateShipping() {
                 let cost = this.costs[this.nazione] !== undefined ? parseFloat(this.costs[this.nazione]) : 20.00;
                 
-                if (this.nazione === 'Italia' && this.freeThreshold > 0 && this.subtotal >= this.freeThreshold) {
+                if (this.isFreeEligible() && this.freeThreshold > 0 && this.subtotal >= this.freeThreshold) {
                     this.shippingCost = 0;
                 } else {
                     this.shippingCost = cost;
