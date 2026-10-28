@@ -181,8 +181,18 @@ class SyncB2bAll extends Command
                 $characteristics[$key] = trim($value);
             }
 
-            // Create or update B2bProduct: prezzo iniziale impostato a 0
-            // Identificato univocamente dalla combinazione di codice E nome (diversi modelli condividono lo stesso codice base)
+            // Estrazione Prezzo dal file Google Sheet (colonna "PREZZO CON IVA")
+            $rawGooglePrice = $data['PREZZO CON IVA'] ?? ($data['prezzo-con-iva'] ?? null);
+            $googlePrice = 0.0;
+            if (!empty($rawGooglePrice)) {
+                $cleanPrice = str_replace(',', '.', preg_replace('/[^\d.,]/', '', $rawGooglePrice));
+                $googlePrice = (float)$cleanPrice;
+            }
+
+            // Create or update B2bProduct: il prezzo è preso direttamente dal Google Sheet
+            $characteristics['PREZZO CON IVA'] = $googlePrice;
+
+            // Identificato univocamente dalla combinazione di codice E nome
             $product = B2bProduct::updateOrCreate(
                 [
                     'code' => $codice,
@@ -192,7 +202,7 @@ class SyncB2bAll extends Command
                     'b2b_brand_id' => $brand->id,
                     'description' => $data['descrizione-articolo-it'] ?? '',
                     'image' => $data['FOTO-PRINCIPALE-PRODOTTO-WEB'] ?? null,
-                    'price' => 0,
+                    'price' => $googlePrice,
                     'has_stock' => true,
                     'is_active' => true,
                     'characteristics' => $characteristics
@@ -206,9 +216,9 @@ class SyncB2bAll extends Command
                 if (!empty($data[$gtinKey])) {
                     $sizeStr = (string)$size;
                     $existingSizes[] = $sizeStr;
-                    $product->variants()->updateOrCreate(
+                    $product->variants()->firstOrCreate(
                         ['size' => $sizeStr, 'color' => 'UNICO'],
-                        ['quantity' => 100]
+                        ['quantity' => 0]
                     );
                 }
             }
@@ -284,61 +294,48 @@ class SyncB2bAll extends Command
         $size = filesize($destination);
         $this->info("Giacenza.csv scaricato con successo ({$size} byte).");
 
-        // Aggiorna prezzi dal file
-        $this->updateProductPricesFromGiacenza($destination);
+        // Aggiorna disponibilità e giacenze varianti dal file
+        $this->updateProductStocksFromGiacenza();
 
         return true;
     }
 
     /**
-     * Aggiorna i prezzi di listino base dal file Giacenza.csv
+     * Aggiorna le giacenze effettive delle varianti dal file Giacenza.csv
      */
-    protected function updateProductPricesFromGiacenza(string $csvPath): void
+    protected function updateProductStocksFromGiacenza(): void
     {
-        if (!file_exists($csvPath)) return;
-
-        $file = fopen($csvPath, 'r');
-        $headers = fgetcsv($file, 0, ';', '"', '\\');
-
-        $csvEntries = [];
-        while (($row = fgetcsv($file, 0, ';', '"', '\\')) !== false) {
-            if (count($row) < 6) continue;
-            $code = trim($row[0]);
-            $name = trim($row[1]);
-            $priceStr = trim($row[5] ?? '');
-
-            if (empty($code) || empty($priceStr)) continue;
-
-            $priceFloat = (float)str_replace(',', '.', $priceStr);
-            if ($priceFloat > 0 && !isset($csvEntries[$code])) {
-                $csvEntries[$code] = [
-                    'raw_code' => $code,
-                    'norm_code' => \App\Models\B2bProduct::normalizeCode($code),
-                    'name' => $name,
-                    'price' => $priceFloat
-                ];
-            }
-        }
-        fclose($file);
-
+        $this->info("Aggiornamento disponibilità varianti da Giacenza.csv...");
         $agentController = app(\App\Http\Controllers\Agent\AgentPortalController::class);
-        $products = B2bProduct::all();
-        $updatedPricesCount = 0;
+        $giacenzaData = $agentController->getGiacenzaData();
+        $products = B2bProduct::with('variants')->get();
+        $updatedVariantsCount = 0;
 
         foreach ($products as $product) {
-            $match = $agentController->findGiacenzaMatch($product, $csvEntries);
-            if ($match && !empty($match['price'])) {
-                $newPrice = (float)$match['price'];
-                if (abs((float)$product->price - $newPrice) > 0.001) {
-                    $product->price = $newPrice;
+            $match = $agentController->findGiacenzaMatch($product, $giacenzaData);
+            if ($match && isset($match['current_stock'])) {
+                $totalStock = 0;
+                foreach ($product->variants as $variant) {
+                    $size = $variant->size;
+                    // Quantità netta disponibile in pronta consegna (giacenza fisica - impegnato)
+                    $qty = max(0, (int)($match['current_stock'][$size] ?? 0));
+                    if ((int)$variant->quantity !== $qty) {
+                        $variant->quantity = $qty;
+                        $variant->save();
+                        $updatedVariantsCount++;
+                    }
+                    $totalStock += $qty;
+                }
+                $hasStock = ($totalStock > 0);
+                if ($product->has_stock !== $hasStock) {
+                    $product->has_stock = $hasStock;
                     $product->save();
-                    $updatedPricesCount++;
                 }
             }
         }
 
-        $this->info("Prezzi aggiornati per {$updatedPricesCount} prodotti.");
-        Log::info("[SyncB2bAll] Prezzi aggiornati per {$updatedPricesCount} prodotti.");
+        $this->info("Disponibilità giacenze aggiornate per {$updatedVariantsCount} varianti.");
+        Log::info("[SyncB2bAll] Disponibilità giacenze aggiornate per {$updatedVariantsCount} varianti da Giacenza.csv.");
     }
 
     /**

@@ -9,26 +9,118 @@ class PublicShopCartController extends Controller
     public function index()
     {
         $cart = session()->get('cart', []);
-        $shippingCosts = \App\Models\ShopShippingCost::orderBy('nazione')->get();
-        $freeThreshold = \App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 0;
+        $shippingCosts = \App\Models\ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
+        $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89.00);
         
-        return view('public.shop.cart', compact('cart', 'shippingCosts', 'freeThreshold'));
+        $totale = 0;
+        if (is_array($cart)) {
+            foreach ($cart as $item) {
+                $totale += ((float)($item['prezzo'] ?? 0) * (int)($item['quantita'] ?? 1));
+            }
+        }
+
+        return view('public.shop.cart', compact('cart', 'shippingCosts', 'freeThreshold', 'totale'));
     }
 
     public function add(Request $request)
     {
+        $cart = session()->get('cart', []);
+
+        // 1. Aggiunta da B2bProduct (catalogo principale del sito pubblico)
+        if ($request->filled('b2b_product_id')) {
+            $request->validate([
+                'b2b_product_id' => 'required|exists:b2b_products,id',
+                'quantita' => 'required|integer|min:1',
+                'taglia' => 'nullable|string'
+            ]);
+
+            $b2bProduct = \App\Models\B2bProduct::with('variants')->findOrFail($request->b2b_product_id);
+            $taglia = (string)($request->taglia ?: '');
+            $quantita = max(1, (int)$request->quantita);
+
+            // Cerca variante associata per taglia
+            $variant = $b2bProduct->variants->firstWhere('size', $taglia);
+
+            // Verifica giacenza disponibile effettiva da Giacenza.csv o DB
+            $agentController = app(\App\Http\Controllers\Agent\AgentPortalController::class);
+            $giacenzaData = $agentController->getGiacenzaData();
+            $match = $agentController->findGiacenzaMatch($b2bProduct, $giacenzaData);
+
+            $availableStock = 0;
+            if ($match && isset($match['current_stock'][$taglia])) {
+                $availableStock = max(0, (int)$match['current_stock'][$taglia]);
+            } elseif ($variant) {
+                $availableStock = max(0, (int)$variant->quantity);
+            }
+
+            if (!$variant || $availableStock <= 0) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "La taglia {$taglia} non è al momento disponibile in magazzino."
+                    ], 422);
+                }
+                return redirect()->back()->with('error', "La taglia {$taglia} non è al momento disponibile in magazzino.");
+            }
+
+            $cartKey = 'b2b_' . $b2bProduct->id . '_' . $taglia;
+            $currentInCart = isset($cart[$cartKey]) ? (int)$cart[$cartKey]['quantita'] : 0;
+            if (($currentInCart + $quantita) > $availableStock) {
+                $quantita = max(1, $availableStock - $currentInCart);
+                if ($currentInCart >= $availableStock) {
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Hai già aggiunto la disponibilità massima ({$availableStock} paia) per la taglia {$taglia}."
+                        ], 422);
+                    }
+                    return redirect()->back()->with('error', "Disponibilità massima ({$availableStock} paia) già raggiunta nel carrello per la taglia {$taglia}.");
+                }
+            }
+
+            $price = $b2bProduct->price ? (float)$b2bProduct->price : 89.00;
+            $foto = $b2bProduct->image_url ?: ($b2bProduct->characteristics['FOTO-PRINCIPALE-PRODOTTO-WEB'] ?? null);
+
+            if (isset($cart[$cartKey])) {
+                $cart[$cartKey]['quantita'] += $quantita;
+            } else {
+                $cart[$cartKey] = [
+                    'variant_id' => $cartKey,
+                    'b2b_product_id' => $b2bProduct->id,
+                    'b2b_variant_id' => $variant ? $variant->id : null,
+                    'prodotto_nome' => $b2bProduct->name,
+                    'sku' => $b2bProduct->code,
+                    'colore' => $variant?->color ?? 'UNICO',
+                    'taglia' => $taglia,
+                    'prezzo' => $price,
+                    'quantita' => $quantita,
+                    'foto' => $foto
+                ];
+            }
+
+            session()->put('cart', $cart);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Prodotto aggiunto al carrello!',
+                    'cart_count' => array_sum(array_column($cart, 'quantita'))
+                ]);
+            }
+
+            return redirect()->route('public.shop.cart.index')->with('success', 'Prodotto aggiunto al carrello con successo!');
+        }
+
+        // 2. Fallback per prodotti legacy ShopVariant
         $request->validate([
             'variant_id' => 'required|exists:shop_variants,id',
             'quantita' => 'required|integer|min:1'
         ]);
 
         $variant = \App\Models\ShopVariant::with('product')->findOrFail($request->variant_id);
+        $cartKey = (string)$variant->id;
         
-        $cart = session()->get('cart', []);
-        
-        $cartKey = $variant->id;
-        
-        $qtyRichiesta = $request->quantita;
+        $qtyRichiesta = (int)$request->quantita;
         if (isset($cart[$cartKey])) {
             $qtyRichiesta += $cart[$cartKey]['quantita'];
         }
@@ -41,30 +133,39 @@ class PublicShopCartController extends Controller
         }
 
         if (isset($cart[$cartKey])) {
-            $cart[$cartKey]['quantita'] += $request->quantita;
+            $cart[$cartKey]['quantita'] += (int)$request->quantita;
         } else {
             $prezzo = $variant->prezzo_scontato && $variant->prezzo_scontato > 0 ? $variant->prezzo_scontato : $variant->prezzo;
             $foto = $variant->foto ?? ($variant->product->foto_aggiuntive[0] ?? null);
             
             $cart[$cartKey] = [
-                'variant_id' => $variant->id,
+                'variant_id' => $cartKey,
                 'prodotto_nome' => $variant->product->nome,
                 'colore' => $variant->colore,
                 'taglia' => $variant->taglia,
                 'prezzo' => $prezzo,
-                'quantita' => $request->quantita,
+                'quantita' => (int)$request->quantita,
                 'foto' => $foto
             ];
         }
 
         session()->put('cart', $cart);
-        return redirect()->back()->with('success', 'Prodotto aggiunto al carrello!');
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Prodotto aggiunto al carrello!',
+                'cart_count' => array_sum(array_column($cart, 'quantita'))
+            ]);
+        }
+
+        return redirect()->route('public.shop.cart.index')->with('success', 'Prodotto aggiunto al carrello!');
     }
 
     public function remove($variant_id)
     {
-        $cart = session()->get('cart');
-        if(isset($cart[$variant_id])) {
+        $cart = session()->get('cart', []);
+        if (isset($cart[$variant_id])) {
             unset($cart[$variant_id]);
             session()->put('cart', $cart);
         }
@@ -75,20 +176,27 @@ class PublicShopCartController extends Controller
     {
         $cart = session()->get('cart', []);
         if (empty($cart)) {
-            return redirect()->route('public.shop.index')->with('error', 'Il tuo carrello è vuoto.');
+            return redirect()->route('public.home')->with('error', 'Il tuo carrello è vuoto.');
         }
 
-        $shippingCosts = \App\Models\ShopShippingCost::orderBy('nazione')->get();
-        $freeThreshold = \App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 0;
+        $shippingCosts = \App\Models\ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
+        $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89.00);
 
-        return view('public.shop.checkout', compact('cart', 'shippingCosts', 'freeThreshold'));
+        $totale = 0;
+        if (is_array($cart)) {
+            foreach ($cart as $item) {
+                $totale += ((float)($item['prezzo'] ?? 0) * (int)($item['quantita'] ?? 1));
+            }
+        }
+
+        return view('public.shop.checkout', compact('cart', 'shippingCosts', 'freeThreshold', 'totale'));
     }
 
     public function processCheckout(Request $request)
     {
         $cart = session()->get('cart', []);
         if (empty($cart)) {
-            return redirect()->route('public.shop.index')->with('error', 'Il tuo carrello è vuoto.');
+            return redirect()->route('public.home')->with('error', 'Il tuo carrello è vuoto.');
         }
 
         // 1. Validation for the different fields depending on checkout mode
@@ -111,13 +219,31 @@ class PublicShopCartController extends Controller
             // SDI e PEC sono solitamente opzionali
         }
 
+        $messages = [
+            'password.required' => 'La password è obbligatoria per creare un account.',
+            'password.min' => 'La password deve contenere almeno :min caratteri.',
+            'password.confirmed' => 'La conferma della password non coincide con la password inserita.',
+            'password.mixed' => 'La password deve contenere almeno una lettera maiuscola.',
+            'password.numbers' => 'La password deve contenere almeno un numero.',
+            'password.symbols' => 'La password deve contenere almeno un carattere speciale o strano (es. !@#$%&*...).',
+            'email.unique' => 'Questo indirizzo email risulta già registrato. Accedi con il tuo account o usa un\'altra email.',
+        ];
+
         // Se sceglie di registrarsi
         if ($request->checkout_mode === 'register') {
-            $rules['password'] = 'required|string|min:8|confirmed';
+            $rules['password'] = [
+                'required',
+                'string',
+                'confirmed',
+                \Illuminate\Validation\Rules\Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+            ];
             $rules['email'] .= '|unique:users,email'; // Unico nella tabella users
         }
 
-        $request->validate($rules);
+        $request->validate($rules, $messages);
 
         // 2. Handle User Creation if 'register'
         if ($request->checkout_mode === 'register') {
@@ -138,6 +264,10 @@ class PublicShopCartController extends Controller
             $customer->email = $request->email;
             // Genera una password casuale se è ospite e non ha scelto di registrarsi (richiesto da schema DB)
             $customer->password = \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12));
+        }
+
+        if ($request->checkout_mode === 'register') {
+            $customer->password = \Illuminate\Support\Facades\Hash::make($request->password);
         }
 
         $customer->nome = $request->nome;
@@ -164,10 +294,10 @@ class PublicShopCartController extends Controller
         }
 
         // Calcolo Dinamico Spedizione
-        $costoSpedizione = \App\Models\ShopShippingCost::where('nazione', $request->nazione)->value('costo') ?? 5.00;
-        $freeThreshold = \App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 0;
+        $costoSpedizione = (float)(\App\Models\ShopShippingCost::where('nazione', $request->nazione)->value('costo') ?? 20.00);
+        $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89.00);
 
-        if ($freeThreshold > 0 && $totaleImponibile >= $freeThreshold) {
+        if (strtolower(trim($request->nazione)) === 'italia' && $freeThreshold > 0 && $totaleImponibile >= $freeThreshold) {
             $costoSpedizione = 0;
         }
 
@@ -227,8 +357,7 @@ class PublicShopCartController extends Controller
                 'shop_order_id' => $order->id,
                 'shop_variant_id' => $variant ? $variant->id : null,
                 'nome_prodotto' => $item['prodotto_nome'],
-                'sku' => $variant ? $variant->sku : null,
-                'ean' => $variant ? $variant->ean : null,
+                'sku' => $variant ? $variant->sku : ($item['sku'] ?? null),
                 'colore' => $item['colore'],
                 'taglia' => $item['taglia'],
                 'prezzo_unitario' => $item['prezzo'],
@@ -240,9 +369,14 @@ class PublicShopCartController extends Controller
             if ($variant) {
                 $isInfinite = \App\Models\Setting::where('key', 'shop_stock_infinite')->value('value') == '1';
                 if (!$isInfinite) {
-                    // Previene che la quantità vada sotto 0 se possibile
                     $variant->quantita = max(0, $variant->quantita - $item['quantita']);
                     $variant->save();
+                }
+            } elseif (!empty($item['b2b_variant_id'])) {
+                $b2bVar = \App\Models\B2bProductVariant::find($item['b2b_variant_id']);
+                if ($b2bVar) {
+                    $b2bVar->quantity = max(0, $b2bVar->quantity - $item['quantita']);
+                    $b2bVar->save();
                 }
             }
         }

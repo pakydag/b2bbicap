@@ -3,13 +3,16 @@
 @section('title', 'Il Tuo Carrello - ' . config('app.name'))
 
 @section('content')
+@php
+    $totale = $totale ?? 0;
+@endphp
 <div class="bg-gray-50 min-h-screen pt-12 pb-24">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="flex items-center space-x-2 text-sm text-gray-500 mb-8">
             <a href="{{ route('public.home') }}" class="hover:text-gray-900">Home</a>
             <span>/</span>
-            <a href="{{ route('public.shop.index') }}" class="hover:text-gray-900">Shop</a>
+            <a href="{{ route('public.home') }}" class="hover:text-gray-900">Shop</a>
             <span>/</span>
             <span class="text-gray-900 font-medium">Carrello</span>
         </div>
@@ -35,7 +38,7 @@
                 <h3 class="mt-2 text-lg font-medium text-gray-900">Il tuo carrello è vuoto</h3>
                 <p class="mt-1 text-sm text-gray-500">Aggiungi dei prodotti per poter procedere all'acquisto.</p>
                 <div class="mt-6">
-                    <a href="{{ route('public.shop.index') }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <a href="{{ route('public.home') }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-none shadow-sm text-white bg-black hover:bg-zinc-800 transition">
                         Inizia lo Shopping
                     </a>
                 </div>
@@ -53,8 +56,8 @@
                             @endphp
                             <li class="flex py-6 sm:py-10">
                                 <div class="flex-shrink-0">
-                                    @if($item['foto'])
-                                        <img src="{{ Str::startsWith($item['foto'], 'http') ? $item['foto'] : url('/') . $item['foto'] }}" class="w-24 h-24 rounded-md object-cover object-center sm:w-32 sm:h-32 border">
+                                    @if(!empty($item['foto']))
+                                        <img src="{{ Str::startsWith($item['foto'], 'http') ? $item['foto'] : url('/') . $item['foto'] }}" class="w-24 h-24 rounded-md object-contain object-center sm:w-32 sm:h-32 border bg-white p-1">
                                     @else
                                         <div class="w-24 h-24 rounded-md bg-gray-100 sm:w-32 sm:h-32 flex items-center justify-center border">
                                             <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -66,17 +69,17 @@
                                     <div class="relative pr-9 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:pr-0">
                                         <div>
                                             <div class="flex justify-between">
-                                                <h3 class="text-sm">
-                                                    <a href="#" class="font-medium text-gray-700 hover:text-gray-800">
+                                                <h3 class="text-base">
+                                                    <a href="{{ !empty($item['b2b_product_id']) ? route('public.product.detail', $item['b2b_product_id']) : '#' }}" class="font-bold text-gray-900 hover:text-[#e35205] transition-colors">
                                                         {{ $item['prodotto_nome'] }}
                                                     </a>
                                                 </h3>
                                             </div>
                                             <div class="mt-1 flex text-sm">
-                                                @if($item['colore'])
+                                                @if(!empty($item['colore']))
                                                     <p class="text-gray-500">Colore: {{ $item['colore'] }}</p>
                                                 @endif
-                                                @if($item['taglia'])
+                                                @if(!empty($item['taglia']))
                                                     <p class="ml-4 pl-4 border-l border-gray-200 text-gray-500">Taglia: {{ $item['taglia'] }}</p>
                                                 @endif
                                             </div>
@@ -111,6 +114,12 @@
                             </li>
                         @endforeach
                     </ul>
+
+                    <div class="mt-6 flex items-center justify-between">
+                        <a href="{{ route('public.home') }}" class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-black hover:text-[#e35205] transition-colors py-2">
+                            <span>&larr; Continua lo Shopping</span>
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Riepilogo Ordine -->
@@ -142,35 +151,27 @@
                                 <span x-show="shippingCost == 0" class="text-emerald-600 uppercase tracking-widest text-xs">Gratis</span>
                             </dd>
 
-                            <template x-if="freeThreshold > 0 && subtotal < freeThreshold">
+                            <template x-if="nazione === 'Italia' && freeThreshold > 0 && subtotal < freeThreshold">
                                 <div class="absolute -top-10 right-0 bg-slate-800 text-white text-[10px] px-2 py-2 rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-20">
-                                    Aggiungi € <span x-text="formatPrice(freeThreshold - subtotal)"></span> per la spedizione <span class="text-emerald-400 font-bold">Gratis</span>!
+                                    Aggiungi € <span x-text="formatPrice(freeThreshold - subtotal)"></span> per la spedizione <span class="text-emerald-400 font-bold">Gratis</span> in Italia!
                                 </div>
                             </template>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200 pt-4">
                             <dt class="text-base font-bold text-gray-900">Totale Ordine</dt>
-                            <dd class="text-2xl font-black text-indigo-600">€ <span x-text="formatPrice(parseFloat(subtotal) + parseFloat(shippingCost))"></span></dd>
+                            <dd class="text-2xl font-black text-black">€ <span x-text="formatPrice(parseFloat(subtotal) + parseFloat(shippingCost))"></span></dd>
                         </div>
                     </dl>
 
                     <div class="mt-8">
-                        <a href="{{ route('public.shop.cart.checkout') }}" class="w-full bg-indigo-600 border border-transparent rounded-xl shadow-lg py-4 px-4 text-lg font-bold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all flex justify-center items-center h-14 uppercase tracking-widest">
-                            Procedi al Checkout
+                        <a href="{{ route('public.shop.cart.checkout') }}" 
+                           class="w-full flex justify-center items-center h-14 uppercase tracking-widest text-center transition-all cursor-pointer shadow-md"
+                           onmouseover="this.style.backgroundColor='#c94500'" 
+                           onmouseout="this.style.backgroundColor='#e35205'"
+                           style="background-color: #e35205 !important; color: #ffffff !important; font-family: 'Bebas Neue', 'Montserrat', sans-serif !important; font-size: 22px !important; letter-spacing: 1px !important; text-decoration: none !important; border: none !important; border-radius: 0 !important; font-weight: bold !important;">
+                            PROCEDI AL CHECKOUT &rarr;
                         </a>
                     </div>
-
-                    @if($freeThreshold > 0)
-                    <div class="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            <span>Soglia Gratuita</span>
-                            <span>€ <span x-text="formatPrice(freeThreshold)"></span></span>
-                        </div>
-                        <div class="w-full bg-slate-200 rounded-full h-1.5 mb-1 overflow-hidden">
-                            <div class="bg-indigo-500 h-1.5 rounded-full transition-all duration-700" :style="'width: ' + Math.min((subtotal / freeThreshold) * 100, 100) + '%'"></div>
-                        </div>
-                    </div>
-                    @endif
                 </section>
             </div>
         @endif
@@ -182,7 +183,7 @@
     function cartSummary() {
         return {
             nazione: 'Italia',
-            subtotal: {{ $totale }},
+            subtotal: {{ $totale ?? 0 }},
             shippingCost: 0,
             freeThreshold: {{ $freeThreshold }},
             costs: @json($shippingCosts->pluck('costo', 'nazione')),
@@ -196,9 +197,9 @@
                     this.shippingCost = 0;
                     return;
                 }
-                let cost = this.costs[this.nazione] !== undefined ? parseFloat(this.costs[this.nazione]) : 5.00;
+                let cost = this.costs[this.nazione] !== undefined ? parseFloat(this.costs[this.nazione]) : 20.00;
                 
-                if (this.freeThreshold > 0 && this.subtotal >= this.freeThreshold) {
+                if (this.nazione === 'Italia' && this.freeThreshold > 0 && this.subtotal >= this.freeThreshold) {
                     this.shippingCost = 0;
                 } else {
                     this.shippingCost = cost;

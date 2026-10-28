@@ -248,9 +248,17 @@ class B2bProductController extends Controller
                 $characteristics[$key] = trim($value);
             }
 
-            // Create or update B2bProduct: il prezzo iniziale viene impostato a 0.
-            // Verrà aggiornato esclusivamente se presente nel file delle giacenze (Giacenza.csv).
-            // Identificato univocamente dalla combinazione di codice E nome (diversi modelli condividono lo stesso codice base)
+            // Estrazione Prezzo dal file Google Sheet (colonna "PREZZO CON IVA")
+            $rawGooglePrice = $data['PREZZO CON IVA'] ?? ($data['prezzo-con-iva'] ?? null);
+            $googlePrice = 0.0;
+            if (!empty($rawGooglePrice)) {
+                $cleanPrice = str_replace(',', '.', preg_replace('/[^\d.,]/', '', $rawGooglePrice));
+                $googlePrice = (float)$cleanPrice;
+            }
+
+            $characteristics['PREZZO CON IVA'] = $googlePrice;
+
+            // Create or update B2bProduct: il prezzo è preso direttamente dal Google Sheet
             $product = \App\Models\B2bProduct::updateOrCreate(
                 [
                     'code' => $codice,
@@ -260,7 +268,7 @@ class B2bProductController extends Controller
                     'b2b_brand_id' => $brand->id,
                     'description' => $data['descrizione-articolo-it'] ?? '',
                     'image' => $data['FOTO-PRINCIPALE-PRODOTTO-WEB'] ?? null,
-                    'price' => 0,
+                    'price' => $googlePrice,
                     'has_stock' => true,
                     'is_active' => true,
                     'characteristics' => $characteristics
@@ -275,9 +283,9 @@ class B2bProductController extends Controller
                 if (!empty($data[$gtinKey])) {
                     $sizeStr = (string)$size;
                     $existingSizes[] = $sizeStr;
-                    $product->variants()->updateOrCreate(
+                    $product->variants()->firstOrCreate(
                         ['size' => $sizeStr, 'color' => 'UNICO'],
-                        ['quantity' => 100] // default quantity for ready delivery
+                        ['quantity' => 0]
                     );
                 }
             }

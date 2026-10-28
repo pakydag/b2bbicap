@@ -74,6 +74,10 @@ class AuthenticatedSessionController extends Controller
             session()->forget('url.intended');
         }
 
+        if ($request->filled('redirect_to')) {
+            session()->put('url.intended', $request->input('redirect_to'));
+        }
+
         // Determina la fallback route in base al ruolo se non c'è un url intended vero e proprio
         if ($request->user()->role === 'admin') {
             $user = $request->user();

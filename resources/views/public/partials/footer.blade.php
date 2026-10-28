@@ -1,122 +1,229 @@
-<footer class="bg-gray-900 text-white pt-16 pb-8 footer font-normal">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-            <!-- Colonna 1: Brand & Descrizione -->
-            <div>
-                <div class="mb-6">
-                    @if(!empty($global_settings['site_logo']))
-                        <img src="{{ asset($global_settings['site_logo']) }}" alt="{{ config('app.name') }}" class="h-12 w-auto object-contain brightness-0 invert">
-                    @else
-                        <span class="text-2xl font-bold text-white">{{ config('app.name') }}</span>
-                    @endif
-                </div>
-                <div class="text-gray-300 text-sm leading-relaxed mb-6">
-                    {{ app()->getLocale() === 'en' ? ($global_settings['footer_description_en'] ?? $global_settings['footer_description'] ?? 'Your complete solution for business management and a professional online presence.') : ($global_settings['footer_description'] ?? 'La tua soluzione completa per la gestione aziendale e la presenza online professionale.') }}
-                </div>
-                <!-- Social Icons -->
-                <div class="flex space-x-4">
-                    @if(!empty($global_settings['social_facebook']))
-                        <a href="{{ $global_settings['social_facebook'] }}" target="_blank" class="text-gray-300 hover:text-white transition">
-                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
-                        </a>
-                    @endif
-                    @if(!empty($global_settings['social_instagram']))
-                        <a href="{{ $global_settings['social_instagram'] }}" target="_blank" class="text-gray-300 hover:text-white transition">
-                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16.4a4.4 4.4 0 110-8.8 4.4 4.4 0 010 8.8zm4.952-9.44a1.108 1.108 0 11-2.216 0 1.108 1.108 0 012.216 0z"/></svg>
-                        </a>
-                    @endif
-                    @if(!empty($global_settings['social_linkedin']))
-                        <a href="{{ $global_settings['social_linkedin'] }}" target="_blank" class="text-gray-300 hover:text-white transition">
-                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                        </a>
-                    @endif
-                    @if(!empty($global_settings['social_youtube']))
-                        <a href="{{ $global_settings['social_youtube'] }}" target="_blank" class="text-gray-300 hover:text-white transition">
-                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                        </a>
-                    @endif
-                </div>
+<!-- ================= 1. NEWSLETTER SECTION (1-to-1 bicap.shop) ================= -->
+<section class="newsletter-centro" style="position: relative; background-image: url('{{ asset('storage/images/newsletter-bg.jpg') }}'); background-size: cover; background-position: center; width: 100%;">
+    <!-- Dark overlay for readability -->
+    <div style="background-color: rgba(0, 0, 0, 0.65); padding: 65px 0 55px 0; width: 100%;">
+        <div style="max-width: 1250px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 40px;">
+            
+            <!-- Left Text Column -->
+            <div style="flex: 1 1 480px; min-width: 280px; color: #ffffff;">
+                <h4 style="font-family: 'Bebas Neue', sans-serif !important; font-size: 32px !important; font-weight: 700 !important; letter-spacing: 1.5px !important; color: #ffffff !important; margin: 0 0 16px 0 !important; line-height: 1.1 !important; text-transform: uppercase !important;">
+                    NEWSLETTER
+                </h4>
+                <p style="font-family: 'Montserrat', sans-serif !important; font-size: 14px !important; line-height: 1.6 !important; color: #ffffff !important; margin: 0 0 14px 0 !important;">
+                    Aggiornati sugli ultimi prodotti ed ottieni subito uno sconto del 5% da usare per il tuo prossimo acquisto!
+                </p>
+                <p style="font-family: 'Montserrat', sans-serif !important; font-size: 13px !important; line-height: 1.5 !important; color: #cccccc !important; margin: 0 !important;">
+                    Sconto utilizzabile su una spesa minima del valore di 100€.
+                </p>
             </div>
 
-            <!-- Colonna 2: Navigazione Dinamica -->
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wider mb-6 text-white">{{ app()->getLocale() === 'en' ? 'Navigation' : 'Navigazione' }}</h3>
-                <ul class="space-y-4">
-                    <li><a href="{{ url('/') }}" class="text-gray-300 hover:text-white transition text-sm">Home</a></li>
-                    @if(isset($shared_sezioni))
-                        @foreach($shared_sezioni->where('mostra_nel_footer', true) as $sez)
-                            @if(strtolower($sez->nome) !== 'informative')
-                                <li>
-                                    <a href="{{ route('public.sezione', $sez->slug ?? $sez->id.'-it') }}" class="text-gray-300 hover:text-white transition text-sm">
-                                        {{ $sez->nome }}
-                                    </a>
-                                </li>
-                            @endif
-                        @endforeach
-                    @endif
-                </ul>
+            <!-- Right Form Column -->
+            <div style="flex: 1 1 380px; max-width: 440px; width: 100%;">
+                <form onsubmit="event.preventDefault(); alert('Grazie per esserti iscritto alla nostra Newsletter!');" style="width: 100%; display: flex; flex-direction: column;">
+                    
+                    <!-- Email input -->
+                    <input type="email" 
+                           required 
+                           placeholder="Email" 
+                           style="width: 100%; height: 44px; background-color: #363636; border: 1px solid #5e5e5e; color: #ffffff; padding: 0 16px; font-family: 'Montserrat', sans-serif; font-size: 13px; outline: none; margin: 0 0 10px 0; box-sizing: border-box;">
+                    
+                    <!-- Submit button (Full width bright yellow) -->
+                    <button type="submit" 
+                            style="width: 100%; height: 44px; background-color: #fedb00 !important; color: #000000 !important; font-family: 'Bebas Neue', sans-serif !important; font-size: 22px !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; border: 1px solid #fedb00 !important; cursor: pointer !important; display: flex; align-items: center; justify-content: center; margin: 0 0 10px 0; transition: opacity 0.2s;"
+                            onmouseover="this.style.opacity='0.9'" 
+                            onmouseout="this.style.opacity='1'">
+                        ISCRIVITI
+                    </button>
+
+                    <!-- Informativa Newsletter link -->
+                    <div style="margin-bottom: 8px;">
+                        <a href="https://www.bicap.it/bicap-Informativa-Newsletter" target="_blank" rel="noopener noreferrer" style="color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 11.5px; text-decoration: underline;">
+                            <u>Informativa Newsletter</u>
+                        </a>
+                    </div>
+
+                    <!-- Radios -->
+                    <div style="display: flex; align-items: center; gap: 20px; color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600;">
+                        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="radio" name="nl_op" value="IN" checked style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
+                            <span>Iscriviti</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="radio" name="nl_op" value="OUT" style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
+                            <span>Cancellati</span>
+                        </label>
+                    </div>
+                </form>
             </div>
 
-            <!-- Colonna 3: Link Legali -->
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wider mb-6 text-white">{{ app()->getLocale() === 'en' ? 'Support & Legal' : 'Supporto & Legale' }}</h3>
-                <ul class="space-y-4">
-                    @php
-                        $informativeSection = isset($shared_sezioni) ? $shared_sezioni->firstWhere('nome', 'Informative') : null;
-                        $informativeArticles = $informativeSection ? \App\Models\Article::where('section_id', $informativeSection->id)->where('visibile', true)->orderBy('ordine')->get() : collect();
-                    @endphp
-                    @foreach($informativeArticles as $article)
-                        <li><a href="{{ url($informativeSection->slug . '/' . $article->slug) }}" class="text-gray-400 hover:text-white transition text-sm">{{ $article->titolo }}</a></li>
-                    @endforeach
-                    <li><a href="{{ route('login') }}" class="text-gray-400 hover:text-white transition text-sm">{{ app()->getLocale() === 'en' ? 'Reserved Area' : 'Area Riservata' }}</a></li>
-                    @if(config('app.shop_enabled') == '1' || ($global_settings['shop_enabled'] ?? '0') == '1')
-                        <li><a href="{{ route('public.shop.index') }}" class="text-gray-400 hover:text-white transition text-sm">Shop Online</a></li>
-                    @endif
-                </ul>
-            </div>
-
-            <!-- Colonna 4: Contatti -->
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wider mb-6 text-white">{{ app()->getLocale() === 'en' ? 'Contacts' : 'Contatti' }}</h3>
-                <ul class="space-y-4 text-sm text-gray-300">
-                    @if(!empty($global_settings['company_address']))
-                        <li class="flex items-start">
-                            <svg class="h-5 w-5 text-white mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            {{ $global_settings['company_address'] }}
-                        </li>
-                    @endif
-                    @if(!empty($global_settings['company_phone']))
-                        <li class="flex items-center">
-                            <svg class="h-5 w-5 text-white mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 004.516 4.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            <a href="tel:{{ str_replace(' ', '', $global_settings['company_phone']) }}" class="hover:text-white transition">{{ $global_settings['company_phone'] }}</a>
-                        </li>
-                    @endif
-                    @if(!empty($global_settings['company_email_public']))
-                        <li class="flex items-center">
-                            <svg class="h-5 w-5 text-white mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            <a href="mailto:{{ $global_settings['company_email_public'] }}" class="hover:text-white transition">{{ $global_settings['company_email_public'] }}</a>
-                        </li>
-                    @endif
-                    @if(!empty($global_settings['company_vat']))
-                        <li class="pt-4 border-t border-gray-800">
-                            P.IVA: {{ $global_settings['company_vat'] }}
-                        </li>
-                    @endif
-                </ul>
-            </div>
         </div>
+    </div>
+</section>
 
-        <!-- Bottom Bar -->
-        <div class="pt-8 border-t border-gray-800 text-center text-white text-xs">
-            &copy; {{ date('Y') }} Eyukka srl. {{ app()->getLocale() === 'en' ? 'All rights reserved.' : 'Tutti i diritti riservati.' }}
+<!-- ================= 2. MAIN 4-COLUMN FOOTER ================= -->
+<footer class="bicap-footer-section" style="background-color: #151515 !important; border-top: 1px solid #000000 !important; padding: 60px 0 40px 0 !important; color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; width: 100%;">
+    <div style="max-width: 1350px; margin: 0 auto; padding: 0 24px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px; padding-bottom: 50px;">
+            
+            <!-- Colonna 1: MENÙ -->
+            <div>
+                <h4 style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 14px !important; letter-spacing: 1px !important; text-transform: uppercase !important; margin: 0 0 24px 0 !important;">
+                    MENÙ
+                </h4>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                    <li><a href="{{ url('/mission-vision') }}">MISSION &amp; VISION</a></li>
+                    <li><a href="{{ url('/condizioni-di-vendita') }}">SUPPORTO</a></li>
+                    <li><a href="{{ route('public.home') }}">SHOP</a></li>
+                    <li><a href="{{ route('public.account.dashboard') }}" style="color: #ffffff !important; font-weight: 700;">AREA PERSONALE</a></li>
+                    <li><a href="{{ route('login') }}" style="color: #fedb00 !important; font-weight: 700;">PORTALE B2B</a></li>
+                </ul>
+            </div>
+
+            <!-- Colonna 2: AREA LEGALE -->
+            <div>
+                <h4 style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 14px !important; letter-spacing: 1px !important; text-transform: uppercase !important; margin: 0 0 24px 0 !important;">
+                    AREA LEGALE
+                </h4>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                    <li><a href="https://www.bicap.it/bicap-Privacy-Policy" target="_blank" rel="noopener noreferrer">PRIVACY POLICY</a></li>
+                    <li><a href="https://www.bicap.it/bicap-Informativa-Form-Contatti" target="_blank" rel="noopener noreferrer">INFORMATIVA FORM CONTATTI</a></li>
+                    <li><a href="https://www.bicap.it/bicap-Informativa-Newsletter" target="_blank" rel="noopener noreferrer">INFORMATIVA NEWSLETTER</a></li>
+                    <li><a href="https://www.bicap.it/bicap-Informativa-Cookie" target="_blank" rel="noopener noreferrer">INFORMATIVA COOKIE</a></li>
+                    <li><a href="https://www.bicap.it/bicap-Informativa-Form-Registrazione" target="_blank" rel="noopener noreferrer">INFORMATIVA FORM REGISTRAZIONE</a></li>
+                </ul>
+            </div>
+
+            <!-- Colonna 3: SUPPORTO -->
+            <div>
+                <h4 style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 14px !important; letter-spacing: 1px !important; text-transform: uppercase !important; margin: 0 0 24px 0 !important;">
+                    SUPPORTO
+                </h4>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                    <li><a href="{{ url('/condizioni-di-vendita') }}">CONDIZIONI DI VENDITA</a></li>
+                    <li><a href="{{ url('/resi-e-rimborsi') }}">RESI E RIMBORSI</a></li>
+                    <li><a href="{{ url('/spedizioni') }}">SPEDIZIONI</a></li>
+                    <li><a href="{{ url('/guida-taglie') }}">GUIDA ALLE TAGLIE</a></li>
+                    <li><a href="{{ url('/faq') }}">FAQ</a></li>
+                </ul>
+            </div>
+
+            <!-- Colonna 4: CALZATURIFICIO 5BI S.R.L. -->
+            <div>
+                <h4 style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 14px !important; letter-spacing: 1px !important; text-transform: uppercase !important; margin: 0 0 24px 0 !important;">
+                    CALZATURIFICIO 5BI S.R.L.
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px; color: #ffffff; line-height: 1.6;">
+                    <!-- Indirizzo -->
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <span class="bicap-footer-icon-yellow" style="color: #fedb00; margin-top: 3px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        <span>Via Trani, 94-100 - 76121 Barletta (BT)</span>
+                    </div>
+
+                    <!-- Telefono -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="bicap-footer-icon-yellow" style="color: #fedb00;">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                            </svg>
+                        </span>
+                        <a href="tel:+390883332137" style="color: #ffffff; font-size: 12px; text-transform: none;">+39 0883 332137</a>
+                    </div>
+
+                    <!-- Email -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="bicap-footer-icon-yellow" style="color: #fedb00;">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                            </svg>
+                        </span>
+                        <a href="mailto:info@bicap.it" style="color: #ffffff; font-size: 12px; text-transform: none;">info@bicap.it</a>
+                    </div>
+
+                    <!-- Partita IVA -->
+                    <div style="color: #888888; font-size: 12px; padding-top: 2px;">
+                        Partita IVA 04056210729
+                    </div>
+
+                    <!-- Link con icone gialle -->
+                    <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 8px;">
+                        <a href="https://bicap.it/documents/" target="_blank" rel="noopener noreferrer" style="color: #fedb00 !important; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Scarica dichiarazioni di conformità UE</span>
+                        </a>
+                        <a href="https://www.bicap.shop/bicap-Disposizioni-ambientali" target="_blank" rel="noopener noreferrer" style="color: #fedb00 !important; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Disposizioni ambientali</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================= 3. BOTTOM BAR (Copyright, Payments, Socials) ================= -->
+    <div style="border-top: 1px solid #222222; padding-top: 25px; margin-top: 10px;">
+        <div style="max-width: 1350px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px;">
+            
+            <!-- Copyright -->
+            <div style="color: #777777; font-size: 11px; font-family: 'Montserrat', sans-serif;">
+                Calzaturificio 5BI s.r.l. - Tutti i diritti riservati 2022 &copy; Cedam srl
+            </div>
+
+            <!-- Payment Badges (Clean monochrome like bicap.shop) -->
+            <div style="display: flex; align-items: center; gap: 20px; color: #999999; font-size: 13px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                <span>VISA</span>
+                <span style="font-size: 11px;">AMERICAN EXPRESS</span>
+                <span>MasterCard</span>
+                <span>PayPal</span>
+            </div>
+
+            <!-- Social Links -->
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <a href="https://www.linkedin.com/company/bicap-calzaturificio-5bi" target="_blank" rel="noopener noreferrer" style="color: #ffffff;" title="LinkedIn" onmouseover="this.style.color='#fedb00'" onmouseout="this.style.color='#ffffff'">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                </a>
+                <a href="https://www.facebook.com/bicap.it" target="_blank" rel="noopener noreferrer" style="color: #ffffff;" title="Facebook" onmouseover="this.style.color='#fedb00'" onmouseout="this.style.color='#ffffff'">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+                </a>
+                <a href="https://www.instagram.com/bicap_official/" target="_blank" rel="noopener noreferrer" style="color: #ffffff;" title="Instagram" onmouseover="this.style.color='#fedb00'" onmouseout="this.style.color='#ffffff'">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                </a>
+                <a href="https://www.youtube.com/@bicap_official" target="_blank" rel="noopener noreferrer" style="color: #ffffff;" title="YouTube" onmouseover="this.style.color='#fedb00'" onmouseout="this.style.color='#ffffff'">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </a>
+            </div>
+
         </div>
     </div>
 </footer>
 
+<!-- ================= 4. FLOATING WIDGETS (WhatsApp & Scroll to top) ================= -->
+<!-- WhatsApp Floating Button -->
+<a href="https://wa.me/390883332137" 
+   target="_blank" 
+   rel="noopener noreferrer" 
+   class="bicap-whatsapp-btn" 
+   title="Contattaci su WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+    </svg>
+</a>
+
+<!-- Scroll To Top Button -->
+<button onclick="window.scrollTo({top: 0, behavior: 'smooth'});" 
+        class="bicap-scroll-top-btn" 
+        title="Torna su">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 font-bold" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+    </svg>
+</button>

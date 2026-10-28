@@ -83,8 +83,12 @@
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-400/5 rounded-full blur-[160px]"></div>
         </div>
 
-        <!-- Header / Language Switcher -->
-        <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-end">
+        <!-- Header / Language Switcher & Public Website Link -->
+        <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <a href="{{ route('public.home') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 text-xs font-bold text-zinc-400 hover:text-yellow-400 hover:border-zinc-700 transition shadow-sm">
+                <span>🌐</span>
+                <span>{{ $isEn ? 'Visit Public Website' : 'Vai al sito web' }}</span>
+            </a>
             <div class="flex items-center bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 rounded-xl p-1 shadow-sm">
                 <a href="{{ route('set-locale', 'it') }}" class="px-2 py-1 text-xs font-black uppercase rounded-lg transition {{ app()->getLocale() === 'it' ? 'bg-yellow-400 text-slate-950 shadow-xs' : 'text-zinc-400 hover:text-white' }}" title="Lingua Italiana">
                     🇮🇹 IT

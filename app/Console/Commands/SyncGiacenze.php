@@ -114,8 +114,8 @@ class SyncGiacenze extends Command
             $this->info("File Giacenza.csv aggiornato con successo! Dimensione: {$size} byte.");
             Log::info("[SyncGiacenze] Giacenza.csv sincronizzato con successo. Dimensione: {$size} byte.");
 
-            // Aggiorna i prezzi dei prodotti nel database
-            $this->updateProductPrices($destination);
+            // Aggiorna le disponibilità delle varianti nel database
+            $this->updateProductStocks();
 
             Cache::put('b2b_last_giacenze_sync_timestamp', now(), 86400);
 
@@ -130,53 +130,38 @@ class SyncGiacenze extends Command
         }
     }
 
-    protected function updateProductPrices($csvPath)
+    protected function updateProductStocks()
     {
-        $this->info("Aggiornamento prezzi prodotti dal listino B2B...");
+        $this->info("Aggiornamento disponibilità varianti da Giacenza.csv...");
         
-        if (!file_exists($csvPath)) return;
-
-        $file = fopen($csvPath, 'r');
-        $headers = fgetcsv($file, 0, ';', '"', '\\');
-        
-        $csvEntries = [];
-        while (($row = fgetcsv($file, 0, ';', '"', '\\')) !== false) {
-            if (count($row) < 6) continue;
-            $code = trim($row[0]);
-            $name = trim($row[1]);
-            $priceStr = trim($row[5] ?? '');
-            
-            if (empty($code) || $priceStr === '') continue;
-            
-            $priceFloat = (float)str_replace(',', '.', $priceStr);
-            if ($priceFloat > 0 && !isset($csvEntries[$code])) {
-                $csvEntries[$code] = [
-                    'raw_code' => $code,
-                    'norm_code' => \App\Models\B2bProduct::normalizeCode($code),
-                    'name' => $name,
-                    'price' => $priceFloat
-                ];
-            }
-        }
-        fclose($file);
-
         $agentController = app(\App\Http\Controllers\Agent\AgentPortalController::class);
-        $products = \App\Models\B2bProduct::all();
-        $updatedCount = 0;
+        $giacenzaData = $agentController->getGiacenzaData();
+        $products = \App\Models\B2bProduct::with('variants')->get();
+        $updatedVariantsCount = 0;
 
         foreach ($products as $product) {
-            $match = $agentController->findGiacenzaMatch($product, $csvEntries);
-            if ($match && !empty($match['price'])) {
-                $newPrice = (float)$match['price'];
-                if (abs((float)$product->price - $newPrice) > 0.001) {
-                    $product->price = $newPrice;
+            $match = $agentController->findGiacenzaMatch($product, $giacenzaData);
+            if ($match && isset($match['current_stock'])) {
+                $totalStock = 0;
+                foreach ($product->variants as $variant) {
+                    $size = $variant->size;
+                    $qty = max(0, (int)($match['current_stock'][$size] ?? 0));
+                    if ((int)$variant->quantity !== $qty) {
+                        $variant->quantity = $qty;
+                        $variant->save();
+                        $updatedVariantsCount++;
+                    }
+                    $totalStock += $qty;
+                }
+                $hasStock = ($totalStock > 0);
+                if ($product->has_stock !== $hasStock) {
+                    $product->has_stock = $hasStock;
                     $product->save();
-                    $updatedCount++;
                 }
             }
         }
         
-        $this->info("Aggiornati $updatedCount prezzi prodotti.");
-        Log::info("[SyncGiacenze] Aggiornati $updatedCount prezzi prodotti.");
+        $this->info("Aggiornate disponibilità per $updatedVariantsCount varianti.");
+        Log::info("[SyncGiacenze] Aggiornate disponibilità per $updatedVariantsCount varianti.");
     }
 }

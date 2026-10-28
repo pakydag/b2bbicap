@@ -87,5 +87,12 @@
                 <span class="text-sm font-bold">→</span>
             </button>
         </div>
+
+        <div class="pt-3 text-center border-t border-zinc-800/80 mt-4">
+            <a href="{{ route('public.home') }}" class="text-xs font-semibold text-zinc-400 hover:text-yellow-400 transition inline-flex items-center gap-1.5">
+                <span>←</span>
+                <span>{{ $isEn ? 'Back to website' : 'Torna al sito web' }}</span>
+            </a>
+        </div>
     </form>
 </x-guest-layout>

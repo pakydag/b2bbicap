@@ -12,9 +12,13 @@ use App\Models\TransferRequest;
 use App\Models\CarRentalRequest;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use App\Models\B2bProduct;
+use App\Models\B2bBrand;
 
 class PublicController extends Controller
 {
+    protected array $global_seo = [];
+
     public function __construct()
     {
         // Let AppServiceProvider handle shared_sezioni to ensure it's loaded for all public views
@@ -27,54 +31,292 @@ class PublicController extends Controller
         ];
     }
 
-    public function home()
+    public function home(Request $request)
     {
-        // Example: load latest 6 articles that belong to visible sections
-        $ultimi_articoli = Article::where('visibile', true)->whereHas('section', function ($q) {
-            $q->where('visibile', true);
-        })->orderBy('ordine')->latest()->take(6)->get();
+        $products = B2bProduct::with('brand', 'variants')
+            ->where('is_active', true)
+            ->get()
+            ->sortBy(function ($p) {
+                return (int)($p->characteristics['ORDINE ARTICOLO'] ?? 999);
+            })
+            ->values();
 
-        // Carica i blocchi drag & drop della home
-        $homeBlocks = HomeBlock::with('globalWidget')->orderBy('ordine')->get();
+        // Collezioni (Brands)
+        $collezioni = B2bBrand::orderBy('name')->pluck('name')->all();
 
-        $seo = [
-            'title' => $this->global_seo['home_seo_title'] ?: config('app.name', 'Sito Web'),
-            'description' => $this->global_seo['home_seo_description'] ?: 'Benvenuti sul nostro sito web ufficiale.',
-            'image' => $this->global_seo['home_seo_image'] ? asset($this->global_seo['home_seo_image']) : asset('img/default-share.jpg'),
-            'url' => url()->current()
+        // Accumulators for available filters
+        $settori = [];
+        $tipologie = [];
+        $categorie = [];
+        $materiali = [];
+        $puntali = [];
+        $suole = [];
+        $calzate = [];
+        $norme = [];
+
+        $formattedProducts = $products->map(function ($p) use (&$settori, &$tipologie, &$categorie, &$materiali, &$puntali, &$suole, &$calzate, &$norme) {
+            $c = $p->characteristics ?? [];
+            
+            $brandName = $p->brand?->name ?? '';
+            $tipologia = trim($c['TIPOLOGIA-FILTRO-IT'] ?? '');
+            $cat = trim($c['CAT-SICUREZZA-FILTRO'] ?? $c['CAT-SICUREZZA'] ?? '');
+            $catFull = trim($c['CAT-SICUREZZA'] ?? $cat);
+            $materiale = trim($c['MATERIALE-FILTRO-IT'] ?? '');
+            $puntale = trim($c['PUNTALE-FILTRO-IT'] ?? $c['PUNTALE'] ?? '');
+            $suola = trim($c['SUOLA-FILTRO-IT'] ?? '');
+            $calzata = trim($c['CALZATA'] ?? '');
+            $norma = trim($c['NORMA'] ?? '');
+
+            // Sectors
+            $prodSettori = [];
+            if (!empty($c['SETTORE-DI-UTILIZZO-IT'])) {
+                $parts = preg_split('/[\/,]/', $c['SETTORE-DI-UTILIZZO-IT']);
+                foreach ($parts as $part) {
+                    $trimmed = trim($part);
+                    if ($trimmed) {
+                        $prodSettori[] = $trimmed;
+                        $settori[$trimmed] = ($settori[$trimmed] ?? 0) + 1;
+                    }
+                }
+            }
+
+            if ($tipologia) $tipologie[$tipologia] = ($tipologie[$tipologia] ?? 0) + 1;
+            if ($cat) $categorie[$cat] = ($categorie[$cat] ?? 0) + 1;
+            if ($materiale) $materiali[$materiale] = ($materiali[$materiale] ?? 0) + 1;
+            if ($puntale) $puntali[$puntale] = ($puntali[$puntale] ?? 0) + 1;
+            if ($suola) $suole[$suola] = ($suole[$suola] ?? 0) + 1;
+            if ($calzata) $calzate[$calzata] = ($calzate[$calzata] ?? 0) + 1;
+            if ($norma) $norme[$norma] = ($norme[$norma] ?? 0) + 1;
+
+            $subtitle = trim($p->code . ' ' . $catFull);
+
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'code' => $p->code,
+                'subtitle' => $subtitle,
+                'brand' => $brandName,
+                'image' => $p->image_url,
+                'price' => (float)$p->price,
+                'tipologia' => $tipologia,
+                'categoria' => $cat,
+                'materiale' => $materiale,
+                'puntale' => $puntale,
+                'suola' => $suola,
+                'calzata' => $calzata,
+                'norma' => $norma,
+                'settori' => $prodSettori,
+                'url' => route('public.product.detail', $p->id),
+            ];
+        });
+
+        arsort($settori);
+        ksort($tipologie);
+        ksort($categorie);
+        ksort($materiali);
+        ksort($puntali);
+        ksort($suole);
+        ksort($calzate);
+        ksort($norme);
+
+        $filterOptions = [
+            'collezioni' => $collezioni,
+            'settori' => array_keys($settori),
+            'tipologie' => array_keys($tipologie),
+            'categorie' => array_keys($categorie),
+            'materiali' => array_keys($materiali),
+            'puntali' => array_keys($puntali),
+            'suole' => array_keys($suole),
+            'calzate' => array_keys($calzate),
+            'norme' => array_keys($norme),
         ];
 
-        return view('public.home', compact('ultimi_articoli', 'homeBlocks', 'seo'));
+        $seo = [
+            'title' => 'BICAP Official SHOP | Scarpe Antinfortunistiche e di Sicurezza Made in Italy',
+            'description' => 'Scopri il catalogo ufficiale BICAP Absolutely Safe. Calzature di sicurezza sportive, leggere e resistenti con certificazioni S1PS, S3, S3S, S7S ed ESD.',
+            'image' => asset('/storage/seo/bicap-og-image.jpg'),
+            'url' => url()->current(),
+        ];
+
+        return view('public.home', compact('products', 'formattedProducts', 'filterOptions', 'seo'));
+    }
+
+    public function productDetail($id)
+    {
+        $product = B2bProduct::with('brand', 'variants')->where('is_active', true)->findOrFail($id);
+        
+        // Verifica disponibilità effettive da Giacenza.csv per garantire coerenza immediata
+        $agentController = app(\App\Http\Controllers\Agent\AgentPortalController::class);
+        $giacenzaData = $agentController->getGiacenzaData();
+        $giacenzaMatch = $agentController->findGiacenzaMatch($product, $giacenzaData);
+
+        if ($giacenzaMatch && isset($giacenzaMatch['current_stock'])) {
+            foreach ($product->variants as $variant) {
+                $variant->quantity = max(0, (int)($giacenzaMatch['current_stock'][$variant->size] ?? 0));
+            }
+        }
+
+        $c = $product->characteristics ?? [];
+        
+        // Correlati / Upselling ("Potrebbe interessarti" da Google Sheet)
+        $relatedProducts = collect();
+        $targetNames = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $val = !empty($c["UPSELLING PRODUCT $i"]) 
+                ? trim($c["UPSELLING PRODUCT $i"]) 
+                : (!empty($c["PRODOTTO CORRELATO $i"]) ? trim($c["PRODOTTO CORRELATO $i"]) : null);
+            if ($val) {
+                $targetNames[] = $val;
+            }
+        }
+
+        foreach ($targetNames as $name) {
+            $match = B2bProduct::where('is_active', true)
+                ->where(function($q) use ($name) {
+                    $q->where('name', $name)
+                      ->orWhere('name', 'LIKE', $name . '%')
+                      ->orWhere('code', 'LIKE', '%' . $name . '%');
+                })
+                ->first();
+
+            if ($match && !$relatedProducts->contains('id', $match->id)) {
+                $relatedProducts->push($match);
+            }
+        }
+
+        // Fallback se meno di 4
+        if ($relatedProducts->count() < 4) {
+            $fallback = B2bProduct::where('is_active', true)
+                ->whereNotIn('id', $relatedProducts->pluck('id')->all())
+                ->inRandomOrder()
+                ->take(4 - $relatedProducts->count())
+                ->get();
+            $relatedProducts = $relatedProducts->concat($fallback);
+        }
+
+        $seo = [
+            'title' => $product->name . ' - ' . $product->code . ' | BICAP Official',
+            'description' => Str::limit(strip_tags($product->localized_description), 160),
+            'image' => $product->image_url,
+            'url' => url()->current(),
+        ];
+
+        // Accordion Info (Condizioni di vendita, Resi e rimborsi, Spedizioni, FAQ, Guida alle taglie dal Gestionale)
+        $condizioniSection = Section::with(['articles' => function($q) {
+            $q->where('visibile', true)->orderBy('ordine', 'asc')->orderBy('id', 'asc');
+        }])->where('slug', 'bicap-condizioni-di-vendita')->orWhere('id', 16)->first();
+
+        $accordionArticles = $condizioniSection ? $condizioniSection->articles : collect();
+
+        return view('public.product_detail', compact('product', 'relatedProducts', 'seo', 'accordionArticles'));
     }
 
     public function sezione($slug)
     {
-        $sezione = Section::where('slug', $slug)
-                          ->where('visibile', true)
-                          ->firstOrFail();
+        $cleanSlug = preg_replace('/^bicap[-_]/i', '', $slug);
 
-        // Se la sezione è di tipo "pagina", eseguiamo un redirect diretto al suo primo articolo
-        if ($sezione->tipo === 'pagina') {
-            $primo_articolo = $sezione->articles()->where('visibile', true)->latest()->first();
-            
-            if ($primo_articolo) {
-                // Redirect alla vista articolo
-                $articolo_slug = $primo_articolo->slug ?? $primo_articolo->id . '-it';
-                return redirect()->route('public.articolo', ['sezione_slug' => $sezione->slug, 'articolo_slug' => $articolo_slug]);
-            }
+        // 1. Cerca prima negli Articoli del Gestionale per slug personalizzato (es: condizioni-di-vendita, resi-e-rimborsi, spedizioni, faq, ecc.)
+        $articolo = Article::with('section')
+            ->where('visibile', true)
+            ->where(function($query) use ($slug, $cleanSlug) {
+                $query->where('slug', $slug)
+                      ->orWhere('slug', $cleanSlug)
+                      ->orWhere('slug', 'bicap-' . $cleanSlug);
+
+                if (str_contains($cleanSlug, 'mission')) {
+                    $query->orWhere('slug', 'like', '%mission%vision%')
+                          ->orWhere('slug', 'like', '%mission%e%vision%')
+                          ->orWhere('titolo', 'like', '%mission%');
+                }
+                if (str_contains($cleanSlug, 'tagli') || str_contains($cleanSlug, 'size')) {
+                    $query->orWhere('titolo', 'like', '%taglie%');
+                }
+                $query->orWhere('titolo', 'like', '%' . str_replace('-', ' ', $cleanSlug) . '%');
+                if (preg_match('/^(\d+)-it$/', $slug, $matches)) {
+                    $query->orWhere('id', $matches[1]);
+                }
+            })
+            ->first();
+
+        if ($articolo) {
+            $seo = [
+                'title' => $articolo->seo_title ?: ($articolo->titolo . ' - ' . ($this->global_seo['home_seo_title'] ?: config('app.name'))),
+                'description' => $articolo->seo_description ?: Str::limit(strip_tags($articolo->descrizione), 160) ?: ($this->global_seo['home_seo_description'] ?? 'Leggi l\'articolo ' . $articolo->titolo),
+                'image' => $articolo->seo_image ? asset($articolo->seo_image) : ($articolo->foto ? asset($articolo->foto) : ($this->global_seo['home_seo_image'] ? asset($this->global_seo['home_seo_image']) : asset('img/default-share.jpg'))),
+                'url' => url()->current()
+            ];
+
+            $altriArticoli = Article::where('visibile', true)
+                ->where('id', '!=', $articolo->id)
+                ->orderBy('ordine')
+                ->get();
+
+            return view('public.articolo', compact('articolo', 'seo', 'altriArticoli'));
         }
 
-        $articoli = $sezione->articles()->where('visibile', true)->orderBy('ordine')->latest()->paginate(9);
+        // 2. Cerca nelle Sezioni del Gestionale (es: bicap-mission-e-vision, bicap-condizioni-di-vendita, ecc.)
+        $sezione = Section::where('visibile', true)
+            ->where(function($query) use ($slug, $cleanSlug) {
+                $query->where('slug', $slug)
+                      ->orWhere('slug', $cleanSlug)
+                      ->orWhere('slug', 'bicap-' . $cleanSlug);
 
-        // Prepare SEO for Section (lists)
-        $seo = [
-            'title' => $sezione->seo_title ?: ($sezione->nome . ' - ' . ($this->global_seo['home_seo_title'] ?: config('app.name'))),
-            'description' => $sezione->seo_description ?: Str::limit(strip_tags($sezione->contenuto), 160) ?: ($this->global_seo['home_seo_description'] ?? 'Esplora i contenuti di ' . $sezione->nome),
-            'image' => $sezione->seo_image ? asset($sezione->seo_image) : ($sezione->foto ? asset($sezione->foto) : ($this->global_seo['home_seo_image'] ? asset($this->global_seo['home_seo_image']) : asset('img/default-share.jpg'))),
-            'url' => url()->current()
-        ];
+                if (str_contains($cleanSlug, 'mission')) {
+                    $query->orWhere('slug', 'like', '%mission%vision%')
+                          ->orWhere('slug', 'like', '%mission%e%vision%')
+                          ->orWhere('nome', 'like', '%mission%');
+                }
+                if (str_contains($cleanSlug, 'condizioni')) {
+                    $query->orWhere('slug', 'like', '%condizioni%');
+                }
+                if (str_contains($cleanSlug, 'resi')) {
+                    $query->orWhere('slug', 'like', '%resi%');
+                }
+                if (str_contains($cleanSlug, 'spedizioni')) {
+                    $query->orWhere('slug', 'like', '%spedizioni%');
+                }
+                if (str_contains($cleanSlug, 'faq')) {
+                    $query->orWhere('slug', 'like', '%faq%');
+                }
+            })
+            ->first();
 
-        return view('public.sezione', compact('sezione', 'articoli', 'seo'));
+        if ($sezione) {
+            // Se la sezione ha 1 solo articolo o è di tipo pagina, visualizziamo direttamente l'articolo
+            if ($sezione->tipo === 'pagina' || $sezione->articles()->where('visibile', true)->count() === 1) {
+                $primo_articolo = $sezione->articles()->where('visibile', true)->first();
+                if ($primo_articolo) {
+                    $articolo = $primo_articolo;
+                    $seo = [
+                        'title' => $articolo->seo_title ?: ($articolo->titolo . ' - ' . ($this->global_seo['home_seo_title'] ?: config('app.name'))),
+                        'description' => $articolo->seo_description ?: Str::limit(strip_tags($articolo->descrizione), 160) ?: ($this->global_seo['home_seo_description'] ?? 'Leggi l\'articolo ' . $articolo->titolo),
+                        'image' => $articolo->seo_image ? asset($articolo->seo_image) : ($articolo->foto ? asset($articolo->foto) : ($this->global_seo['home_seo_image'] ? asset($this->global_seo['home_seo_image']) : asset('img/default-share.jpg'))),
+                        'url' => url()->current()
+                    ];
+
+                    $altriArticoli = Article::where('visibile', true)
+                        ->where('id', '!=', $articolo->id)
+                        ->orderBy('ordine')
+                        ->get();
+
+                    return view('public.articolo', compact('articolo', 'seo', 'altriArticoli'));
+                }
+            }
+
+            $articoli = $sezione->articles()->where('visibile', true)->orderBy('ordine')->latest()->paginate(9);
+
+            // Prepare SEO for Section (lists)
+            $seo = [
+                'title' => $sezione->seo_title ?: ($sezione->nome . ' - ' . ($this->global_seo['home_seo_title'] ?: config('app.name'))),
+                'description' => $sezione->seo_description ?: Str::limit(strip_tags($sezione->contenuto), 160) ?: ($this->global_seo['home_seo_description'] ?? 'Esplora i contenuti di ' . $sezione->nome),
+                'image' => $sezione->seo_image ? asset($sezione->seo_image) : ($sezione->foto ? asset($sezione->foto) : ($this->global_seo['home_seo_image'] ? asset($this->global_seo['home_seo_image']) : asset('img/default-share.jpg'))),
+                'url' => url()->current()
+            ];
+
+            return view('public.sezione', compact('sezione', 'articoli', 'seo'));
+        }
+
+        abort(404);
     }
 
     public function articolo($sezione_slug, $articolo_slug)
@@ -98,12 +340,17 @@ class PublicController extends Controller
         // Prepare SEO for Article
         $seo = [
             'title' => $articolo->seo_title ?: ($articolo->titolo . ' - ' . ($this->global_seo['home_seo_title'] ?: config('app.name'))),
-            'description' => $articolo->seo_description ?: Str::limit(strip_tags($articolo->contenuto), 160) ?: ($this->global_seo['home_seo_description'] ?? 'Leggi l\'articolo ' . $articolo->titolo),
+            'description' => $articolo->seo_description ?: Str::limit(strip_tags($articolo->descrizione), 160) ?: ($this->global_seo['home_seo_description'] ?? 'Leggi l\'articolo ' . $articolo->titolo),
             'image' => $articolo->seo_image ? asset($articolo->seo_image) : ($articolo->foto ? asset($articolo->foto) : ($this->global_seo['home_seo_image'] ? asset($this->global_seo['home_seo_image']) : asset('img/default-share.jpg'))),
             'url' => url()->current()
         ];
 
-        return view('public.articolo', compact('articolo', 'seo'));
+        $altriArticoli = Article::where('visibile', true)
+            ->where('id', '!=', $articolo->id)
+            ->orderBy('ordine')
+            ->get();
+
+        return view('public.articolo', compact('articolo', 'seo', 'altriArticoli'));
     }
 
     public function submitContactForm(Request $request)

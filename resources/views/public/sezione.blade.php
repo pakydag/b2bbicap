@@ -3,14 +3,25 @@
 @section('title', $sezione->nome . ' - ' . config('app.name'))
 
 @section('content')
-<div class="gradient relative bg-gray-50 h-64 flex items-end bg-top bg-center bg-cover px-6 lg:px-0 bg-no-repeat" @if($sezione->immagine) style="background-image: url('{{ asset($sezione->immagine) }}');" @endif>
-    <div class="mx-auto max-w-7xl w-full bg-white rounded-t-lg px-6 lg:px-0 relative z-10">
-        <!-- Breadcrumb / Back link -->
-        <nav class=" flex p-6 items-left text-sm font-medium text-gray-400 breadcrumb">
-            <a href="{{ route('public.home') }}" class="hover:text-gray-900">Home</a>
-            <svg class="h-5 w-5 shrink-0 text-gray-400 mx-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
-            <span>{{ $sezione->nome }}</span>
-        </nav>
+<!-- ================= 1. VIDEO HERO BANNER ================= -->
+<div class="relative w-full overflow-hidden bg-black" style="height: 480px; max-height: 60vh;">
+    <!-- Video Element -->
+    <video playsinline autoplay loop muted class="absolute inset-0 w-full h-full object-cover">
+        <source src="https://www.bicap.it/video/SVILUPPO.webm" type="video/webm">
+        <source src="https://www.bicap.it/video/SVILUPPO-mobile.mp4" type="video/mp4">
+    </video>
+
+    <!-- Dark Overlay with Centered Title & Breadcrumbs -->
+    <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10" style="background: linear-gradient(to bottom, rgba(0,0,0,0.50) 0%, rgba(0,0,0,0.70) 100%);">
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-normal text-white uppercase tracking-wider mb-2" style="font-family: 'Montserrat', sans-serif; text-shadow: 0 2px 6px rgba(0,0,0,0.85); color: #ffffff !important;">
+            {{ $sezione->nome }}
+        </h1>
+        <div class="w-16 h-0.5 bg-white mx-auto my-3 shadow-sm" style="background-color: #ffffff !important;"></div>
+        <div class="flex items-center justify-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-widest text-white" style="font-family: 'Montserrat', sans-serif; text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.85); color: #ffffff !important;">
+            <a href="{{ route('public.home') }}" class="text-white hover:underline transition-opacity hover:opacity-85" style="color: #ffffff !important; text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.85);">HOME</a>
+            <span class="text-white font-bold" style="color: #ffffff !important; text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.85);">·</span>
+            <span class="text-white font-bold" style="color: #ffffff !important; text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.85);">{{ $sezione->nome }}</span>
+        </div>
     </div>
 </div>
 

@@ -1,234 +1,222 @@
 @php
-    $siteLogo = \App\Models\Setting::where('key', 'site_logo')->value('value');
-    $shopEnabled = \App\Models\Setting::where('key', 'shop_enabled')->value('value');
-    $bookingEnabled = \App\Models\Setting::where('key', 'booking_enabled')->value('value');
-    $englishEnabled = \App\Models\Setting::where('key', 'english_enabled')->value('value') == '1';
+    $siteLogo = \App\Models\Setting::where('key', 'site_logo')->value('value') ?: 'storage/logo/logo-bicap.png';
     $currentLocale = session('locale', 'it');
 @endphp
 
-<style>
-/* Rende la transizione fluida come il resto del menu */
-a[title="Accedi Area Booking"],
-a[title="Accedi Area Booking"] svg {
-    transition: all 0.3s ease-in-out !important;
-}
-</style>
+<!-- Top Announcement Bar (Yellow Banner - Scrolls away naturally when page scrolls) -->
+<div class="bicap-top-banner" style="background-color: #fedb00 !important; color: #000000 !important; width: 100% !important; text-align: center !important; padding: 7px 16px !important; font-family: 'Montserrat', sans-serif !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.5px !important; text-transform: uppercase !important; border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; user-select: none !important; position: relative !important; z-index: 40 !important; box-sizing: border-box !important;">
+    SPEDIZIONE GRATUITA ITALIA a partire da € 89
+</div>
 
-<header x-data="{ scrolled: false, mobileMenuOpen: false }" x-init="window.addEventListener('scroll', () => { scrolled = window.scrollY > 50 })" class="menu top-0 left-0 w-full z-50 transition-all duration-300 border-b" :class="scrolled ? 'fixed bg-white shadow-md border-gray-200' : 'absolute bg-gradient-to-b from-black/80 to-transparent border-white/100 shadow-none'">
-    <div class="max-w-7xl mx-auto w-full">
-        <!-- Top bar with language selector and booking personal area, aligned to the right, no border -->
-        @if($englishEnabled || $bookingEnabled == '1')
-            <div class="flex items-center justify-end py-2 pb-0 px-4 lg:px-0 gap-4 transition-all duration-300">
-                @if($englishEnabled)
-                    <div class="flex items-center space-x-4 mr-2 bg-black/10 px-3 py-1.5 rounded-full border border-white/10" :class="scrolled ? 'bg-gray-100 border-gray-200 text-black' : 'bg-black/20 border-white/20 text-white'">
-                        <a href="{{ route('set-locale', 'it') }}" class="flex items-center gap-1.5 transition-transform hover:scale-105 {{ $currentLocale === 'it' ? 'scale-105 drop-shadow-md font-bold' : 'opacity-60 hover:opacity-100' }}" title="Italiano">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2" class="w-5 h-3.5 rounded-sm object-cover shadow-sm"><rect width="3" height="2" fill="#009246"/><rect width="2" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#ce2b37"/></svg>
-                            <span class="text-xs tracking-wider">IT</span>
-                        </a>
-                        <a href="{{ route('set-locale', 'en') }}" class="flex items-center gap-1.5 transition-transform hover:scale-105 {{ $currentLocale === 'en' ? 'scale-105 drop-shadow-md font-bold' : 'opacity-60 hover:opacity-100' }}" title="English">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" class="w-5 h-3.5 rounded-sm object-cover shadow-sm"><path fill="#012169" d="M0 0h60v30H0z"/><path stroke="#FFF" stroke-width="6" d="M0 0l60 30m0-30L0 30"/><path stroke="#C8102E" stroke-width="4" d="M0 0l60 30m0-30L0 30"/><path stroke="#FFF" stroke-width="10" d="M30 0v30M0 15h60"/><path stroke="#C8102E" stroke-width="6" d="M30 0v30M0 15h60"/></svg>
-                            <span class="text-xs tracking-wider">EN</span>
-                        </a>
+<!-- Main Navigation Bar (Black Header - Sticks to top on scroll, edge-to-edge full width) -->
+<header class="bicap-header-sticky" style="position: sticky !important; top: 0 !important; z-index: 9990 !important; background-color: #000000 !important; width: 100% !important; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;" x-data="{ mobileMenuOpen: false, langOpen: false }">
+    <div class="bicap-header-container" style="width: 100% !important; display: flex !important; align-items: center !important; justify-content: space-between !important; height: 80px !important; box-sizing: border-box !important;">
+        
+        <!-- Far Left: Logo BICAP ABSOLUTELY SAFE -->
+        <div class="flex items-center shrink-0">
+            <a href="{{ route('public.home') }}" class="flex items-center transition-opacity hover:opacity-90">
+                @if(file_exists(public_path($siteLogo)))
+                    <img src="{{ asset($siteLogo) }}" alt="BICAP Absolutely Safe" class="h-10 sm:h-12 w-auto object-contain">
+                @else
+                    <div class="flex items-center gap-2">
+                        <span style="background-color: #fedb00 !important; color: #000000 !important;" class="inline-block w-8 h-8 rounded-sm transform -skew-x-12 flex items-center justify-center font-black text-lg">B</span>
+                        <div class="flex flex-col">
+                            <span class="text-xl sm:text-2xl font-black tracking-tighter uppercase text-white leading-none">BICAP</span>
+                            <span class="text-[8px] font-bold tracking-widest uppercase text-zinc-400 leading-none mt-0.5">ABSOLUTELY SAFE</span>
+                        </div>
                     </div>
                 @endif
+            </a>
+        </div>
 
-                @if($bookingEnabled == '1')
-                    @if(Auth::guard('booking_customer')->check())
-                        <div class="relative inline-flex items-center" x-data="{ open: false }" @click.away="open = false">
-                            <button @click="open = !open" :class="scrolled ? 'text-gray-600 hover:text-primary' : 'text-white/80 hover:text-white'" class="p-2 transition-colors flex items-center gap-1" title="Area Booking">
-                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                                <svg class="h-4 w-4 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+        <!-- Far Right: Desktop Nav Menu + Yellow Icons + Language Flag -->
+        <div class="flex items-center space-x-6 xl:space-x-8 shrink-0">
+            <!-- Desktop Nav Menu Links (Exact bicap.shop: Montserrat 13px 700 uppercase, padding 0 10px, normal tracking) -->
+            <nav class="hidden lg:flex items-center space-x-0.5 xl:space-x-1">
+                <a href="{{ url('/mission-vision') }}" class="bicap-nav-link">
+                    MISSION & VISION
+                </a>
+                <a href="{{ route('public.home') }}" class="bicap-nav-link">
+                    SHOP
+                </a>
+                <a href="{{ url('/condizioni-di-vendita') }}" class="bicap-nav-link">
+                    CONDIZIONI DI VENDITA
+                </a>
+                <a href="{{ url('/resi-e-rimborsi') }}" class="bicap-nav-link">
+                    RESI E RIMBORSI
+                </a>
+                <a href="{{ url('/spedizioni') }}" class="bicap-nav-link">
+                    SPEDIZIONI
+                </a>
+                <a href="{{ url('/faq') }}" class="bicap-nav-link">
+                    FAQ
+                </a>
+                <a href="https://www.bicap.it" target="_blank" rel="noopener noreferrer" class="bicap-nav-link bicap-nav-link-yellow font-bold">
+                    <span>BICAP.IT</span>
+                </a>
+            </nav>
+
+            <!-- Utility Action Icons (Far Right - Solid Yellow icons exactly matching bicap.shop) -->
+            <div class="flex items-center space-x-3.5 sm:space-x-4 shrink-0">
+                <!-- 1. Email Contact Icon (Solid Yellow) -->
+                <a href="mailto:info@bicap.it" style="color: #fedb00 !important;" class="hover:opacity-80 transition-opacity p-1 inline-flex items-center" title="Contattaci via Email">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="#fedb00" style="fill: #fedb00 !important;">
+                        <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
+                        <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
+                    </svg>
+                </a>
+
+                <!-- 2. User / Shop Account Login / Area Personale (Solid Yellow) -->
+                @auth
+                    @php
+                        $user = auth()->user();
+                        $isShopCustomer = in_array($user->role, ['customer', 'user']) && !$user->b2b_customer_id;
+                    @endphp
+                    @if($isShopCustomer)
+                        <!-- Dropdown Menu Cliente Shop -->
+                        <div class="relative inline-flex items-center" x-data="{ userMenuOpen: false }" @click.away="userMenuOpen = false">
+                            <button @click="userMenuOpen = !userMenuOpen" 
+                                    style="color: #fedb00 !important;" 
+                                    class="hover:opacity-80 transition-opacity p-1 inline-flex items-center gap-1 focus:outline-none cursor-pointer" 
+                                    title="Area Personale ({{ $user->name }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="#fedb00" style="fill: #fedb00 !important;">
+                                    <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
+                                </svg>
+                                <svg class="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <div x-show="open" x-transition class="absolute right-0 top-12 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 py-1" style="display: none;">
-                                <div class="px-4 py-2 text-xs text-gray-400 border-b">Area Booking</div>
-                                <a href="{{ route('public.booking.dashboard.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 italic">Le mie prenotazioni</a>
-                                <a href="{{ route('public.booking.dashboard.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 italic">Profilo</a>
-                                <form action="{{ route('public.booking.dashboard.logout') }}" method="POST">@csrf<button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 italic">Esci</button></form>
+                            <div x-show="userMenuOpen" 
+                                 x-transition 
+                                 class="absolute right-0 top-full mt-2 w-56 bg-zinc-950 border border-zinc-800 rounded-none shadow-2xl py-2 z-50 text-xs" 
+                                 style="display: none;">
+                                <div class="px-4 py-2 border-b border-zinc-800">
+                                    <p class="font-black text-white truncate">{{ $user->name }}</p>
+                                    <p class="text-[11px] text-zinc-400 truncate">{{ $user->email }}</p>
+                                </div>
+                                <a href="{{ route('public.account.dashboard') }}" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-zinc-900 text-zinc-200 hover:text-[#fedb00] transition">
+                                    <svg class="w-4 h-4 text-[#fedb00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                    <span class="font-bold">I Miei Ordini</span>
+                                </a>
+                                <a href="{{ route('public.account.profile') }}" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-zinc-900 text-zinc-200 hover:text-[#fedb00] transition">
+                                    <svg class="w-4 h-4 text-[#fedb00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    <span class="font-bold">Dati Personali & Spedizione</span>
+                                </a>
+                                <div class="pt-2 mt-1 border-t border-zinc-800">
+                                    <form method="POST" action="{{ route('public.account.logout') }}">
+                                        @csrf
+                                        <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-400 hover:bg-zinc-900 hover:text-rose-300 transition cursor-pointer font-bold">
+                                            <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                            <span>Esci</span>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     @else
-                        <a href="{{ route('public.booking.dashboard.index') }}" :class="scrolled ? 'text-gray-600 hover:text-primary' : 'text-white/80 hover:text-white'" class="relative inline-flex items-center p-2 transition-colors" title="Accedi Area Booking">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                        @php
+                            $dashUrl = $user->role === 'admin' ? route('dashboard') : route('agent.dashboard');
+                        @endphp
+                        <a href="{{ $dashUrl }}" style="color: #fedb00 !important;" class="hover:opacity-80 transition-opacity p-1 inline-flex items-center" title="Pannello B2B / Gestione ({{ $user->name }})">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="#fedb00" style="fill: #fedb00 !important;">
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
+                            </svg>
                         </a>
                     @endif
-                @endif
-            </div>
-        @endif
-        <div class="flex items-center justify-between h-20">
-             <!-- Logo -->
-                <div class="flex shrink-0 mr-5 ml-4 lg:ml-0">
-                    <a href="{{ route('public.home') }}" class="text-2xl font-bold text-indigo-600 flex items-center">
-                        @if($siteLogo)
-                            <img src="{{ asset($siteLogo) }}" alt="{{ config('app.name') }}" :class="scrolled ? '' : 'brightness-0 invert'" class="h-14 w-auto transition-all duration-300">
-                        @else
-                            {{ config('app.name', 'Il Mio Sito') }}
-                        @endif
+                @else
+                    <a href="{{ route('public.account.login') }}" style="color: #fedb00 !important;" class="hover:opacity-80 transition-opacity p-1 inline-flex items-center" title="Area Personale / Accedi">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="#fedb00" style="fill: #fedb00 !important;">
+                            <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
+                        </svg>
                     </a>
-                </div>
-            <div class="flex items-center gap-7 ml-auto space-x-4">
-                <!-- Mobile menu button -->
-                <div class="-ml-2 mr-2 flex items-center lg:hidden">
-                  <button @click="mobileMenuOpen = !mobileMenuOpen" type="button"
-        :class="scrolled ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' : 'text-white hover:text-white/80 hover:bg-white/10'"
-        class="inline-flex items-center justify-center p-2 rounded-md focus:outline-none transition duration-150 ease-in-out"
-        aria-label="Menu" :aria-expanded="mobileMenuOpen">
-    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-        <path :class="{'hidden': mobileMenuOpen, 'inline-flex': !mobileMenuOpen }" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        <path :class="{'hidden': !mobileMenuOpen, 'inline-flex': mobileMenuOpen }" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-</button>
-                </div>
+                @endauth
 
-
-
-                <!-- Navigation Links -->
-                <nav class="menu tracking-tight hidden gap-8 sm:-my-px lg:flex justify-center items-center">
-
-
-                    @if(isset($shared_sezioni))
-                        @foreach($shared_sezioni->where('mostra_nel_menu', true) as $sez)
-                            @if(
-                                ($sez->modulo === 'shop' && $shopEnabled != '1') ||
-                                ($sez->modulo === 'b2b' && $shopEnabled != '1') ||
-                                ($sez->modulo === 'booking' && $bookingEnabled != '1')
-                            )
-                                @continue
-                            @endif
-                            @php
-                                $url = route('public.sezione', $sez->slug ?? $sez->id.'-it');
-                                if ($sez->modulo === 'home') $url = route('public.home');
-                                if ($sez->modulo === 'shop') $url = route('public.shop.index');
-                                if ($sez->modulo === 'booking') $url = route('public.booking.index');
-                                if ($sez->modulo === 'b2b') $url = route('agent.dashboard');
-
-                                $isActive = request()->is($sez->slug ?? $sez->id.'-it') ||
-                                            ($sez->modulo === 'home' && request()->routeIs('public.home')) ||
-                                            ($sez->modulo === 'shop' && request()->routeIs('public.shop.*')) ||
-                                            ($sez->modulo === 'booking' && request()->routeIs('public.booking.*')) ||
-                                            ($sez->modulo === 'b2b' && request()->routeIs('agent.*'));
-                            @endphp
-
-                            @if($sez->tipo == 'archivio' && $sez->menu_a_tendina && !$sez->modulo)
-                                <!-- Dropdown per Archivio (Solo per sezioni CMS normali) -->
-                                <div class="relative inline-flex items-center px-1 pt-1 border-b-2 border-transparent" x-data="{ open: false }" @click.away="open = false" @mouseenter="open = true" @mouseleave="open = false">
-                                    <a href="{{ $url }}" :class="scrolled ? 'text-gray-500 hover:text-black' : 'text-white/80 hover:text-white'" class="text-base leading-5 transition duration-150 ease-in-out inline-block">{{ $sez->nome }} <svg class="ml-1 h-4 w-4 inline-block transform transition-transform duration-200" :class="{'rotate-180': open, 'text-gray-400': scrolled, 'text-white/50': !scrolled}" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></a>
-
-                                    <div x-show="open"
-                                         x-transition:enter="transition ease-out duration-100"
-                                         x-transition:enter-start="transform opacity-0 scale-95"
-                                         x-transition:enter-end="transform opacity-100 scale-100"
-                                         x-transition:leave="transition ease-in duration-75"
-                                         x-transition:leave-start="transform opacity-100 scale-100"
-                                         x-transition:leave-end="transform opacity-0 scale-95"
-                                         class="origin-top-left absolute left-0 top-12 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 divide-y divide-gray-100 focus:outline-none" style="display: none;">
-
-                                        <div class="py-1">
-                                            <a href="{{ $url }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 font-semibold border-b">
-                                                Tutti gli articoli
-                                            </a>
-                                            @foreach($sez->articles()->where('visibile', true)->latest()->get() as $articolo)
-                                                <a href="{{ route('public.articolo', ['sezione_slug' => $sez->slug ?? $sez->id.'-it', 'articolo_slug' => $articolo->slug ?? $articolo->id.'-it']) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 border-l-2 border-transparent hover:border-indigo-500">
-                                                    {{ Str::limit($articolo->titolo, 30) }}
-                                                </a>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                            @else
-                                <!-- Link Semplice (Module o Pagina) -->
-                                <a href="{{ $url }}" :class="scrolled ? '{{ $isActive ? 'border-primary text-primary font-semibold' : 'border-transparent hover:text-primary hover:border-primary hover:font-semibold' }}' : '{{ $isActive ? 'border-white text-white font-semibold' : 'border-transparent text-white hover:text-white hover:border-white hover:font-semibold font-medium' }}'" class="inline-flex items-center pb-1 border-b-2 font-medium leading-5 transition duration-150 ease-in-out">{{ $sez->nome }}</a>
-                            @endif
-                        @endforeach
+                <!-- 3. Cart Icon (Solid Yellow with Badge) -->
+                @php
+                    $sessionCart = session()->get('cart', []);
+                    $sessionCartCount = is_array($sessionCart) ? array_sum(array_column($sessionCart, 'quantita')) : 0;
+                @endphp
+                <a href="{{ route('public.shop.cart.index') }}" style="color: #fedb00 !important;" class="hover:opacity-80 transition-opacity p-1 inline-flex items-center relative" title="Carrello ({{ $sessionCartCount }})">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="#fedb00" style="fill: #fedb00 !important;">
+                        <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" />
+                    </svg>
+                    @if($sessionCartCount > 0)
+                        <span class="absolute -top-1.5 -right-2 bg-[#e35205] text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none shadow-sm">
+                            {{ $sessionCartCount > 99 ? '99+' : $sessionCartCount }}
+                        </span>
                     @endif
-                </nav>
+                </a>
+
+                <!-- 4. Language Switcher (Italian Flag) -->
+                <div class="relative inline-flex items-center" @click.away="langOpen = false">
+                    <button @click="langOpen = !langOpen" class="flex items-center gap-1 p-1 hover:opacity-80 transition" title="Cambia lingua">
+                        @if($currentLocale === 'en')
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" class="w-5 h-3.5 rounded-none object-cover shadow-xs"><path fill="#012169" d="M0 0h60v30H0z"/><path stroke="#FFF" stroke-width="6" d="M0 0l60 30m0-30L0 30"/><path stroke="#C8102E" stroke-width="4" d="M0 0l60 30m0-30L0 30"/><path stroke="#FFF" stroke-width="10" d="M30 0v30M0 15h60"/><path stroke="#C8102E" stroke-width="6" d="M30 0v30M0 15h60"/></svg>
+                        @else
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2" class="w-5 h-3.5 rounded-none object-cover shadow-xs"><rect width="3" height="2" fill="#009246"/><rect width="2" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#ce2b37"/></svg>
+                        @endif
+                    </button>
+                    <div x-show="langOpen" x-transition class="absolute right-0 mt-2 w-32 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl py-1 z-50 text-xs font-bold" style="display: none;">
+                        <a href="{{ route('set-locale', 'it') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-zinc-800 transition text-white {{ $currentLocale === 'it' ? 'bg-zinc-800 text-[#fedb00]' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2" class="w-4 h-2.5 rounded-none"><rect width="3" height="2" fill="#009246"/><rect width="2" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#ce2b37"/></svg>
+                            <span>Italiano</span>
+                        </a>
+                        <a href="{{ route('set-locale', 'en') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-zinc-800 transition text-white {{ $currentLocale === 'en' ? 'bg-zinc-800 text-[#fedb00]' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" class="w-4 h-2"><path fill="#012169" d="M0 0h60v30H0z"/><path stroke="#FFF" stroke-width="6" d="M0 0l60 30m0-30L0 30"/><path stroke="#C8102E" stroke-width="4" d="M0 0l60 30m0-30L0 30"/><path stroke="#FFF" stroke-width="10" d="M30 0v30M0 15h60"/><path stroke="#C8102E" stroke-width="6" d="M30 0v30M0 15h60"/></svg>
+                            <span>English</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 5. Mobile Menu Button -->
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden text-white hover:text-[#fedb00] p-1.5 focus:outline-none">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path :class="{'hidden': mobileMenuOpen, 'inline-flex': !mobileMenuOpen }" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': !mobileMenuOpen, 'inline-flex': mobileMenuOpen }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
-
-            <div class="flex items-center space-x-5 sm:ml-6 hidden">
-    @if($shopEnabled == '1' || Auth::check())
-        @auth
-            <a href="{{ Auth::user()->role === 'admin' ? route('dashboard') : route('public.account.dashboard') }}" :class="scrolled ? 'text-gray-600 hover:text-black' : 'text-white/80 hover:text-white'" class="relative inline-flex items-center p-2 transition-colors" title="Il Mio Account">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-            </a>
-        @else
-            <a href="{{ route('login') }}" :class="scrolled ? 'text-gray-600 hover:text-black' : 'text-white/80 hover:text-white'" class="relative inline-flex items-center p-2 transition-colors" title="Accedi Shop / Registrati">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
-            </a>
-        @endauth
-    @endif
-
-    @if($shopEnabled == '1')
-        <a href="{{ route('public.shop.cart.index') }}" :class="scrolled ? 'text-gray-600 hover:text-primary' : 'text-white/80 hover:text-white'" class="relative inline-flex items-center p-2 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-            @php $cartCount = array_sum(array_column(session()->get('cart', []), 'quantita')); @endphp
-            @if($cartCount > 0)
-                <span class="absolute top-0 right-0 -mt-1 -mr-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">{{ $cartCount }}</span>
-            @endif
-        </a>
-    @endif
-</div>
         </div>
     </div>
 
-    <!-- Mobile menu, toggle via Alpine.js -->
-    <div x-show="mobileMenuOpen" class="lg:hidden bg-white border-t border-gray-200" style="display: none;"
-         x-transition:enter="transition ease-out duration-100"
-         x-transition:enter-start="transform opacity-0 scale-95"
-         x-transition:enter-end="transform opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-75"
-         x-transition:leave-start="transform opacity-100 scale-100"
-         x-transition:leave-end="transform opacity-0 scale-95">
-        <div class="pt-2 pb-3 space-y-1 font-display">
-
-
-            @if(isset($shared_sezioni))
-                @foreach($shared_sezioni->where('mostra_nel_menu', true) as $sez)
-                    @if(
-                        ($sez->modulo === 'shop' && $shopEnabled != '1') ||
-                        ($sez->modulo === 'b2b' && $shopEnabled != '1') ||
-                        ($sez->modulo === 'booking' && $bookingEnabled != '1')
-                    )
-                        @continue
-                    @endif
-                    @php
-                        $url = route('public.sezione', $sez->slug ?? $sez->id.'-it');
-                        if ($sez->modulo === 'home') $url = route('public.home');
-                        if ($sez->modulo === 'shop') $url = route('public.shop.index');
-                        if ($sez->modulo === 'booking') $url = route('public.booking.index');
-                        if ($sez->modulo === 'b2b') $url = route('agent.dashboard');
-
-                        $isActive = request()->is($sez->slug ?? $sez->id.'-it') ||
-                                    ($sez->modulo === 'home' && request()->routeIs('public.home')) ||
-                                    ($sez->modulo === 'shop' && request()->routeIs('public.shop.*')) ||
-                                    ($sez->modulo === 'booking' && request()->routeIs('public.booking.*')) ||
-                                    ($sez->modulo === 'b2b' && request()->routeIs('agent.*'));
-                    @endphp
-
-                    @if($sez->tipo == 'archivio' && $sez->menu_a_tendina && !$sez->modulo)
-                        <div x-data="{ openSub: false }">
-                            <button @click="openSub = !openSub" class="w-full flex justify-between items-center text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300 text-base font-medium transition duration-150 ease-in-out">
-                                {{ $sez->nome }}
-                                <svg class="ml-1 h-4 w-4 transform transition-transform duration-200 text-gray-400" :class="{'rotate-180': openSub}" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                            </button>
-                            <div x-show="openSub" class="bg-gray-50 pl-6 pr-4 py-2 space-y-1" style="display: none;">
-                                <a href="{{ $url }}" class="block py-2 text-sm text-gray-700 font-semibold hover:text-indigo-600">
-                                    Tutti gli articoli
-                                </a>
-                                @foreach($sez->articles()->where('visibile', true)->latest()->get() as $articolo)
-                                    <a href="{{ route('public.articolo', ['sezione_slug' => $sez->slug ?? $sez->id.'-it', 'articolo_slug' => $articolo->slug ?? $articolo->id.'-it']) }}" class="block py-2 text-sm text-gray-500 hover:text-primary">
-                                        {{ Str::limit($articolo->titolo, 30) }}
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                    @else
-                        <a href="{{ $url }}" class="block pl-3 pr-4 py-2 border-l-2 border-primary {{ $isActive ? 'border-text-primary text-primary' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }} text-base font-medium transition duration-150 ease-in-out">
-                            {{ $sez->nome }}
-                        </a>
-                    @endif
-                @endforeach
-            @endif
+    <!-- Mobile Drawer Menu -->
+    <div x-show="mobileMenuOpen" class="lg:hidden bg-zinc-950 border-b border-zinc-800 text-white px-4 py-4 space-y-3" style="display: none;"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-2">
+        <a href="{{ url('/mission-vision') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">MISSION & VISION</a>
+        <a href="{{ route('public.home') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-[#fedb00]">SHOP</a>
+        <a href="{{ url('/condizioni-di-vendita') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">CONDIZIONI DI VENDITA</a>
+        <a href="{{ url('/resi-e-rimborsi') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">RESI E RIMBORSI</a>
+        <a href="{{ url('/spedizioni') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">SPEDIZIONI</a>
+        <a href="{{ url('/faq') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">FAQ</a>
+        <a href="https://www.bicap.it" target="_blank" class="block py-2 text-sm font-bold uppercase tracking-wider text-[#fedb00]">BICAP.IT ↗</a>
+        <div class="pt-3 border-t border-zinc-800 space-y-2">
+            @auth
+                @if(in_array(auth()->user()->role, ['customer', 'user']) && !auth()->user()->b2b_customer_id)
+                    <div class="text-xs text-zinc-400 font-bold mb-1">AREA PERSONALE ({{ auth()->user()->name }})</div>
+                    <a href="{{ route('public.account.dashboard') }}" class="block py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:text-[#fedb00]">I MIEI ORDINI</a>
+                    <a href="{{ route('public.account.profile') }}" class="block py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:text-[#fedb00]">DATI PERSONALI & SPEDIZIONE</a>
+                    <form method="POST" action="{{ route('public.account.logout') }}" class="pt-1">
+                        @csrf
+                        <button type="submit" class="text-xs font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 cursor-pointer">Esci dall'Account</button>
+                    </form>
+                @else
+                    <a href="{{ auth()->user()->role === 'admin' ? route('dashboard') : route('agent.dashboard') }}" class="inline-flex items-center gap-2 bg-[#fedb00] text-black px-4 py-2 rounded-none text-xs font-black uppercase tracking-wider">
+                        <span>Pannello Gestione</span>
+                        <span>→</span>
+                    </a>
+                @endif
+            @else
+                <a href="{{ route('public.account.login') }}" class="w-full inline-flex items-center justify-center gap-2 bg-[#fedb00] text-black px-4 py-2.5 rounded-none text-xs font-black uppercase tracking-wider">
+                    <span>Accedi Area Personale</span>
+                    <span>→</span>
+                </a>
+                <div class="text-center pt-2">
+                    <a href="{{ route('login') }}" class="text-[11px] text-zinc-400 hover:text-white underline">Accedi Portale B2B Agenti</a>
+                </div>
+            @endauth
         </div>
     </div>
 </header>

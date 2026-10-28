@@ -47,11 +47,11 @@
                 @endif
             </div>
 
-            <div class="mt-6 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <a href="{{ route('public.shop.index') }}" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <div class="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+                <a href="{{ route('public.home') }}" class="inline-flex justify-center items-center px-6 py-3 border border-gray-300 text-sm font-bold uppercase tracking-wider rounded-none text-black bg-white hover:bg-gray-50 transition">
                     Continua lo Shopping
                 </a>
-                <a href="{{ route('public.home') }}" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <a href="{{ route('public.home') }}" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-bold uppercase tracking-wider rounded-none text-white bg-black hover:bg-zinc-800 transition">
                     Torna alla Home
                 </a>
             </div>

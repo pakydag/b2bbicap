@@ -34,6 +34,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($request->is('booking*')) {
                     return route('public.booking.login.view');
                 }
+                if ($request->is('account*') || $request->is('shop/account*')) {
+                    return route('public.account.login');
+                }
                 return route('login');
             },
             users: function (\Illuminate\Http\Request $request) {
@@ -48,7 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
                         }
                         return route('dashboard');
                     }
-                    if ($user->role === 'customer') {
+                    if ($user->role === 'customer' || $user->role === 'user') {
                         return route('public.account.dashboard');
                     }
                 }

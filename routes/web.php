@@ -11,7 +11,7 @@ use App\Http\Controllers\Admin\HomeController as AdminHomeController;
 use App\Http\Controllers\PublicController;
 use Illuminate\Support\Facades\Route;
 
-// Rotte Pubbliche (Homepage)
+// Rotte Portale (Root redirect a login o dashboard)
 Route::get('/', function () {
     if (auth()->check()) {
         $user = auth()->user();
@@ -29,7 +29,14 @@ Route::get('/', function () {
         }
     }
     return redirect()->route('login');
-})->name('public.home');
+})->name('root');
+
+// Sito Web Pubblico (Sito vetrina classico con menu, sezioni e contenuti)
+Route::get('/sito', [PublicController::class, 'home'])->name('public.home');
+Route::get('/sito-web', function () {
+    return redirect()->route('public.home');
+})->name('public.sito');
+Route::get('/prodotto/{product}', [PublicController::class, 'productDetail'])->name('public.product.detail');
 
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['it', 'en'])) {
@@ -101,10 +108,28 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Area Clienti B2C (Pubblica)
-    Route::get('/account', [\App\Http\Controllers\CustomerAreaController::class, 'dashboard'])->name('public.account.dashboard');
-    Route::get('/account/profile', [\App\Http\Controllers\CustomerAreaController::class, 'profile'])->name('public.account.profile');
-    Route::post('/account/profile', [\App\Http\Controllers\CustomerAreaController::class, 'updateProfile'])->name('public.account.updateProfile');
+    // Breeze Default Profile (per utenti autenticati generici)
+});
+
+// Area Clienti B2C Shop (Guest: Login, Registrazione, Logout)
+Route::prefix('account')->name('public.account.')->group(function () {
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [\App\Http\Controllers\CustomerAreaController::class, 'showLogin'])->name('login');
+        Route::post('/login', [\App\Http\Controllers\CustomerAreaController::class, 'login'])->name('login.submit');
+        Route::get('/register', [\App\Http\Controllers\CustomerAreaController::class, 'showRegister'])->name('register');
+        Route::post('/register', [\App\Http\Controllers\CustomerAreaController::class, 'register'])->name('register.submit');
+    });
+
+    Route::post('/logout', [\App\Http\Controllers\CustomerAreaController::class, 'logout'])->name('logout');
+});
+
+// Area Clienti B2C Shop (Auth: Profilo, Storico e Dettaglio Ordini)
+Route::middleware('auth')->prefix('account')->name('public.account.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\CustomerAreaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/ordini', [\App\Http\Controllers\CustomerAreaController::class, 'dashboard'])->name('orders');
+    Route::get('/ordini/{id}', [\App\Http\Controllers\CustomerAreaController::class, 'orderDetail'])->name('orders.detail');
+    Route::get('/profile', [\App\Http\Controllers\CustomerAreaController::class, 'profile'])->name('profile');
+    Route::post('/profile', [\App\Http\Controllers\CustomerAreaController::class, 'updateProfile'])->name('updateProfile');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')->group(function () {
@@ -165,6 +190,8 @@ Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')-
         // Gestione Spedizioni
         Route::get('shipping-costs', [\App\Http\Controllers\Admin\ShopShippingCostController::class, 'index'])->name('shipping_costs.index');
         Route::post('shipping-costs', [\App\Http\Controllers\Admin\ShopShippingCostController::class, 'store'])->name('shipping_costs.store');
+        Route::put('shipping-costs/{shippingCost}', [\App\Http\Controllers\Admin\ShopShippingCostController::class, 'update'])->name('shipping_costs.update');
+        Route::post('shipping-costs/init-eu', [\App\Http\Controllers\Admin\ShopShippingCostController::class, 'initEuCountries'])->name('shipping_costs.init_eu');
         Route::patch('shipping-costs/threshold', [\App\Http\Controllers\Admin\ShopShippingCostController::class, 'updateThreshold'])->name('shipping_costs.threshold');
         Route::delete('shipping-costs/{shippingCost}', [\App\Http\Controllers\Admin\ShopShippingCostController::class, 'destroy'])->name('shipping_costs.destroy');
 
@@ -312,6 +339,8 @@ Route::get('/webhook/spoki', function () {
 // Shop Pubblico
 Route::get('/shop', [\App\Http\Controllers\PublicShopController::class, 'index'])->name('public.shop.index');
 Route::get('/shop/cart', [\App\Http\Controllers\PublicShopCartController::class, 'index'])->name('public.shop.cart.index');
+Route::get('/carrello', [\App\Http\Controllers\PublicShopCartController::class, 'index'])->name('public.cart');
+Route::get('/cart', [\App\Http\Controllers\PublicShopCartController::class, 'index']);
 Route::post('/shop/cart/add', [\App\Http\Controllers\PublicShopCartController::class, 'add'])->name('public.shop.cart.add');
 Route::delete('/shop/cart/remove/{variant_id}', [\App\Http\Controllers\PublicShopCartController::class, 'remove'])->name('public.shop.cart.remove');
 
