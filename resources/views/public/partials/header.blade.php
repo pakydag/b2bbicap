@@ -92,26 +92,38 @@
                             </button>
                             <div x-show="userMenuOpen" 
                                  x-transition 
-                                 class="absolute right-0 top-full mt-2 w-56 bg-zinc-950 border border-zinc-800 rounded-none shadow-2xl py-2 z-50 text-xs" 
-                                 style="display: none;">
-                                <div class="px-4 py-2 border-b border-zinc-800">
-                                    <p class="font-black text-white truncate">{{ $user->name }}</p>
-                                    <p class="text-[11px] text-zinc-400 truncate">{{ $user->email }}</p>
+                                 class="absolute right-0 top-full mt-2 w-64 bg-black border border-zinc-700 shadow-2xl py-2 z-50 text-xs" 
+                                 style="display: none; background-color: #000000 !important;">
+                                <div class="px-4 py-3 border-b border-zinc-800">
+                                    <p class="font-bold truncate" style="color: #ffffff !important; font-size: 13px;">{{ $user->name }}</p>
+                                    <p class="truncate mt-0.5" style="color: #a1a1aa !important; font-size: 11px;">{{ $user->email }}</p>
                                 </div>
-                                <a href="{{ route('public.account.dashboard') }}" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-zinc-900 text-zinc-200 hover:text-[#fedb00] transition">
-                                    <svg class="w-4 h-4 text-[#fedb00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                                    <span class="font-bold">I Miei Ordini</span>
+                                <a href="{{ route('public.account.dashboard') }}" 
+                                   style="color: #ffffff !important; text-decoration: none !important;" 
+                                   class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-zinc-900 transition font-bold"
+                                   onmouseover="this.style.color='#fedb00'"
+                                   onmouseout="this.style.color='#ffffff'">
+                                    <svg class="w-4 h-4 shrink-0" style="color: #fedb00;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                    <span style="color: inherit !important;">I Miei Ordini</span>
                                 </a>
-                                <a href="{{ route('public.account.profile') }}" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-zinc-900 text-zinc-200 hover:text-[#fedb00] transition">
-                                    <svg class="w-4 h-4 text-[#fedb00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                    <span class="font-bold">Dati Personali & Spedizione</span>
+                                <a href="{{ route('public.account.profile') }}" 
+                                   style="color: #ffffff !important; text-decoration: none !important;" 
+                                   class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-zinc-900 transition font-bold"
+                                   onmouseover="this.style.color='#fedb00'"
+                                   onmouseout="this.style.color='#ffffff'">
+                                    <svg class="w-4 h-4 shrink-0" style="color: #fedb00;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    <span style="color: inherit !important;">Dati Personali & Spedizione</span>
                                 </a>
                                 <div class="pt-2 mt-1 border-t border-zinc-800">
                                     <form method="POST" action="{{ route('public.account.logout') }}">
                                         @csrf
-                                        <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-400 hover:bg-zinc-900 hover:text-rose-300 transition cursor-pointer font-bold">
-                                            <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                                            <span>Esci</span>
+                                        <button type="submit" 
+                                                style="color: #ff6b6b !important;" 
+                                                class="w-full text-left flex items-center gap-2.5 px-4 py-2 hover:bg-zinc-900 transition cursor-pointer font-bold"
+                                                onmouseover="this.style.color='#ffa8a8'"
+                                                onmouseout="this.style.color='#ff6b6b'">
+                                            <svg class="w-4 h-4 shrink-0" style="color: #ff6b6b;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                            <span style="color: inherit !important;">Esci</span>
                                         </button>
                                     </form>
                                 </div>
@@ -202,8 +214,8 @@
             @auth
                 @if(in_array(auth()->user()->role, ['customer', 'user']) && !auth()->user()->b2b_customer_id)
                     <div class="text-xs text-zinc-400 font-bold mb-1">AREA PERSONALE ({{ auth()->user()->name }})</div>
-                    <a href="{{ route('public.account.dashboard') }}" class="block py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:text-[#fedb00]">I MIEI ORDINI</a>
-                    <a href="{{ route('public.account.profile') }}" class="block py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:text-[#fedb00]">DATI PERSONALI & SPEDIZIONE</a>
+                    <a href="{{ route('public.account.dashboard') }}" style="color: #ffffff !important;" class="block py-1.5 text-xs font-bold uppercase tracking-wider hover:text-[#fedb00]">I MIEI ORDINI</a>
+                    <a href="{{ route('public.account.profile') }}" style="color: #ffffff !important;" class="block py-1.5 text-xs font-bold uppercase tracking-wider hover:text-[#fedb00]">DATI PERSONALI & SPEDIZIONE</a>
                     <form method="POST" action="{{ route('public.account.logout') }}" class="pt-1">
                         @csrf
                         <button type="submit" class="text-xs font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 cursor-pointer">Esci dall'Account</button>
