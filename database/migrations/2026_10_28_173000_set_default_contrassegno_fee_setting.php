@@ -14,7 +14,7 @@ return new class extends Migration
         if (!$setting || $setting->value === null || $setting->value === '') {
             Setting::updateOrCreate(
                 ['key' => 'payment_contrassegno_fee'],
-                ['value' => '5.00']
+                ['value' => '10.00']
             );
         }
     }

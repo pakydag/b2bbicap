@@ -95,7 +95,7 @@
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <span class="text-slate-400 font-bold">€</span>
                                     </div>
-                                    <input type="number" step="0.01" min="0" name="payment_contrassegno_fee" id="payment_contrassegno_fee" value="{{ $contrassegnoFee ?? '5.00' }}" class="bg-slate-50 border-slate-200 text-slate-900 text-lg font-bold rounded-xl focus:ring-black focus:border-black block w-full pl-10 p-3.5 transition-all" placeholder="5.00">
+                                    <input type="number" step="0.01" min="0" name="payment_contrassegno_fee" id="payment_contrassegno_fee" value="{{ $contrassegnoFee ?? '10.00' }}" class="bg-slate-50 border-slate-200 text-slate-900 text-lg font-bold rounded-xl focus:ring-black focus:border-black block w-full pl-10 p-3.5 transition-all" placeholder="10.00">
                                 </div>
                                 <p class="text-[11px] text-slate-500 mt-1.5">
                                     Costo fisso addizionale per chi sceglie il pagamento alla consegna (valido solo per l'Italia).

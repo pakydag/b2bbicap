@@ -617,7 +617,7 @@
             shippingCost: 0,
             freeThreshold: {{ $freeThreshold }},
             freeShippingScope: '{{ $freeShippingScope ?? "italy" }}',
-            contrassegnoFee: {{ (float)($contrassegnoFee ?? 5.00) }},
+            contrassegnoFee: {{ (float)($contrassegnoFee ?? 10.00) }},
             paymentMethod: '{{ old('payment_method', $preferred_method ?: 'stripe') }}',
             costs: @json($shippingCosts->pluck('costo', 'nazione')),
 

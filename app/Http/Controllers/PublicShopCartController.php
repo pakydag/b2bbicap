@@ -183,7 +183,7 @@ class PublicShopCartController extends Controller
         $shippingCosts = \App\Models\ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
         $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89.00);
         $freeShippingScope = \App\Models\Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
-        $contrassegnoFee = (float)(\App\Models\Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 5.00);
+        $contrassegnoFee = (float)(\App\Models\Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 10.00);
 
         $totale = 0;
         if (is_array($cart)) {
@@ -312,7 +312,7 @@ class PublicShopCartController extends Controller
             if (strtolower(trim($request->nazione)) !== 'italia') {
                 return back()->withErrors(['payment_method' => 'Il pagamento in contrassegno è disponibile esclusivamente per le spedizioni con destinazione in Italia.'])->withInput();
             }
-            $costoContrassegno = (float)(\App\Models\Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 5.00);
+            $costoContrassegno = (float)(\App\Models\Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 10.00);
         }
 
         $totaleOrdine = $totaleImponibile + $costoSpedizione + $costoContrassegno;

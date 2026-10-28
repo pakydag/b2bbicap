@@ -14,7 +14,7 @@ class ShopShippingCostController extends Controller
         $costs = ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
         $freeThreshold = Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89;
         $freeShippingScope = Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
-        $contrassegnoFee = Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 5.00;
+        $contrassegnoFee = Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 10.00;
         
         return view('admin.shop.shipping_costs.index', compact('costs', 'freeThreshold', 'freeShippingScope', 'contrassegnoFee'));
     }
