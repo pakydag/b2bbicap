@@ -183,6 +183,7 @@ class PublicShopCartController extends Controller
         $shippingCosts = \App\Models\ShopShippingCost::orderByRaw("CASE WHEN nazione = 'Italia' THEN 0 ELSE 1 END, nazione ASC")->get();
         $freeThreshold = (float)(\App\Models\Setting::where('key', 'shop_free_shipping_threshold')->value('value') ?? 89.00);
         $freeShippingScope = \App\Models\Setting::where('key', 'shop_free_shipping_scope')->value('value') ?? 'italy';
+        $contrassegnoFee = (float)(\App\Models\Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 0.00);
 
         $totale = 0;
         if (is_array($cart)) {
@@ -191,7 +192,7 @@ class PublicShopCartController extends Controller
             }
         }
 
-        return view('public.shop.checkout', compact('cart', 'shippingCosts', 'freeThreshold', 'freeShippingScope', 'totale'));
+        return view('public.shop.checkout', compact('cart', 'shippingCosts', 'freeThreshold', 'freeShippingScope', 'contrassegnoFee', 'totale'));
     }
 
     public function processCheckout(Request $request)
@@ -305,7 +306,16 @@ class PublicShopCartController extends Controller
             $costoSpedizione = 0;
         }
 
-        $totaleOrdine = $totaleImponibile + $costoSpedizione;
+        // Calcolo Contrassegno (solo per l'Italia)
+        $costoContrassegno = 0;
+        if (($request->payment_method ?? '') === 'contrassegno') {
+            if (strtolower(trim($request->nazione)) !== 'italia') {
+                return back()->withErrors(['payment_method' => 'Il pagamento in contrassegno è disponibile esclusivamente per le spedizioni con destinazione in Italia.'])->withInput();
+            }
+            $costoContrassegno = (float)(\App\Models\Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 0.00);
+        }
+
+        $totaleOrdine = $totaleImponibile + $costoSpedizione + $costoContrassegno;
 
         // 5. Create the Order record
         $order = new \App\Models\ShopOrder();
@@ -320,6 +330,7 @@ class PublicShopCartController extends Controller
         $order->totale_iva = 0; // Se c'è IVA specifica da calcolare, aggiungerla
         $order->totale_ordine = $totaleOrdine;
         $order->costo_spedizione = $costoSpedizione;
+        $order->costo_contrassegno = $costoContrassegno;
 
         $order->spedizione_nome = $request->nome . ' ' . $request->cognome;
         $order->spedizione_indirizzo = $request->indirizzo;

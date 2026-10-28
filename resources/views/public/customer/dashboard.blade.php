@@ -337,6 +337,12 @@
                                                         @endif
                                                     </span>
                                                 </div>
+                                                @if((float)($order->costo_contrassegno ?? 0) > 0)
+                                                <div class="flex justify-between text-amber-900 font-bold">
+                                                    <span>Contrassegno:</span>
+                                                    <span>+ € {{ number_format($order->costo_contrassegno, 2, ',', '.') }}</span>
+                                                </div>
+                                                @endif
                                                 <div class="flex justify-between text-sm font-black text-black pt-2 border-t border-zinc-200">
                                                     <span>Totale Complessivo:</span>
                                                     <span class="text-base text-[#e35205]">€ {{ number_format($order->totale_ordine, 2, ',', '.') }}</span>

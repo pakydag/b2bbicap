@@ -58,7 +58,8 @@ class SettingController extends Controller
         $paymentParams = [
             'stripe_key', 'stripe_secret',
             'paypal_client_id', 'paypal_secret', 'paypal_mode',
-            'bonifico_intestazione', 'bonifico_banca', 'bonifico_iban'
+            'bonifico_intestazione', 'bonifico_banca', 'bonifico_iban',
+            'payment_contrassegno_fee',
         ];
 
         $trackingSettings = [
@@ -96,6 +97,7 @@ class SettingController extends Controller
             'bonifico_intestazione' => 'nullable|string',
             'bonifico_banca' => 'nullable|string',
             'bonifico_iban' => 'nullable|string',
+            'payment_contrassegno_fee' => 'nullable|numeric|min:0',
             'vapi_key' => 'nullable|string',
             'vapi_assistant_id' => 'nullable|string',
             'spoki_key' => 'nullable|string',

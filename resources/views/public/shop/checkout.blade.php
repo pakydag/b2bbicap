@@ -464,8 +464,8 @@
                         @else
                             <div class="space-y-4">
                                 @if($stripe_enabled)
-                                <div class="border rounded px-4 py-3 flex items-center bg-gray-50 border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer">
-                                    <input id="payment_stripe" name="payment_method" type="radio" value="stripe" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer" required {{ $preferred_method === 'stripe' ? 'checked' : '' }}>
+                                <div class="border rounded px-4 py-3 flex items-center bg-gray-50 border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer" :class="{ 'border-slate-900 bg-white ring-1 ring-slate-900': paymentMethod === 'stripe' }">
+                                    <input id="payment_stripe" name="payment_method" type="radio" value="stripe" x-model="paymentMethod" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer" required>
                                     <label for="payment_stripe" class="ml-3 block text-sm font-medium text-gray-900 flex items-center flex-1 cursor-pointer">
                                         Carta di Credito (Stripe)
                                     </label>
@@ -473,8 +473,8 @@
                                 @endif
 
                                 @if($paypal_enabled)
-                                <div class="border rounded px-4 py-3 flex items-center bg-gray-50 border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer">
-                                    <input id="payment_paypal" name="payment_method" type="radio" value="paypal" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer" required {{ $preferred_method === 'paypal' ? 'checked' : '' }}>
+                                <div class="border rounded px-4 py-3 flex items-center bg-gray-50 border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer" :class="{ 'border-slate-900 bg-white ring-1 ring-slate-900': paymentMethod === 'paypal' }">
+                                    <input id="payment_paypal" name="payment_method" type="radio" value="paypal" x-model="paymentMethod" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer" required>
                                     <label for="payment_paypal" class="ml-3 block text-sm font-medium text-gray-900 flex items-center flex-1 cursor-pointer">
                                         PayPal Checkout
                                     </label>
@@ -482,8 +482,8 @@
                                 @endif
 
                                 @if($bonifico_enabled)
-                                <div class="border rounded px-4 py-3 flex items-center bg-gray-50 border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer">
-                                    <input id="payment_bonifico" name="payment_method" type="radio" value="bonifico" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer" required {{ $preferred_method === 'bonifico' ? 'checked' : '' }}>
+                                <div class="border rounded px-4 py-3 flex items-center bg-gray-50 border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer" :class="{ 'border-slate-900 bg-white ring-1 ring-slate-900': paymentMethod === 'bonifico' }">
+                                    <input id="payment_bonifico" name="payment_method" type="radio" value="bonifico" x-model="paymentMethod" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer" required>
                                     <label for="payment_bonifico" class="ml-3 block text-sm font-medium text-gray-900 flex-1 cursor-pointer">
                                         Bonifico Bancario Anticipato
                                     </label>
@@ -491,11 +491,21 @@
                                 @endif
 
                                 @if($contrassegno_enabled)
-                                <div class="border rounded px-4 py-3 flex items-center bg-gray-50 border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer">
-                                    <input id="payment_contrassegno" name="payment_method" type="radio" value="contrassegno" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer" required {{ $preferred_method === 'contrassegno' ? 'checked' : '' }}>
-                                    <label for="payment_contrassegno" class="ml-3 block text-sm font-medium text-gray-900 flex-1 cursor-pointer">
-                                        Contrassegno (Pagamento alla Consegna)
-                                    </label>
+                                <div x-show="nazione === 'Italia'" class="border rounded px-4 py-3 flex items-center justify-between bg-gray-50 border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer" :class="{ 'border-slate-900 bg-white ring-1 ring-slate-900': paymentMethod === 'contrassegno' }">
+                                    <div class="flex items-center flex-1 cursor-pointer">
+                                        <input id="payment_contrassegno" name="payment_method" type="radio" value="contrassegno" x-model="paymentMethod" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer" required>
+                                        <label for="payment_contrassegno" class="ml-3 block text-sm font-medium text-gray-900 flex-1 cursor-pointer">
+                                            Contrassegno (Pagamento alla Consegna)
+                                        </label>
+                                    </div>
+                                    <template x-if="contrassegnoFee > 0">
+                                        <span class="text-xs font-bold bg-amber-100 text-amber-900 px-2.5 py-1 rounded-md">
+                                            + € <span x-text="formatPrice(contrassegnoFee)"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                                <div x-show="nazione !== 'Italia'" class="text-xs text-slate-500 italic px-3 py-2 bg-slate-50 border border-slate-200 rounded">
+                                    ℹ️ Il pagamento in contrassegno è disponibile solo per ordini con consegna in Italia.
                                 </div>
                                 @endif
                             </div>
@@ -564,9 +574,19 @@
                                 </template>
                             </dd>
                         </div>
+                        <template x-if="nazione === 'Italia' && paymentMethod === 'contrassegno' && contrassegnoFee > 0">
+                            <div class="flex items-center justify-between text-sm text-amber-900 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                                <dt class="font-bold flex items-center gap-1.5">
+                                    <span>📦 Supplemento Contrassegno</span>
+                                </dt>
+                                <dd class="font-extrabold text-amber-950">
+                                    + € <span x-text="formatPrice(contrassegnoFee)"></span>
+                                </dd>
+                            </div>
+                        </template>
                         <div class="flex items-center justify-between border-t border-gray-200 pt-4">
                             <dt class="text-base font-bold text-gray-900">Totale Da Pagare</dt>
-                            <dd class="text-2xl font-black text-black">€ <span x-text="formatPrice(parseFloat(subtotal) + parseFloat(shippingCost))"></span></dd>
+                            <dd class="text-2xl font-black text-black">€ <span x-text="formatPrice(parseFloat(subtotal) + parseFloat(shippingCost) + (nazione === 'Italia' && paymentMethod === 'contrassegno' ? parseFloat(contrassegnoFee) : 0))"></span></dd>
                         </div>
                     </dl>
 
@@ -597,6 +617,8 @@
             shippingCost: 0,
             freeThreshold: {{ $freeThreshold }},
             freeShippingScope: '{{ $freeShippingScope ?? "italy" }}',
+            contrassegnoFee: {{ $contrassegnoFee ?? 0 }},
+            paymentMethod: '{{ old('payment_method', $preferred_method ?: 'stripe') }}',
             costs: @json($shippingCosts->pluck('costo', 'nazione')),
 
             password: '{{ old('password', '') }}',
@@ -680,6 +702,10 @@
                     this.shippingCost = 0;
                 } else {
                     this.shippingCost = cost;
+                }
+
+                if (this.nazione !== 'Italia' && this.paymentMethod === 'contrassegno') {
+                    this.paymentMethod = 'stripe';
                 }
             },
             

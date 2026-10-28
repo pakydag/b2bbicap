@@ -49,6 +49,12 @@
                         @endif
                     </td>
                 </tr>
+                @if(($order->costo_contrassegno ?? 0) > 0)
+                <tr>
+                    <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Supplemento Contrassegno:</td>
+                    <td style="padding: 10px; text-align: right;">+ € {{ number_format($order->costo_contrassegno, 2, ',', '.') }}</td>
+                </tr>
+                @endif
                 <tr>
                     <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold; font-size: 1.1em; border-top: 2px solid #ddd;">Totale Ordine:</td>
                     <td style="padding: 10px; text-align: right; font-weight: bold; font-size: 1.1em; border-top: 2px solid #ddd;">€ {{ number_format($order->totale_ordine, 2, ',', '.') }}</td>

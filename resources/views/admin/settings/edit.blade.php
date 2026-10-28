@@ -227,6 +227,26 @@
                                         <span class="ms-3 text-sm font-medium text-gray-900">Pagamento alla Consegna (Contrassegno)</span>
                                     </label>
                                 </div>
+
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <div class="max-w-md">
+                                        <label for="payment_contrassegno_fee" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                            Supplemento Costo Contrassegno (€)
+                                        </label>
+                                        <div class="relative rounded-md shadow-sm w-48">
+                                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                                <span class="text-gray-500 font-bold sm:text-sm">€</span>
+                                            </div>
+                                            <input type="number" step="0.01" min="0" name="payment_contrassegno_fee" id="payment_contrassegno_fee" 
+                                                   value="{{ $settings['payment_contrassegno_fee'] ?? '0.00' }}" 
+                                                   class="block w-full rounded-md border-gray-300 pl-8 pr-3 py-2 text-sm font-bold text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" 
+                                                   placeholder="0.00">
+                                        </div>
+                                        <p class="mt-1.5 text-xs text-amber-700 font-medium flex items-center gap-1">
+                                            <span>ℹ️</span> <span>Il contrassegno è valido <strong>esclusivamente per spedizioni in Italia</strong> e questo costo verrà aggiunto al totale dell'ordine.</span>
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         @endif
