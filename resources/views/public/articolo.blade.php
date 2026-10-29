@@ -75,8 +75,60 @@
                 @endif
 
                 <!-- Article Rich Text Description -->
+                @php
+                    $descrizioneHtml = $articolo->descrizione;
+                    // Supporto completo per hspace, vspace e align dagli attributi HTML e da CKEditor
+                    $descrizioneHtml = preg_replace_callback('/<img\b([^>]*?)(\/?)>/i', function($matches) {
+                        $attrs = trim($matches[1]);
+                        $isSelfClosing = !empty($matches[2]) || str_ends_with($attrs, '/');
+                        if (str_ends_with($attrs, '/')) {
+                            $attrs = trim(substr($attrs, 0, -1));
+                        }
+                        
+                        $hspace = null;
+                        $vspace = null;
+                        $align = null;
+                        
+                        if (preg_match('/\bhspace\s*=\s*["\']?(\d+)["\']?/i', $attrs, $m)) {
+                            $hspace = (int)$m[1];
+                        }
+                        if (preg_match('/\bvspace\s*=\s*["\']?(\d+)["\']?/i', $attrs, $m)) {
+                            $vspace = (int)$m[1];
+                        }
+                        if (preg_match('/\balign\s*=\s*["\']?(left|right|center)["\']?/i', $attrs, $m)) {
+                            $align = strtolower($m[1]);
+                        }
+                        
+                        $hasStyle = preg_match('/\bstyle\s*=\s*["\'](.*?)["\']/i', $attrs, $sm);
+                        $styleStr = $hasStyle ? rtrim(trim($sm[1]), ';') : '';
+                        
+                        if ($align === 'left' && !str_contains($styleStr, 'float')) {
+                            $styleStr .= ($styleStr ? '; ' : '') . 'float: left';
+                        } elseif ($align === 'right' && !str_contains($styleStr, 'float')) {
+                            $styleStr .= ($styleStr ? '; ' : '') . 'float: right';
+                        }
+                        
+                        if ($hspace !== null && !str_contains($styleStr, 'margin-left') && !str_contains($styleStr, 'margin-right')) {
+                            $styleStr .= ($styleStr ? '; ' : '') . "margin-left: {$hspace}px; margin-right: {$hspace}px";
+                        }
+                        if ($vspace !== null && !str_contains($styleStr, 'margin-top') && !str_contains($styleStr, 'margin-bottom')) {
+                            $styleStr .= ($styleStr ? '; ' : '') . "margin-top: {$vspace}px; margin-bottom: {$vspace}px";
+                        }
+                        
+                        if ($hasStyle) {
+                            $newAttrs = preg_replace('/\bstyle\s*=\s*["\'].*?["\']/i', 'style="' . $styleStr . '"', $attrs);
+                        } elseif (!empty($styleStr)) {
+                            $newAttrs = $attrs . ' style="' . $styleStr . '"';
+                        } else {
+                            $newAttrs = $attrs;
+                        }
+                        
+                        return '<img ' . $newAttrs . ($isSelfClosing ? ' />' : '>');
+                    }, $descrizioneHtml);
+                @endphp
+
                 <div class="bicap-article-content text-zinc-800 text-[14px] leading-relaxed space-y-4">
-                    {!! $articolo->descrizione !!}
+                    {!! $descrizioneHtml !!}
                 </div>
 
                 @if($alignment !== 'center')
@@ -260,11 +312,83 @@
     }
 }
 
-.bicap-article-content img {
-    max-width: 100% !important;
-    height: auto !important;
-    margin: 16px 0 !important;
+/* Fix tipografia e layout per contenuto articolo */
+.bicap-article-content {
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
+
+/* Clearfix sui paragrafi e sezioni per contenere i float */
+.bicap-article-content::after,
+.bicap-article-content p::after,
+.bicap-article-content div::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* Titoli interni: devono sempre fare clear di foto precedenti e avere spaziatura pulita */
+.bicap-article-content h1, 
+.bicap-article-content h2, 
+.bicap-article-content h3, 
+.bicap-article-content h4 {
+    clear: both !important;
+    margin-top: 2rem !important;
+    margin-bottom: 0.75rem !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+}
+
+/* Immagini: max-width 100% per non debordare, MA SENZA forzare margin con !important,
+   in modo che vspace, hspace e stili inline (es. margin: 10px) abbiano piena priorità */
+.bicap-article-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Immagini centrate o standard (senza float) */
+.bicap-article-content img:not([style*="float"]):not([align="left"]):not([align="right"]) {
+    display: block;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+/* Immagini con float a sinistra: default con margine destro e inferiore se non specificato */
+.bicap-article-content img[style*="float: left"],
+.bicap-article-content img[style*="float:left"],
+.bicap-article-content img[align="left"] {
+    float: left;
+    margin-right: 20px;
+    margin-bottom: 14px;
+    margin-top: 6px;
+}
+
+/* Immagini con float a destra: default con margine sinistro e inferiore se non specificato */
+.bicap-article-content img[style*="float: right"],
+.bicap-article-content img[style*="float:right"],
+.bicap-article-content img[align="right"] {
+    float: right;
+    margin-left: 20px;
+    margin-bottom: 14px;
+    margin-top: 6px;
+}
+
+/* Su mobile, le immagini floatate si dispongono centrate a tutta larghezza per preservare la leggibilità */
+@media (max-width: 640px) {
+    .bicap-article-content img[style*="float"],
+    .bicap-article-content img[align="left"],
+    .bicap-article-content img[align="right"] {
+        float: none !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        margin-top: 16px !important;
+        margin-bottom: 16px !important;
+        display: block !important;
+        max-width: 100% !important;
+        height: auto !important;
+    }
+}
+
 .bicap-article-content p {
     margin-bottom: 1rem !important;
     line-height: 1.7 !important;
@@ -280,12 +404,6 @@
 }
 .bicap-article-content ol {
     list-style: decimal !important;
-}
-.bicap-article-content h1, .bicap-article-content h2, .bicap-article-content h3 {
-    margin-top: 1.5rem !important;
-    margin-bottom: 0.75rem !important;
-    font-weight: 700 !important;
-    color: #000000 !important;
 }
 </style>
 @endsection

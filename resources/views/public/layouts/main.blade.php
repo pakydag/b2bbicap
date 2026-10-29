@@ -530,10 +530,26 @@
             border-bottom: 1px solid #e0e0e0 !important;
         }
         .bicap-accordion-content img {
-            max-width: 100% !important;
-            height: auto !important;
-            display: block !important;
-            margin: 8px 0 !important;
+            max-width: 100%;
+            height: auto;
+        }
+        .bicap-accordion-content img:not([style*="float"]):not([align="left"]):not([align="right"]) {
+            display: block;
+            margin: 8px 0;
+        }
+        .bicap-accordion-content img[style*="float: left"],
+        .bicap-accordion-content img[style*="float:left"],
+        .bicap-accordion-content img[align="left"] {
+            float: left;
+            margin-right: 16px;
+            margin-bottom: 10px;
+        }
+        .bicap-accordion-content img[style*="float: right"],
+        .bicap-accordion-content img[style*="float:right"],
+        .bicap-accordion-content img[align="right"] {
+            float: right;
+            margin-left: 16px;
+            margin-bottom: 10px;
         }
         .bicap-accordion-content p {
             margin-bottom: 0.6rem !important;
