@@ -73,16 +73,29 @@
             padding: 0 10px !important;
             text-decoration: none !important;
             white-space: nowrap !important;
-            transition: color 0.15s ease !important;
+            transition: color 0.2s ease, opacity 0.2s ease !important;
         }
+        body.bicap-public-site .bicap-nav-link:hover,
+        body.bicap-public-site a.bicap-nav-link:hover,
         .bicap-nav-link:hover {
             color: #fedb00 !important;
         }
-        .bicap-nav-link-yellow {
+        body.bicap-public-site .bicap-nav-link.bicap-nav-link-yellow,
+        body.bicap-public-site a.bicap-nav-link.bicap-nav-link-yellow,
+        body.bicap-public-site .bicap-nav-link-yellow,
+        .bicap-nav-link-yellow,
+        body.bicap-public-site .bicap-nav-link.bicap-nav-link-yellow span,
+        .bicap-nav-link-yellow span {
             color: #fedb00 !important;
         }
-        .bicap-nav-link-yellow:hover {
-            color: #ffffff !important;
+        body.bicap-public-site .bicap-nav-link.bicap-nav-link-yellow:hover,
+        body.bicap-public-site a.bicap-nav-link.bicap-nav-link-yellow:hover,
+        body.bicap-public-site .bicap-nav-link-yellow:hover,
+        .bicap-nav-link-yellow:hover,
+        body.bicap-public-site .bicap-nav-link.bicap-nav-link-yellow:hover span,
+        .bicap-nav-link-yellow:hover span {
+            color: #fedb00 !important;
+            opacity: 0.85 !important;
         }
 
         body.bicap-public-site .bicap-filter-btn,

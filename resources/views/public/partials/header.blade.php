@@ -57,8 +57,8 @@
                 <a href="{{ url('/faq') }}" class="bicap-nav-link">
                     FAQ
                 </a>
-                <a href="https://www.bicap.it" target="_blank" rel="noopener noreferrer" class="bicap-nav-link bicap-nav-link-yellow font-bold">
-                    <span>BICAP.IT</span>
+                <a href="https://www.bicap.it" target="_blank" rel="noopener noreferrer" class="bicap-nav-link bicap-nav-link-yellow font-bold" style="color: #fedb00 !important;">
+                    <span style="color: #fedb00 !important;">BICAP.IT</span>
                 </a>
             </nav>
 
@@ -203,13 +203,13 @@
          x-transition:leave="transition ease-in duration-100"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 -translate-y-2">
-        <a href="{{ url('/mission-vision') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">MISSION & VISION</a>
-        <a href="{{ route('public.home') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-[#fedb00]">SHOP</a>
-        <a href="{{ url('/condizioni-di-vendita') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">{{ $currentLocale === 'en' ? 'TERMS OF SALE' : 'CONDIZIONI DI VENDITA' }}</a>
-        <a href="{{ url('/resi-e-rimborsi') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">{{ $currentLocale === 'en' ? 'RETURNS & REFUNDS' : 'RESI E RIMBORSI' }}</a>
-        <a href="{{ url('/spedizioni') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">{{ $currentLocale === 'en' ? 'SHIPPING' : 'SPEDIZIONI' }}</a>
-        <a href="{{ url('/faq') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00]">FAQ</a>
-        <a href="https://www.bicap.it" target="_blank" class="block py-2 text-sm font-bold uppercase tracking-wider text-[#fedb00]">BICAP.IT ↗</a>
+        <a href="{{ url('/mission-vision') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00] transition-colors">MISSION & VISION</a>
+        <a href="{{ route('public.home') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00] transition-colors">SHOP</a>
+        <a href="{{ url('/condizioni-di-vendita') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00] transition-colors">{{ $currentLocale === 'en' ? 'TERMS OF SALE' : 'CONDIZIONI DI VENDITA' }}</a>
+        <a href="{{ url('/resi-e-rimborsi') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00] transition-colors">{{ $currentLocale === 'en' ? 'RETURNS & REFUNDS' : 'RESI E RIMBORSI' }}</a>
+        <a href="{{ url('/spedizioni') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00] transition-colors">{{ $currentLocale === 'en' ? 'SHIPPING' : 'SPEDIZIONI' }}</a>
+        <a href="{{ url('/faq') }}" class="block py-2 text-sm font-bold uppercase tracking-wider text-zinc-300 hover:text-[#fedb00] transition-colors">FAQ</a>
+        <a href="https://www.bicap.it" target="_blank" class="block py-2 text-sm font-bold uppercase tracking-wider text-[#fedb00] hover:opacity-80 transition-opacity">BICAP.IT ↗</a>
         <div class="pt-3 border-t border-zinc-800 space-y-2">
             @auth
                 @if(in_array(auth()->user()->role, ['customer', 'user']) && !auth()->user()->b2b_customer_id)
