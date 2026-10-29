@@ -31,7 +31,7 @@
                 </div>
                 <h2>Impostazioni di accessibilità</h2>
                 <div class="onetap-header-sublinks">
-                    <span>Dichiarazione di accessibilità</span>
+                    <span class="declaration-trigger" id="onetap-declaration-trigger" style="text-decoration: underline; cursor: pointer;">Dichiarazione di accessibilità</span>
                     <span class="sep">•</span>
                     <span class="hide-trigger" id="onetap-hide-trigger">Nascondi barra degli strumenti</span>
                 </div>
@@ -182,6 +182,68 @@
             <button class="onetap-reset-btn" data-action="resetAll" type="button">
                 Ripristina Impostazioni
             </button>
+        </div>
+    </div>
+
+    
+    <!-- Modal Dichiarazione di Accessibilità -->
+    <div id="onetap-declaration-modal" class="onetap-modal-backdrop" style="display: none;" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="decl-title">
+        <div class="onetap-modal-dialog">
+            <div class="onetap-modal-header">
+                <div class="onetap-modal-title-box">
+                    <span class="onetap-modal-badge">WCAG 2.1 AA</span>
+                    <h2 id="decl-title">Dichiarazione di Accessibilità</h2>
+                    <p>Calzaturificio 5 Bi Srl • BICAP</p>
+                </div>
+                <button class="onetap-modal-close" id="onetap-decl-close" aria-label="Chiudi dichiarazione">&times;</button>
+            </div>
+            
+            <div class="onetap-modal-body">
+                <div class="decl-section">
+                    <h3>1. Il nostro impegno</h3>
+                    <p>
+                        <strong>Calzaturificio 5 Bi Srl</strong> si impegna costantemente a rendere il proprio sito web e il portale e-commerce 
+                        <strong>BICAP</strong> accessibili a tutti gli utenti, garantendo parità di accesso e piena inclusione digitale, 
+                        in conformità alle <strong>Linee Guida per l'Accessibilità dei Contenuti Web (WCAG 2.1) - Livello AA</strong> 
+                        e all'<strong>European Accessibility Act (Direttiva UE 2019/882 e D.Lgs. 82/2022)</strong>.
+                    </p>
+                </div>
+
+                <div class="decl-section">
+                    <h3>2. Strumenti e Funzionalità di Accessibilità Disponibili</h3>
+                    <p>Attraverso la barra degli strumenti di accessibilità integrata, gli utenti possono personalizzare la navigazione in base alle proprie esigenze:</p>
+                    <ul class="decl-list">
+                        <li><strong>Disabilità Visive:</strong> Regolazione di contrasto, saturazione e dimensione del testo con font ottimizzato.</li>
+                        <li><strong>Supporto ADHD:</strong> Attivazione della <em>Riga Guida di Lettura (Reading Ruler)</em> per focalizzare lo sguardo riga per riga e blocco delle distrazioni visive.</li>
+                        <li><strong>Sicurezza Crisi ed Epilessia:</strong> Arresto istantaneo di tutte le animazioni CSS, transizioni ed eliminazione di lampeggiamenti o forti contrasti.</li>
+                        <li><strong>Screen Reader e Cecità:</strong> Evidenziazione marcata con focus ring ad altissimo contrasto per navigazione da tastiera (Tab).</li>
+                        <li><strong>Moduli di Contenuto:</strong> Scalatura dinamica dei caratteri da 75% a 200%, Evidenziazione link in giallo ad alto contrasto, Tema dark ad alto contrasto (che tutela le foto dei prodotti) e Font Leggibile per dislessia.</li>
+                    </ul>
+                </div>
+
+                <div class="decl-section">
+                    <h3>3. Meccanismo di Feedback e Assistenza</h3>
+                    <p>
+                        L'accessibilità digitale è un processo in continua evoluzione. Se riscontri barriere, difficoltà di consultazione 
+                        o hai bisogno di schede tecniche e documenti in formati accessibili alternativi, il nostro team è a tua disposizione:
+                    </p>
+                    <div class="decl-contact-card">
+                        <p><strong>Ufficio Supporto e Customer Care BICAP:</strong></p>
+                        <p>📧 Email: <a href="mailto:customercare@bicap.it">customercare@bicap.it</a></p>
+                        <p>📞 Telefono: <a href="tel:+390883332137">+39 0883 332137</a></p>
+                        <p>📍 Sede: Via Trani 94/100 – 76121 Barletta (BT), Italia</p>
+                        <p class="decl-note"><em>Ci impegniamo a prendere in carico le richieste di accessibilità entro 2 giorni lavorativi.</em></p>
+                    </div>
+                </div>
+
+                <div class="decl-section" style="margin-bottom: 0;">
+                    <p class="decl-date"><em>Ultima revisione e aggiornamento: Ottobre 2026</em></p>
+                </div>
+            </div>
+
+            <div class="onetap-modal-footer">
+                <button class="onetap-modal-btn" id="onetap-decl-close-btn" type="button">Chiudi Dichiarazione</button>
+            </div>
         </div>
     </div>
 
@@ -660,6 +722,161 @@
     html.acc-cursor-big * {
         cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='%23000000' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M3 3l7 17 2.5-6.5L19 11 3 3z'/%3E%3C/svg%3E"), auto !important;
     }
+
+    /* Modal Dichiarazione di Accessibilità */
+    .onetap-modal-backdrop {
+        position: fixed !important;
+        top: 0 !important; left: 0 !important;
+        width: 100vw !important; height: 100vh !important;
+        background: rgba(15, 23, 42, 0.65) !important;
+        backdrop-filter: blur(4px) !important;
+        z-index: 2147483645 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 20px !important;
+    }
+    .onetap-modal-dialog {
+        background: #ffffff !important;
+        width: 100% !important;
+        max-width: 620px !important;
+        max-height: 88vh !important;
+        border-radius: 20px !important;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        border: 1px solid #e2e8f0 !important;
+        animation: onetapModalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    @keyframes onetapModalFadeIn {
+        from { opacity: 0; transform: scale(0.95) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .onetap-modal-header {
+        background: #0052ff !important;
+        color: #ffffff !important;
+        padding: 24px 26px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important;
+    }
+    .onetap-modal-badge {
+        display: inline-block !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: #ffffff !important;
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        padding: 3px 10px !important;
+        border-radius: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 8px !important;
+    }
+    .onetap-modal-title-box h2 {
+        font-size: 1.45rem !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        color: #ffffff !important;
+        letter-spacing: -0.3px !important;
+    }
+    .onetap-modal-title-box p {
+        margin: 4px 0 0 0 !important;
+        font-size: 0.82rem !important;
+        color: #e0e7ff !important;
+    }
+    .onetap-modal-close {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: none !important;
+        color: #ffffff !important;
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 50% !important;
+        font-size: 1.6rem !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: background 0.15s ease !important;
+    }
+    .onetap-modal-close:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+    }
+    .onetap-modal-body {
+        padding: 24px 26px !important;
+        overflow-y: auto !important;
+        flex: 1 !important;
+        font-size: 0.88rem !important;
+        line-height: 1.6 !important;
+        color: #334155 !important;
+    }
+    .decl-section {
+        margin-bottom: 22px !important;
+    }
+    .decl-section h3 {
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        margin: 0 0 8px 0 !important;
+    }
+    .decl-section p {
+        margin: 0 0 8px 0 !important;
+    }
+    .decl-list {
+        margin: 8px 0 0 0 !important;
+        padding-left: 18px !important;
+    }
+    .decl-list li {
+        margin-bottom: 6px !important;
+    }
+    .decl-contact-card {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        border-left: 4px solid #0052ff !important;
+        border-radius: 10px !important;
+        padding: 14px 18px !important;
+        margin-top: 10px !important;
+    }
+    .decl-contact-card p {
+        margin: 0 0 4px 0 !important;
+    }
+    .decl-contact-card a {
+        color: #0052ff !important;
+        font-weight: 600 !important;
+        text-decoration: underline !important;
+    }
+    .decl-note {
+        font-size: 0.78rem !important;
+        color: #64748b !important;
+        margin-top: 8px !important;
+    }
+    .decl-date {
+        font-size: 0.76rem !important;
+        color: #94a3b8 !important;
+    }
+    .onetap-modal-footer {
+        padding: 16px 26px !important;
+        background: #f8fafc !important;
+        border-top: 1px solid #e2e8f0 !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+    }
+    .onetap-modal-btn {
+        padding: 10px 22px !important;
+        background: #0052ff !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+        font-size: 0.86rem !important;
+        cursor: pointer !important;
+        transition: background 0.15s ease !important;
+    }
+    .onetap-modal-btn:hover {
+        background: #0040cc !important;
+    }
+
 </style>
 
 <script>
