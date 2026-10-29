@@ -78,3 +78,4 @@ class NewsletterConfirmEmail extends Mailable
         return [];
     }
 }
+

@@ -228,11 +228,11 @@
                         <article class="group flex flex-col items-center text-center cursor-pointer">
                             <a :href="product.url" class="block w-full">
                                 
-                                <!-- Large Product Shoe Image Container (Identical proportions to bicap.shop) -->
-                                <div class="w-full max-w-[440px] h-[300px] sm:h-[340px] lg:h-[360px] mx-auto flex items-center justify-center p-3 relative overflow-hidden bg-white">
+                                <!-- Large Product Shoe Image Container (+20% size) -->
+                                <div class="w-full max-w-[530px] h-[360px] sm:h-[410px] lg:h-[432px] mx-auto flex items-center justify-center p-1 relative overflow-hidden bg-white">
                                     <img :src="product.image" 
                                          :alt="product.name" 
-                                         class="max-h-full max-w-full object-contain transition-transform duration-300 ease-out group-hover:scale-105"
+                                         class="bicap-product-img"
                                          loading="lazy">
                                 </div>
 

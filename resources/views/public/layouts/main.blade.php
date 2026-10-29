@@ -214,6 +214,17 @@
             line-height: 1.4 !important;
             color: #555555 !important;
         }
+        .bicap-product-img {
+            max-height: 100% !important;
+            max-width: 100% !important;
+            object-fit: contain !important;
+            transform: scale(1.2) !important;
+            transform-origin: center center !important;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .group:hover .bicap-product-img {
+            transform: scale(1.26) !important;
+        }
         /* Mobile offcanvas drawer (< 1024px) */
         @media (max-width: 1023px) {
             .bicap-sidebar {
