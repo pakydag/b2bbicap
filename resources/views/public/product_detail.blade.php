@@ -8,17 +8,8 @@
     $cat = $c['CAT-SICUREZZA'] ?? ($c['CAT-SICUREZZA-FILTRO'] ?? '');
     $price = $product->price ? (float)$product->price : 89.00;
     
-    // All Photos
-    $photos = [];
-    if (!empty($product->image_url)) $photos[] = $product->image_url;
-    if (!empty($c['FOTO-PRINCIPALE-PRODOTTO-WEB'])) $photos[] = $c['FOTO-PRINCIPALE-PRODOTTO-WEB'];
-    for ($i = 1; $i <= 10; $i++) {
-        if (!empty($c["FOTO-AGGIUNTIVA-{$i}"])) {
-            $photos[] = $c["FOTO-AGGIUNTIVA-{$i}"];
-        }
-    }
-    if (!empty($c['FOTO SUOLA'])) $photos[] = $c['FOTO SUOLA'];
-    $photos = array_values(array_unique(array_filter($photos)));
+    // All Photos (Solo quelle realmente esistenti nel catalogo per evitare thumbnail rotte)
+    $photos = $product->getValidGalleryPhotos();
 
     $foto360 = $c['PRIMA-FOTO-360-LARGE'] ?? null;
     $frames360 = [];
@@ -106,7 +97,7 @@
 
 @section('content')
 <div class="bg-white text-black min-h-screen py-6 sm:py-10" 
-     x-data="productDetailGallery(@js($photos))">
+     x-data="productDetailGallery(@js($photos), @js($frames360))">
     <div class="max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8">
 
         @if(session('success'))
@@ -227,6 +218,15 @@
                                     <img src="https://bicap.it/images/360.png" class="w-4 h-4 object-contain">
                                     <span x-text="`${currentFrame + 1} / ${totalFrames}`"></span>
                                 </div>
+
+                                <!-- Expand 360 Fullscreen Badge Bottom Right -->
+                                <button type="button" 
+                                        @click.stop="openLightbox(null, true)" 
+                                        class="absolute bottom-2 right-2 bg-white/90 hover:bg-black hover:text-white text-black px-2.5 py-1.5 rounded-md shadow-xs border border-gray-200 transition-all opacity-80 group-hover:opacity-100 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider cursor-pointer z-10"
+                                        title="{{ $isEn ? 'Enlarge 360°' : 'Ingrandisci a 360°' }}">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                    <span>{{ $isEn ? '360° Fullscreen' : '360° Schermo Intero' }}</span>
+                                </button>
                             </div>
 
                             <!-- Interactive Controls & Hint Bar -->
@@ -686,14 +686,21 @@
                 <h3 class="font-['Bebas_Neue',sans-serif] text-xl sm:text-2xl text-white tracking-wider uppercase m-0 leading-none">
                     {{ $product->name }}
                 </h3>
-                <span class="text-xs font-mono font-bold bg-zinc-800 text-[#fedb00] px-3 py-1 rounded-full border border-zinc-700"
+                <span x-show="!lightboxIs360" 
+                      class="text-xs font-mono font-bold bg-zinc-800 text-[#fedb00] px-3 py-1 rounded-full border border-zinc-700"
                       x-text="(lightboxIndex + 1) + ' / ' + photos.length">
+                </span>
+                <span x-show="lightboxIs360" 
+                      class="text-xs font-bold bg-[#fedb00] text-black px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm"
+                      style="display: none;">
+                    <img src="https://bicap.it/images/360.png" class="w-3.5 h-3.5 object-contain">
+                    <span>360° INTERATTIVO (<span x-text="`${currentFrame360 + 1} / ${frames360.length}`"></span>)</span>
                 </span>
             </div>
             
             <div class="flex items-center gap-4">
-                <span class="hidden md:inline text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">
-                    {{ $isEn ? 'ESC to close • Arrows to navigate' : 'ESC per chiudere • Frecce per navigare' }}
+                <span class="hidden md:inline text-[11px] uppercase tracking-wider text-zinc-400 font-semibold"
+                      x-text="lightboxIs360 ? '{{ $isEn ? 'Drag or swipe to rotate 360°' : 'Trascina o scorri per ruotare a 360°' }}' : '{{ $isEn ? 'ESC to close • Arrows to navigate' : 'ESC per chiudere • Frecce per navigare' }}'">
                 </span>
                 <button type="button" 
                         @click="closeLightbox()" 
@@ -704,24 +711,24 @@
             </div>
         </div>
 
-        <!-- Center Carousel View with Navigation Arrows -->
-        <div class="relative flex-1 w-full flex items-center justify-center px-2 sm:px-16 overflow-hidden"
-             @click.self="closeLightbox()"
-             @touchstart="handleTouchStart($event)"
-             @touchend="handleTouchEnd($event)">
+        <!-- Center Area: Standard Image OR 360 Rotating Viewer -->
+        <div class="relative flex-1 w-full flex items-center justify-center px-2 sm:px-16 overflow-hidden">
              
-            <!-- Prev Button -->
+            <!-- Prev Button (Available in both modes) -->
             <button type="button" 
-                    x-show="photos.length > 1"
+                    x-show="(photos.length + (has360 ? 1 : 0)) > 1"
                     @click.stop="prevPhoto()" 
                     class="absolute left-3 sm:left-6 z-20 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-zinc-900/90 hover:bg-black text-white hover:text-[#fedb00] border border-zinc-700 flex items-center justify-center transition-all cursor-pointer shadow-2xl hover:scale-105 active:scale-95"
-                    title="{{ $isEn ? 'Previous photo (Left arrow)' : 'Foto precedente (Freccia sinistra)' }}">
+                    title="{{ $isEn ? 'Previous (Left arrow)' : 'Precedente (Freccia sinistra)' }}">
                 <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
             </button>
 
-            <!-- Current Active Lightbox Image -->
-            <div class="relative max-w-5xl max-h-[75vh] w-full flex items-center justify-center p-2 overflow-hidden"
-                 @click.self="closeLightbox()">
+            <!-- Mode 1: Static Photo Display -->
+            <div x-show="!lightboxIs360" 
+                 class="relative max-w-5xl max-h-[75vh] w-full flex items-center justify-center p-2 overflow-hidden"
+                 @click.self="closeLightbox()"
+                 @touchstart="handleTouchStart($event)"
+                 @touchend="handleTouchEnd($event)">
                 <img :src="photos[lightboxIndex]" 
                      :alt="'{{ $product->name }} - ' + (lightboxIndex + 1)" 
                      class="max-h-[70vh] sm:max-h-[75vh] max-w-full object-contain select-none transition-transform duration-200"
@@ -729,28 +736,87 @@
                      draggable="false">
             </div>
 
-            <!-- Next Button -->
+            <!-- Mode 2: Interactive 360 Degree Viewer Display -->
+            <div x-show="lightboxIs360" 
+                 class="relative max-w-5xl max-h-[75vh] w-full flex flex-col items-center justify-center p-2 select-none"
+                 style="display: none;"
+                 @click.self="closeLightbox()">
+                 
+                <div class="relative w-full flex items-center justify-center cursor-grab active:cursor-grabbing touch-none py-2"
+                     @mousedown="startDrag360($event)"
+                     @mousemove="onDrag360($event)"
+                     @mouseup="stopDrag360()"
+                     @mouseleave="stopDrag360()"
+                     @touchstart="handleTouchStart($event)"
+                     @touchmove="onDrag360($event)"
+                     @touchend="handleTouchEnd($event)"
+                     title="{{ $isEn ? 'Drag horizontally to rotate 360°' : 'Trascina in orizzontale per ruotare a 360°' }}">
+                    <img :src="frames360[currentFrame360]" 
+                         alt="{{ $product->name }} 360°" 
+                         class="max-h-[62vh] sm:max-h-[68vh] max-w-full object-contain pointer-events-none transition-none"
+                         draggable="false">
+                </div>
+
+                <!-- 360 Interactive Action Buttons Bar inside Lightbox -->
+                <div class="mt-3 flex items-center gap-3 bg-zinc-900/90 border border-zinc-700 px-4 py-2 rounded-full shadow-lg z-20">
+                    <button type="button" 
+                            @click="prevFrame360()" 
+                            class="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white hover:text-[#fedb00] flex items-center justify-center text-xs cursor-pointer transition-colors"
+                            title="{{ $isEn ? 'Rotate left' : 'Ruota a sinistra' }}">
+                        <i class="fa fa-chevron-left"></i>
+                    </button>
+                    
+                    <button type="button" 
+                            @click="toggleAutoSpin360()" 
+                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#fedb00] hover:bg-yellow-400 text-black text-xs font-bold uppercase cursor-pointer transition-colors">
+                        <i class="fa text-[11px]" :class="isAutoSpinning360 ? 'fa-pause' : 'fa-play'"></i>
+                        <span x-text="isAutoSpinning360 ? '{{ $isEn ? 'Pause' : 'Pausa' }}' : '{{ $isEn ? 'Auto Spin' : 'Rotazione Automatica' }}'"></span>
+                    </button>
+
+                    <button type="button" 
+                            @click="nextFrame360()" 
+                            class="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white hover:text-[#fedb00] flex items-center justify-center text-xs cursor-pointer transition-colors"
+                            title="{{ $isEn ? 'Rotate right' : 'Ruota a destra' }}">
+                        <i class="fa fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Next Button (Available in both modes) -->
             <button type="button" 
-                    x-show="photos.length > 1"
+                    x-show="(photos.length + (has360 ? 1 : 0)) > 1"
                     @click.stop="nextPhoto()" 
                     class="absolute right-3 sm:right-6 z-20 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-zinc-900/90 hover:bg-black text-white hover:text-[#fedb00] border border-zinc-700 flex items-center justify-center transition-all cursor-pointer shadow-2xl hover:scale-105 active:scale-95"
-                    title="{{ $isEn ? 'Next photo (Right arrow)' : 'Foto successiva (Freccia destra)' }}">
+                    title="{{ $isEn ? 'Next (Right arrow)' : 'Successiva (Freccia destra)' }}">
                 <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
             </button>
         </div>
 
-        <!-- Bottom Thumbnails Strip -->
+        <!-- Bottom Thumbnails Strip (Photos + 360) -->
         <div class="w-full bg-black/90 border-t border-zinc-800 px-4 py-3 shrink-0 z-10">
-            <div class="max-w-4xl mx-auto flex items-center justify-center gap-2 overflow-x-auto py-1">
+            <div class="max-w-4xl mx-auto flex items-center justify-center gap-2.5 overflow-x-auto py-1">
+                <!-- Static Photo Thumbnails -->
                 <template x-for="(thumb, idx) in photos" :key="idx">
                     <button type="button" 
                             @click.stop="goToPhoto(idx)"
                             class="w-14 h-14 sm:w-16 sm:h-16 shrink-0 p-1 bg-white border-2 rounded-none transition-all cursor-pointer overflow-hidden flex items-center justify-center"
-                            :class="lightboxIndex === idx ? 'border-[#fedb00] ring-2 ring-[#fedb00] scale-105' : 'border-zinc-700 opacity-60 hover:opacity-100'">
+                            :class="(!lightboxIs360 && lightboxIndex === idx) ? 'border-[#fedb00] ring-2 ring-[#fedb00] scale-105' : 'border-zinc-700 opacity-60 hover:opacity-100'">
                         <img :src="thumb" 
                              :alt="'thumb-' + idx" 
                              class="max-h-full max-w-full object-contain pointer-events-none"
                              :style="idx === 0 ? 'transform: scale(1.38); transform-origin: center center;' : ''">
+                    </button>
+                </template>
+
+                <!-- 360 Thumbnail in Lightbox -->
+                <template x-if="has360">
+                    <button type="button" 
+                            @click.stop="goTo360()"
+                            class="w-14 h-14 sm:w-16 sm:h-16 shrink-0 p-1 bg-zinc-900 border-2 rounded-none transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center"
+                            :class="lightboxIs360 ? 'border-[#fedb00] ring-2 ring-[#fedb00] scale-105' : 'border-zinc-700 opacity-60 hover:opacity-100'"
+                            title="{{ $isEn ? 'Interactive 360° View' : 'Vista Interattiva 360°' }}">
+                        <img src="https://bicap.it/images/360.png" alt="360 view" class="w-6 h-6 object-contain mb-0.5 pointer-events-none">
+                        <span class="font-bebas text-[11px] leading-none text-[#fedb00] font-bold">360°</span>
                     </button>
                 </template>
             </div>
@@ -762,9 +828,11 @@
 
 @push('scripts')
 <script>
-    function productDetailGallery(photos) {
+    function productDetailGallery(photos, frames360) {
         return {
             photos: photos || [],
+            frames360: frames360 || [],
+            has360: Boolean(frames360 && frames360.length > 0),
             activeImage: (photos && photos.length > 0) ? photos[0] : '',
             is360: false,
             selectedSize: '42',
@@ -775,55 +843,176 @@
             // Lightbox state
             lightboxOpen: false,
             lightboxIndex: 0,
+            lightboxIs360: false,
             touchStartX: 0,
             touchEndX: 0,
 
-            openLightbox(imgUrl) {
-                let idx = this.photos.indexOf(imgUrl);
-                if (idx === -1) idx = 0;
-                this.lightboxIndex = idx;
+            // 360 viewer state in lightbox
+            currentFrame360: 0,
+            isAutoSpinning360: false,
+            autoSpinTimer360: null,
+            isDragging360: false,
+            startX360: 0,
+            startFrame360: 0,
+
+            openLightbox(imgUrl, as360 = false) {
+                if (as360 && this.has360) {
+                    this.lightboxIs360 = true;
+                } else {
+                    this.lightboxIs360 = false;
+                    let idx = this.photos.indexOf(imgUrl);
+                    if (idx === -1) idx = 0;
+                    this.lightboxIndex = idx;
+                }
                 this.lightboxOpen = true;
                 document.body.style.overflow = 'hidden';
+                if (this.lightboxIs360) {
+                    this.startAutoSpin360(true);
+                }
             },
 
             closeLightbox() {
                 this.lightboxOpen = false;
+                this.stopAutoSpin360();
                 document.body.style.overflow = '';
             },
 
             nextPhoto() {
+                if (this.lightboxIs360) {
+                    this.stopAutoSpin360();
+                    this.lightboxIs360 = false;
+                    this.lightboxIndex = 0;
+                    this.activeImage = this.photos[0];
+                    return;
+                }
                 if (this.photos.length > 0) {
-                    this.lightboxIndex = (this.lightboxIndex + 1) % this.photos.length;
-                    this.activeImage = this.photos[this.lightboxIndex];
+                    if (this.lightboxIndex === this.photos.length - 1 && this.has360) {
+                        this.lightboxIs360 = true;
+                        this.startAutoSpin360(true);
+                    } else {
+                        this.lightboxIndex = (this.lightboxIndex + 1) % this.photos.length;
+                        this.activeImage = this.photos[this.lightboxIndex];
+                    }
                 }
             },
 
             prevPhoto() {
-                if (this.photos.length > 0) {
-                    this.lightboxIndex = (this.lightboxIndex - 1 + this.photos.length) % this.photos.length;
+                if (this.lightboxIs360) {
+                    this.stopAutoSpin360();
+                    this.lightboxIs360 = false;
+                    this.lightboxIndex = this.photos.length - 1;
                     this.activeImage = this.photos[this.lightboxIndex];
+                    return;
+                }
+                if (this.photos.length > 0) {
+                    if (this.lightboxIndex === 0 && this.has360) {
+                        this.lightboxIs360 = true;
+                        this.startAutoSpin360(true);
+                    } else {
+                        this.lightboxIndex = (this.lightboxIndex - 1 + this.photos.length) % this.photos.length;
+                        this.activeImage = this.photos[this.lightboxIndex];
+                    }
                 }
             },
 
             goToPhoto(idx) {
+                this.stopAutoSpin360();
+                this.lightboxIs360 = false;
                 if (idx >= 0 && idx < this.photos.length) {
                     this.lightboxIndex = idx;
                     this.activeImage = this.photos[idx];
                 }
             },
 
+            goTo360() {
+                if (!this.has360) return;
+                this.lightboxIs360 = true;
+                this.startAutoSpin360(true);
+            },
+
+            startAutoSpin360(once = false) {
+                this.stopAutoSpin360();
+                this.isAutoSpinning360 = true;
+                let steps = 0;
+                const maxSteps = once ? this.frames360.length : Infinity;
+                this.autoSpinTimer360 = setInterval(() => {
+                    this.nextFrame360();
+                    steps++;
+                    if (steps >= maxSteps) {
+                        this.stopAutoSpin360();
+                    }
+                }, 85);
+            },
+
+            stopAutoSpin360() {
+                this.isAutoSpinning360 = false;
+                if (this.autoSpinTimer360) {
+                    clearInterval(this.autoSpinTimer360);
+                    this.autoSpinTimer360 = null;
+                }
+            },
+
+            toggleAutoSpin360() {
+                if (this.isAutoSpinning360) {
+                    this.stopAutoSpin360();
+                } else {
+                    this.startAutoSpin360(false);
+                }
+            },
+
+            nextFrame360() {
+                if (this.frames360.length > 0) {
+                    this.currentFrame360 = (this.currentFrame360 + 1) % this.frames360.length;
+                }
+            },
+
+            prevFrame360() {
+                if (this.frames360.length > 0) {
+                    this.currentFrame360 = (this.currentFrame360 - 1 + this.frames360.length) % this.frames360.length;
+                }
+            },
+
+            startDrag360(e) {
+                this.stopAutoSpin360();
+                this.isDragging360 = true;
+                this.startX360 = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                this.startFrame360 = this.currentFrame360;
+            },
+
+            onDrag360(e) {
+                if (!this.isDragging360 || this.frames360.length === 0) return;
+                const currentX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                const deltaX = currentX - this.startX360;
+                const frameDelta = Math.floor(deltaX / 14);
+                let newFrame = (this.startFrame360 - frameDelta) % this.frames360.length;
+                if (newFrame < 0) newFrame += this.frames360.length;
+                this.currentFrame360 = newFrame;
+            },
+
+            stopDrag360() {
+                this.isDragging360 = false;
+            },
+
             handleTouchStart(e) {
-                this.touchStartX = e.changedTouches ? e.changedTouches[0].screenX : 0;
+                if (this.lightboxIs360) {
+                    this.startDrag360(e);
+                } else {
+                    this.touchStartX = e.changedTouches ? e.changedTouches[0].screenX : 0;
+                }
             },
 
             handleTouchEnd(e) {
-                this.touchEndX = e.changedTouches ? e.changedTouches[0].screenX : 0;
-                const diff = this.touchStartX - this.touchEndX;
-                if (Math.abs(diff) > 40) {
-                    if (diff > 0) {
-                        this.nextPhoto();
-                    } else {
-                        this.prevPhoto();
+                if (this.lightboxIs360) {
+                    this.stopDrag360();
+                } else {
+                    this.touchEndX = e.changedTouches ? e.changedTouches[0].screenX : 0;
+                    const diff = this.touchStartX - this.touchEndX;
+                    if (Math.abs(diff) > 40) {
+                        if (diff > 0) {
+                            this.nextPhoto();
+                        } else {
+                            this.prevPhoto();
+                        }
                     }
                 }
             }

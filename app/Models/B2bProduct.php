@@ -109,6 +109,64 @@ class B2bProduct extends Model
     }
 
     /**
+     * Restituisce solo le foto della galleria effettivamente esistenti (esclude 404).
+     * Il risultato viene memorizzato in cache per garantire velocità istantanea.
+     */
+    public function getValidGalleryPhotos(): array
+    {
+        $cacheKey = "b2b_product_valid_photos_{$this->id}";
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 86400, function () {
+            $c = $this->characteristics ?? [];
+            $candidates = [];
+            if (!empty($this->image_url)) $candidates[] = $this->image_url;
+            if (!empty($c['FOTO-PRINCIPALE-PRODOTTO-WEB'])) $candidates[] = $c['FOTO-PRINCIPALE-PRODOTTO-WEB'];
+            for ($i = 1; $i <= 10; $i++) {
+                if (!empty($c["FOTO-AGGIUNTIVA-{$i}"])) {
+                    $candidates[] = $c["FOTO-AGGIUNTIVA-{$i}"];
+                }
+            }
+            if (!empty($c['FOTO SUOLA'])) $candidates[] = $c['FOTO SUOLA'];
+            $candidates = array_values(array_unique(array_filter($candidates)));
+
+            if (empty($candidates)) {
+                return !empty($this->image_url) ? [$this->image_url] : [];
+            }
+
+            // Validazione rapida in parallelo via curl_multi
+            $mh = curl_multi_init();
+            $handles = [];
+            foreach ($candidates as $url) {
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_NOBODY, true);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_multi_add_handle($mh, $ch);
+                $handles[$url] = $ch;
+            }
+
+            $running = null;
+            do {
+                curl_multi_exec($mh, $running);
+                curl_multi_select($mh);
+            } while ($running > 0);
+
+            $valid = [];
+            foreach ($handles as $url => $ch) {
+                $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                if ($code >= 200 && $code < 400) {
+                    $valid[] = $url;
+                }
+                curl_multi_remove_handle($mh, $ch);
+                curl_close($ch);
+            }
+            curl_multi_close($mh);
+
+            return !empty($valid) ? $valid : (!empty($this->image_url) ? [$this->image_url] : []);
+        });
+    }
+
+    /**
      * Restituisce la descrizione estesa HTML localizzata (IT / EN).
      */
     public function getLocalizedExtendedHtmlAttribute(): ?string
