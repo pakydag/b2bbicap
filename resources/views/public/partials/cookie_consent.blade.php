@@ -168,16 +168,16 @@
         </div>
     </template>
 
-    <!-- 3. Trigger Flottante (Revoca) - SEMPRE AL TOP -->
+    <!-- 3. Trigger Flottante (Revoca) - POSIZIONATO A SINISTRA -->
     <div x-show="!visible && !showSettings && hasCookie" 
-         class="fixed bottom-8 right-8 pointer-events-auto"
+         class="fixed bottom-6 left-6 pointer-events-auto"
          x-transition:enter="transition ease-out duration-500"
          x-transition:enter-start="opacity-0 scale-50"
          x-transition:enter-end="opacity-100 scale-100"
-         style="display: none; position: fixed !important; bottom: 2rem !important; right: 2rem !important; z-index: 2147483647 !important;"
+         style="display: none; position: fixed !important; bottom: 1.5rem !important; left: 1.5rem !important; right: auto !important; z-index: 2147483647 !important;"
     >
         <button @click="visible = true; showSettings = true" 
-                class="bg-gray-900 text-white p-4 rounded-full shadow-[0_15px_40px_rgba(0,0,0,0.4)] hover:bg-indigo-600 hover:scale-110 active:scale-90 transition-all border-4 border-white"
+                class="bg-gray-900 text-white p-3.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.35)] hover:bg-indigo-600 hover:scale-110 active:scale-90 transition-all border-2 border-white cursor-pointer"
                 title="Privacy & Cookie">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
