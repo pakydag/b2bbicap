@@ -46,3 +46,4 @@ class TestEmail extends Mailable
         return [];
     }
 }
+
