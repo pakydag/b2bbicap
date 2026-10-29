@@ -245,7 +245,7 @@
 
 <!-- ================= 4. FLOATING WIDGETS (WhatsApp & Scroll to top) ================= -->
 <!-- WhatsApp Floating Button -->
-<a href="https://wa.me/390883332137" 
+<a href="https://wa.me/393518581006" 
    target="_blank" 
    rel="noopener noreferrer" 
    class="bicap-whatsapp-btn" 
