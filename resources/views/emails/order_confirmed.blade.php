@@ -191,6 +191,9 @@
                     @endif
                     <br>
                     <strong>{{ $isEn ? 'Items total :' : 'Totale articoli :' }}</strong> &euro; {{ number_format($order->totale_imponibile, 2, ',', '.') }}<br>
+                    @if(!empty($order->totale_sconto) && $order->totale_sconto > 0)
+                        <strong style="color: #047857;">{{ $isEn ? 'Coupon discount' : 'Sconto coupon' }}{{ !empty($order->coupon_codice) ? ' (' . $order->coupon_codice . ')' : '' }} :</strong> <span style="color: #047857;">- &euro; {{ number_format($order->totale_sconto, 2, ',', '.') }}</span><br>
+                    @endif
                     @if($order->metodo_pagamento === 'contrassegno')
                         <strong>{{ $isEn ? 'Cash on delivery :' : 'Contrassegno :' }}</strong> &euro; {{ number_format($order->costo_contrassegno > 0 ? $order->costo_contrassegno : 10, 2, ',', '.') }}<br>
                     @endif

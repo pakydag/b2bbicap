@@ -562,6 +562,16 @@
                             <dt class="text-gray-600">{{ $isEn ? 'Subtotal' : 'Subtotale' }}</dt>
                             <dd class="font-medium text-gray-900">€ <span x-text="formatPrice(subtotal)"></span></dd>
                         </div>
+                        <template x-if="discount > 0">
+                            <div class="flex items-center justify-between text-sm text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+                                <dt class="font-bold flex items-center gap-1.5">
+                                    <span>🏷️</span>
+                                    <span>{{ $isEn ? 'Discount Coupon' : 'Sconto Coupon' }}</span>
+                                    <span class="font-mono text-xs uppercase" x-text="'(' + couponCode + ')'"></span>
+                                </dt>
+                                <dd class="font-extrabold text-emerald-800">- € <span x-text="formatPrice(discount)"></span></dd>
+                            </div>
+                        </template>
                         <div class="flex items-center justify-between text-sm">
                             <dt class="text-gray-600">{{ $isEn ? 'Shipping' : 'Spedizione' }}</dt>
                             <dd class="font-medium text-gray-900 group relative">
@@ -592,7 +602,7 @@
                         </template>
                         <div class="flex items-center justify-between border-t border-gray-200 pt-4">
                             <dt class="text-base font-bold text-gray-900">{{ $isEn ? 'Total to Pay' : 'Totale Da Pagare' }}</dt>
-                            <dd class="text-2xl font-black text-black">€ <span x-text="formatPrice(parseFloat(subtotal) + parseFloat(shippingCost) + (nazione === 'Italia' && paymentMethod === 'contrassegno' ? parseFloat(contrassegnoFee || 0) : 0))"></span></dd>
+                            <dd class="text-2xl font-black text-black">€ <span x-text="formatPrice(Math.max(0, parseFloat(subtotal) - parseFloat(discount)) + parseFloat(shippingCost) + (nazione === 'Italia' && paymentMethod === 'contrassegno' ? parseFloat(contrassegnoFee || 0) : 0))"></span></dd>
                         </div>
                     </dl>
 
@@ -620,6 +630,8 @@
             isAzienda: {{ old('is_azienda') ? 'true' : 'false' }},
             nazione: '{{ old('nazione', 'Italia') }}',
             subtotal: {{ $totale ?? 0 }},
+            discount: {{ (float)($scontoCoupon ?? 0) }},
+            couponCode: '{{ $appliedCoupon["code"] ?? "" }}',
             shippingCost: 0,
             freeThreshold: {{ $freeThreshold }},
             freeShippingScope: '{{ $freeShippingScope ?? "italy" }}',

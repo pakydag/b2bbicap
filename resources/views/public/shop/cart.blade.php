@@ -128,6 +128,47 @@
                 <section aria-labelledby="summary-heading" class="mt-16 bg-white rounded-lg px-4 py-6 sm:p-6 lg:p-8 lg:mt-0 lg:col-span-4 shadow border-t-2 border-indigo-500 sticky top-6">
                     <h2 id="summary-heading" class="text-xl font-bold text-gray-900 border-b pb-4 mb-6">{{ $isEn ? 'Order Summary' : 'Riepilogo Ordine' }}</h2>
 
+                    <!-- Box Codice Coupon -->
+                    <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span>🎟️</span>
+                            <span>{{ $isEn ? 'Have a Discount Coupon?' : 'Hai un Codice Sconto?' }}</span>
+                        </label>
+
+                        @if(!empty($appliedCoupon))
+                            <div class="flex items-center justify-between bg-emerald-50 border border-emerald-300 p-3 rounded-md">
+                                <div>
+                                    <span class="font-mono font-bold text-xs uppercase text-emerald-900 tracking-wider bg-white px-2 py-0.5 rounded border border-emerald-200">
+                                        {{ $appliedCoupon['code'] }}
+                                    </span>
+                                    <p class="text-xs text-emerald-700 mt-1 font-semibold">
+                                        {{ $isEn ? 'Discount applied:' : 'Sconto applicato:' }} 
+                                        <strong>- € {{ number_format($scontoCoupon, 2, ',', '.') }}</strong>
+                                    </p>
+                                </div>
+                                <form action="{{ route('public.shop.cart.coupon.remove') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="text-xs text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider underline cursor-pointer">
+                                        {{ $isEn ? 'Remove' : 'Rimuovi' }}
+                                    </button>
+                                </form>
+                            </div>
+                        @else
+                            <form action="{{ route('public.shop.cart.coupon.apply') }}" method="POST" class="flex gap-2">
+                                @csrf
+                                <input type="text" 
+                                       name="code" 
+                                       required 
+                                       placeholder="{{ $isEn ? 'Code (e.g. welcomebicapshop)' : 'Codice (es. welcomebicapshop)' }}" 
+                                       class="flex-1 uppercase font-mono text-xs border-slate-300 rounded-md focus:ring-amber-400 focus:border-amber-400 p-2.5 bg-white">
+                                <button type="submit" 
+                                        class="px-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-md transition cursor-pointer">
+                                    {{ $isEn ? 'Apply' : 'Applica' }}
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+
                     <div class="mb-6">
                         <label for="estimate_nation" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ $isEn ? 'Destination for estimate' : 'Destinazione per la stima' }}</label>
                         <select id="estimate_nation" x-model="nazione" @change="updateShipping()" class="w-full bg-slate-50 border-slate-200 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all p-3">
@@ -143,6 +184,18 @@
                             <dt class="text-sm text-gray-600">{{ $isEn ? 'Products Subtotal' : 'Subtotale Prodotti' }}</dt>
                             <dd class="text-sm font-bold text-gray-900">€ <span x-text="formatPrice(subtotal)"></span></dd>
                         </div>
+
+                        <template x-if="discount > 0">
+                            <div class="flex items-center justify-between text-sm text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200">
+                                <dt class="font-bold flex items-center gap-1">
+                                    <span>🏷️</span>
+                                    <span>{{ $isEn ? 'Discount Coupon' : 'Sconto Coupon' }}</span>
+                                    <span class="font-mono text-xs uppercase" x-text="'(' + couponCode + ')'"></span>
+                                </dt>
+                                <dd class="font-extrabold">- € <span x-text="formatPrice(discount)"></span></dd>
+                            </div>
+                        </template>
+
                         <div class="flex items-center justify-between border-t border-gray-100 pt-4 group relative">
                             <dt class="text-sm text-gray-600 flex items-center">
                                 {{ $isEn ? 'Estimated shipping' : 'Spedizione stimata' }}
@@ -165,7 +218,7 @@
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200 pt-4">
                             <dt class="text-base font-bold text-gray-900">{{ $isEn ? 'Order Total' : 'Totale Ordine' }}</dt>
-                            <dd class="text-2xl font-black text-black">€ <span x-text="formatPrice(parseFloat(subtotal) + parseFloat(shippingCost))"></span></dd>
+                            <dd class="text-2xl font-black text-black">€ <span x-text="formatPrice(Math.max(0, parseFloat(subtotal) - parseFloat(discount)) + parseFloat(shippingCost))"></span></dd>
                         </div>
                     </dl>
 
@@ -190,6 +243,8 @@
         return {
             nazione: 'Italia',
             subtotal: {{ $totale ?? 0 }},
+            discount: {{ (float)($scontoCoupon ?? 0) }},
+            couponCode: '{{ $appliedCoupon["code"] ?? "" }}',
             shippingCost: 0,
             freeThreshold: {{ $freeThreshold }},
             freeShippingScope: '{{ $freeShippingScope ?? "italy" }}',

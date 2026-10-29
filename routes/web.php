@@ -190,6 +190,15 @@ Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')-
         Route::patch('shipping-costs/threshold', [\App\Http\Controllers\Admin\ShopShippingCostController::class, 'updateThreshold'])->name('shipping_costs.threshold');
         Route::delete('shipping-costs/{shippingCost}', [\App\Http\Controllers\Admin\ShopShippingCostController::class, 'destroy'])->name('shipping_costs.destroy');
 
+        // Gestione Newsletter
+        Route::get('newsletter', [\App\Http\Controllers\Admin\ShopNewsletterController::class, 'index'])->name('newsletter.index');
+        Route::delete('newsletter/{subscriber}', [\App\Http\Controllers\Admin\ShopNewsletterController::class, 'destroy'])->name('newsletter.destroy');
+        Route::get('newsletter/export', [\App\Http\Controllers\Admin\ShopNewsletterController::class, 'export'])->name('newsletter.export');
+
+        // Gestione Coupon
+        Route::resource('coupons', \App\Http\Controllers\Admin\ShopCouponController::class);
+        Route::patch('coupons/{coupon}/toggle', [\App\Http\Controllers\Admin\ShopCouponController::class, 'toggle'])->name('coupons.toggle');
+
         Route::resource('tags', \App\Http\Controllers\TagController::class);
     });
 
@@ -338,6 +347,11 @@ Route::get('/carrello', [\App\Http\Controllers\PublicShopCartController::class, 
 Route::get('/cart', [\App\Http\Controllers\PublicShopCartController::class, 'index']);
 Route::post('/shop/cart/add', [\App\Http\Controllers\PublicShopCartController::class, 'add'])->name('public.shop.cart.add');
 Route::delete('/shop/cart/remove/{variant_id}', [\App\Http\Controllers\PublicShopCartController::class, 'remove'])->name('public.shop.cart.remove');
+Route::post('/shop/cart/coupon/apply', [\App\Http\Controllers\PublicShopCartController::class, 'applyCoupon'])->name('public.shop.cart.coupon.apply');
+Route::post('/shop/cart/coupon/remove', [\App\Http\Controllers\PublicShopCartController::class, 'removeCoupon'])->name('public.shop.cart.coupon.remove');
+
+// Newsletter Pubblica
+Route::post('/newsletter/subscribe', [\App\Http\Controllers\PublicNewsletterController::class, 'subscribe'])->name('public.newsletter.subscribe');
 
 Route::get('/shop/checkout', [\App\Http\Controllers\PublicShopCartController::class, 'checkout'])->name('public.shop.cart.checkout');
 Route::post('/shop/checkout/process', [\App\Http\Controllers\PublicShopCartController::class, 'processCheckout'])->name('public.shop.cart.process');

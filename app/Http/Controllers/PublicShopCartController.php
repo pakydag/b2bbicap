@@ -20,7 +20,33 @@ class PublicShopCartController extends Controller
             }
         }
 
-        return view('public.shop.cart', compact('cart', 'shippingCosts', 'freeThreshold', 'freeShippingScope', 'totale'));
+        // Gestione Coupon applicato
+        $appliedCoupon = session()->get('applied_coupon');
+        $scontoCoupon = 0;
+        if ($appliedCoupon) {
+            $couponModel = \App\Models\ShopCoupon::find($appliedCoupon['id'] ?? null)
+                ?: \App\Models\ShopCoupon::where('code', $appliedCoupon['code'] ?? '')->first();
+
+            if ($couponModel && $couponModel->isUsable($totale)['valid']) {
+                $scontoCoupon = $couponModel->calculateDiscount($totale);
+                $appliedCoupon['discount_amount'] = $scontoCoupon;
+                session()->put('applied_coupon', $appliedCoupon);
+            } else {
+                session()->forget('applied_coupon');
+                $appliedCoupon = null;
+                $scontoCoupon = 0;
+            }
+        }
+
+        return view('public.shop.cart', compact(
+            'cart', 
+            'shippingCosts', 
+            'freeThreshold', 
+            'freeShippingScope', 
+            'totale', 
+            'appliedCoupon', 
+            'scontoCoupon'
+        ));
     }
 
     public function add(Request $request)
@@ -178,6 +204,93 @@ class PublicShopCartController extends Controller
         return redirect()->back()->with('success', 'Prodotto rimosso dal carrello.');
     }
 
+    public function applyCoupon(Request $request)
+    {
+        $isEn = app()->getLocale() === 'en';
+        $cart = session()->get('cart', []);
+
+        if (empty($cart)) {
+            $msg = $isEn ? 'Your cart is empty.' : 'Il tuo carrello è vuoto.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $code = strtolower(trim((string)$request->code));
+        if (empty($code)) {
+            $msg = $isEn ? 'Please enter a coupon code.' : 'Inserisci un codice coupon.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $coupon = \App\Models\ShopCoupon::where('code', $code)->first();
+        if (!$coupon) {
+            $msg = $isEn ? 'Invalid coupon code.' : 'Codice coupon non valido o inesistente.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $subtotal = 0;
+        foreach ($cart as $item) {
+            $subtotal += ((float)($item['prezzo'] ?? 0) * (int)($item['quantita'] ?? 1));
+        }
+
+        $usableCheck = $coupon->isUsable($subtotal);
+        if (!$usableCheck['valid']) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $usableCheck['message']], 422);
+            }
+            return redirect()->back()->with('error', $usableCheck['message']);
+        }
+
+        $discount = $coupon->calculateDiscount($subtotal);
+
+        session()->put('applied_coupon', [
+            'id' => $coupon->id,
+            'code' => $coupon->code,
+            'name' => $coupon->name,
+            'type' => $coupon->type,
+            'valore' => $coupon->valore,
+            'min_spesa' => $coupon->min_spesa,
+            'sempre_attivo' => $coupon->sempre_attivo,
+            'discount_amount' => $discount,
+        ]);
+
+        $formattedDiscount = number_format($discount, 2, ',', '.');
+        $successMsg = $isEn
+            ? "Coupon '{$coupon->code}' applied successfully! Discount: € {$formattedDiscount}"
+            : "Coupon '{$coupon->code}' applicato con successo! Sconto: € {$formattedDiscount}";
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMsg,
+                'coupon' => $coupon->code,
+                'discount' => $discount,
+            ]);
+        }
+
+        return redirect()->back()->with('success', $successMsg);
+    }
+
+    public function removeCoupon(Request $request)
+    {
+        $isEn = app()->getLocale() === 'en';
+        session()->forget('applied_coupon');
+
+        $msg = $isEn ? 'Coupon removed.' : 'Coupon rimosso dal carrello.';
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => $msg]);
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
+
     public function checkout()
     {
         $cart = session()->get('cart', []);
@@ -197,7 +310,34 @@ class PublicShopCartController extends Controller
             }
         }
 
-        return view('public.shop.checkout', compact('cart', 'shippingCosts', 'freeThreshold', 'freeShippingScope', 'contrassegnoFee', 'totale'));
+        // Verifica coupon
+        $appliedCoupon = session()->get('applied_coupon');
+        $scontoCoupon = 0;
+        if ($appliedCoupon) {
+            $couponModel = \App\Models\ShopCoupon::find($appliedCoupon['id'] ?? null)
+                ?: \App\Models\ShopCoupon::where('code', $appliedCoupon['code'] ?? '')->first();
+
+            if ($couponModel && $couponModel->isUsable($totale)['valid']) {
+                $scontoCoupon = $couponModel->calculateDiscount($totale);
+                $appliedCoupon['discount_amount'] = $scontoCoupon;
+                session()->put('applied_coupon', $appliedCoupon);
+            } else {
+                session()->forget('applied_coupon');
+                $appliedCoupon = null;
+                $scontoCoupon = 0;
+            }
+        }
+
+        return view('public.shop.checkout', compact(
+            'cart', 
+            'shippingCosts', 
+            'freeThreshold', 
+            'freeShippingScope', 
+            'contrassegnoFee', 
+            'totale',
+            'appliedCoupon',
+            'scontoCoupon'
+        ));
     }
 
     public function processCheckout(Request $request)
@@ -332,7 +472,23 @@ class PublicShopCartController extends Controller
             $costoContrassegno = (float)(\App\Models\Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 10.00);
         }
 
-        $totaleOrdine = $totaleImponibile + $costoSpedizione + $costoContrassegno;
+        // Calcolo Coupon
+        $appliedCoupon = session()->get('applied_coupon');
+        $couponCode = null;
+        $totaleSconto = 0;
+        $couponModel = null;
+        if ($appliedCoupon) {
+            $couponModel = \App\Models\ShopCoupon::find($appliedCoupon['id'] ?? null)
+                ?: \App\Models\ShopCoupon::where('code', $appliedCoupon['code'] ?? '')->first();
+
+            if ($couponModel && $couponModel->isUsable($totaleImponibile)['valid']) {
+                $couponCode = $couponModel->code;
+                $totaleSconto = $couponModel->calculateDiscount($totaleImponibile);
+            }
+        }
+
+        $totaleScontato = max(0, $totaleImponibile - $totaleSconto);
+        $totaleOrdine = $totaleScontato + $costoSpedizione + $costoContrassegno;
 
         // 5. Create the Order record
         $order = new \App\Models\ShopOrder();
@@ -343,6 +499,8 @@ class PublicShopCartController extends Controller
         $order->metodo_pagamento = $request->payment_method ?? 'bonifico';
         $order->note_cliente = $request->note_ordine;
         
+        $order->coupon_codice = $couponCode;
+        $order->totale_sconto = $totaleSconto;
         $order->totale_imponibile = $totaleImponibile;
         $order->totale_iva = 0; // Se c'è IVA specifica da calcolare, aggiungerla
         $order->totale_ordine = $totaleOrdine;
@@ -380,6 +538,10 @@ class PublicShopCartController extends Controller
 
         $order->contact_id = $contact->id;
         $order->save();
+
+        if ($couponModel) {
+            $couponModel->recordUsage();
+        }
 
         // 6. Create Order Items and decrease stock
         foreach ($cart as $variant_id => $item) {
@@ -456,7 +618,7 @@ class PublicShopCartController extends Controller
                     ];
                 }
 
-                $checkout_session = \Stripe\Checkout\Session::create([
+                $sessionParams = [
                     'payment_method_types' => ['card'],
                     'line_items' => $line_items,
                     'mode' => 'payment',
@@ -464,7 +626,23 @@ class PublicShopCartController extends Controller
                     'cancel_url' => route('public.shop.cart.stripe.cancel') . '?order_id=' . $order->id,
                     'client_reference_id' => $order->id,
                     'customer_email' => $customer->email,
-                ]);
+                ];
+
+                if ($totaleSconto > 0) {
+                    try {
+                        $stripeCoupon = \Stripe\Coupon::create([
+                            'amount_off' => round($totaleSconto * 100),
+                            'currency' => 'eur',
+                            'duration' => 'once',
+                            'name' => 'Sconto Coupon (' . ($couponCode ?: 'BICAP') . ')',
+                        ]);
+                        $sessionParams['discounts'] = [['coupon' => $stripeCoupon->id]];
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning('Stripe coupon creation fallback: ' . $e->getMessage());
+                    }
+                }
+
+                $checkout_session = \Stripe\Checkout\Session::create($sessionParams);
 
                 return redirect($checkout_session->url);
             } catch (\Exception $e) {
@@ -554,6 +732,7 @@ class PublicShopCartController extends Controller
 
         // 8. Clear Cart & Redirect to success
         session()->forget('cart');
+        session()->forget('applied_coupon');
 
         return redirect()->route('public.shop.cart.success')->with('order_number', $order->numero_ordine);
     }
@@ -595,10 +774,12 @@ class PublicShopCartController extends Controller
                     }
 
                     session()->forget('cart');
+                    session()->forget('applied_coupon');
                     return redirect()->route('public.shop.cart.success')->with('order_number', $order->numero_ordine);
                 } else if ($order && $order->stato_pagamento === 'pagato') {
                     // Già pagato (refresh pagina)
                     session()->forget('cart');
+                    session()->forget('applied_coupon');
                     return redirect()->route('public.shop.cart.success')->with('order_number', $order->numero_ordine);
                 }
             }
@@ -690,6 +871,7 @@ class PublicShopCartController extends Controller
                     }
 
                     session()->forget('cart');
+                    session()->forget('applied_coupon');
                     return redirect()->route('public.shop.cart.success')->with('order_number', $order->numero_ordine);
                 }
             }

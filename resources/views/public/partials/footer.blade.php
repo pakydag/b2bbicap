@@ -21,21 +21,34 @@
             </div>
 
             <!-- Right Form Column -->
-            <div style="flex: 1 1 380px; max-width: 440px; width: 100%;">
-                <form onsubmit="event.preventDefault(); alert('{{ $isEn ? 'Thank you for subscribing to our newsletter!' : 'Grazie per esserti iscritto alla nostra Newsletter!' }}');" style="width: 100%; display: flex; flex-direction: column;">
-                    
+            <div style="flex: 1 1 380px; max-width: 440px; width: 100%;" x-data="newsletterForm()">
+                <!-- Inline Feedback Alert -->
+                <div x-show="message" 
+                     x-transition 
+                     :class="success ? 'bg-emerald-900/90 text-emerald-200 border-emerald-500' : 'bg-rose-900/90 text-rose-200 border-rose-500'" 
+                     class="p-3.5 mb-3 rounded-none border text-xs font-semibold leading-relaxed" 
+                     style="display: none;">
+                    <p x-text="message"></p>
+                </div>
+
+                <form @submit.prevent="submitNewsletter" action="{{ route('public.newsletter.subscribe') }}" method="POST" style="width: 100%; display: flex; flex-direction: column;">
+                    @csrf
                     <!-- Email input -->
                     <input type="email" 
+                           name="email"
+                           x-model="email"
                            required 
                            placeholder="Email" 
                            style="width: 100%; height: 44px; background-color: #363636; border: 1px solid #5e5e5e; color: #ffffff; padding: 0 16px; font-family: 'Montserrat', sans-serif; font-size: 13px; outline: none; margin: 0 0 10px 0; box-sizing: border-box;">
                     
                     <!-- Submit button (Full width bright yellow) -->
                     <button type="submit" 
+                            :disabled="loading"
                             style="width: 100%; height: 44px; background-color: #fedb00 !important; color: #000000 !important; font-family: 'Bebas Neue', sans-serif !important; font-size: 22px !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; border: 1px solid #fedb00 !important; cursor: pointer !important; display: flex; align-items: center; justify-content: center; margin: 0 0 10px 0; transition: opacity 0.2s;"
                             onmouseover="this.style.opacity='0.9'" 
                             onmouseout="this.style.opacity='1'">
-                        {{ $isEn ? 'SUBSCRIBE' : 'ISCRIVITI' }}
+                        <span x-show="!loading">{{ $isEn ? 'SUBSCRIBE' : 'ISCRIVITI' }}</span>
+                        <span x-show="loading" style="display: none;">{{ $isEn ? 'SENDING...' : 'INVIO IN CORSO...' }}</span>
                     </button>
 
                     <!-- Informativa Newsletter link -->
@@ -48,11 +61,11 @@
                     <!-- Radios -->
                     <div style="display: flex; align-items: center; gap: 20px; color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600;">
                         <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="radio" name="nl_op" value="IN" checked style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
+                            <input type="radio" name="nl_op" value="IN" x-model="nl_op" style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
                             <span>{{ $isEn ? 'Subscribe' : 'Iscriviti' }}</span>
                         </label>
                         <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="radio" name="nl_op" value="OUT" style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
+                            <input type="radio" name="nl_op" value="OUT" x-model="nl_op" style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
                             <span>{{ $isEn ? 'Unsubscribe' : 'Cancellati' }}</span>
                         </label>
                     </div>
@@ -230,3 +243,54 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
     </svg>
 </button>
+
+<script>
+    function newsletterForm() {
+        return {
+            email: '',
+            nl_op: 'IN',
+            loading: false,
+            message: '',
+            success: true,
+
+            async submitNewsletter() {
+                if (!this.email) return;
+                this.loading = true;
+                this.message = '';
+
+                try {
+                    const response = await fetch('{{ route('public.newsletter.subscribe') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: this.email,
+                            nl_op: this.nl_op
+                        })
+                    });
+
+                    const data = await response.json();
+                    this.loading = false;
+
+                    if (response.ok && data.success) {
+                        this.success = true;
+                        this.message = data.message;
+                        if (this.nl_op === 'IN') {
+                            this.email = '';
+                        }
+                    } else {
+                        this.success = false;
+                        this.message = data.message || '{{ $isEn ? "An error occurred, please try again." : "Si è verificato un errore, riprova più tardi." }}';
+                    }
+                } catch (err) {
+                    this.loading = false;
+                    this.success = false;
+                    this.message = '{{ $isEn ? "Connection error. Please try again later." : "Errore di connessione. Riprova più tardi." }}';
+                }
+            }
+        };
+    }
+</script>

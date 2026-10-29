@@ -33,8 +33,19 @@
                         <div class="p-4 bg-gray-50 rounded border flex flex-col justify-between">
                             <div>
                                 <h3 class="font-bold text-lg mb-2 border-b pb-2">Riepilogo Importi</h3>
-                                <div class="flex justify-between mb-1"><span class="text-gray-600">Imponibile (Netto):</span> <span>€ {{ number_format($ordine->totale_imponibile, 2, ',', '.') }}</span></div>
+                                <div class="flex justify-between mb-1"><span class="text-gray-600">Imponibile (Articoli):</span> <span>€ {{ number_format($ordine->totale_imponibile, 2, ',', '.') }}</span></div>
+                                @if(!empty($ordine->totale_sconto) && $ordine->totale_sconto > 0)
+                                    <div class="flex justify-between mb-1 text-emerald-700 font-semibold">
+                                        <span>Sconto Coupon ({{ $ordine->coupon_codice ?: 'PROMO' }}):</span> 
+                                        <span>- € {{ number_format($ordine->totale_sconto, 2, ',', '.') }}</span>
+                                    </div>
+                                @endif
+                                <div class="flex justify-between mb-1"><span class="text-gray-600">Spedizione:</span> <span>€ {{ number_format($ordine->costo_spedizione, 2, ',', '.') }}</span></div>
+                                @if($ordine->metodo_pagamento === 'contrassegno')
+                                    <div class="flex justify-between mb-1"><span class="text-gray-600">Contrassegno:</span> <span>€ {{ number_format($ordine->costo_contrassegno > 0 ? $ordine->costo_contrassegno : 10, 2, ',', '.') }}</span></div>
+                                @endif
                                 <div class="flex justify-between mb-1"><span class="text-gray-600">IVA/Imposte:</span> <span>€ {{ number_format($ordine->totale_iva, 2, ',', '.') }}</span></div>
+                                <div class="flex justify-between mt-2 pt-2 border-t font-bold text-base"><span>Totale Ordine:</span> <span class="text-indigo-600">€ {{ number_format($ordine->totale_ordine, 2, ',', '.') }}</span></div>
                             </div>
                             <div>
                                 </div>
