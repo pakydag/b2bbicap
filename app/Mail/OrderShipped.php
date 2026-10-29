@@ -76,3 +76,4 @@ class OrderShipped extends Mailable
         return [];
     }
 }
+
