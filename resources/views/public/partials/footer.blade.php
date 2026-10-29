@@ -126,6 +126,7 @@
                     <li><a href="https://www.bicap.it/bicap-Informativa-Newsletter" target="_blank" rel="noopener noreferrer">{{ $isEn ? 'NEWSLETTER NOTICE' : 'INFORMATIVA NEWSLETTER' }}</a></li>
                     <li><a href="https://www.bicap.it/bicap-Informativa-Cookie" target="_blank" rel="noopener noreferrer">{{ $isEn ? 'COOKIE NOTICE' : 'INFORMATIVA COOKIE' }}</a></li>
                     <li><a href="https://www.bicap.it/bicap-Informativa-Form-Registrazione" target="_blank" rel="noopener noreferrer">{{ $isEn ? 'REGISTRATION FORM NOTICE' : 'INFORMATIVA FORM REGISTRAZIONE' }}</a></li>
+                    <li><a href="#accessibility-declaration" class="open-accessibility-declaration" style="cursor: pointer;">{{ $isEn ? 'ACCESSIBILITY DECLARATION' : 'DICHIARAZIONE DI ACCESSIBILITÀ' }}</a></li>
                 </ul>
             </div>
 

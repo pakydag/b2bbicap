@@ -187,7 +187,7 @@
 
     
     <!-- Modal Dichiarazione di Accessibilità -->
-    <div id="onetap-declaration-modal" class="onetap-modal-backdrop" style="display: none;" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="decl-title">
+    <div id="onetap-declaration-modal" class="onetap-modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="decl-title">
         <div class="onetap-modal-dialog">
             <div class="onetap-modal-header">
                 <div class="onetap-modal-title-box">
@@ -738,10 +738,13 @@
         background: rgba(15, 23, 42, 0.65) !important;
         backdrop-filter: blur(4px) !important;
         z-index: 2147483645 !important;
-        display: flex !important;
+        display: none !important;
         align-items: center !important;
         justify-content: center !important;
         padding: 20px !important;
+    }
+    .onetap-modal-backdrop.open {
+        display: flex !important;
     }
     .onetap-modal-dialog {
         background: #ffffff !important;
@@ -1024,17 +1027,21 @@
             overlay.classList.remove('active');
         };
 
-        const openDeclModal = () => {
+        const openDeclModal = (e) => {
+            if (e && e.preventDefault) e.preventDefault();
             if (declModal) {
-                declModal.style.display = 'flex';
+                declModal.classList.add('open');
                 declModal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
             }
         };
 
-        const closeDeclModal = () => {
+        const closeDeclModal = (e) => {
+            if (e && e.preventDefault) e.preventDefault();
             if (declModal) {
-                declModal.style.display = 'none';
+                declModal.classList.remove('open');
                 declModal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
             }
         };
 
@@ -1047,9 +1054,17 @@
         if (declCloseFooterBtn) declCloseFooterBtn.onclick = closeDeclModal;
         if (declModal) {
             declModal.onclick = (e) => {
-                if (e.target === declModal) closeDeclModal();
+                if (e.target === declModal) closeDeclModal(e);
             };
         }
+
+        // Ascolto globale per link footer o pulsanti pagina
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('.open-accessibility-declaration, a[href="#accessibility-declaration"], a[href*="dichiarazione-accessibilita"]');
+            if (link) {
+                openDeclModal(e);
+            }
+        });
 
         const hideTriggerBtn = root.querySelector('#onetap-hide-trigger');
         if (hideTriggerBtn) {
@@ -1136,9 +1151,9 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (declModal && declModal.style.display !== 'none') {
+                if (declModal && declModal.classList.contains('open')) {
                     closeDeclModal();
-                } else if (panel.classList.contains('open')) {
+                } else if (panel && panel.classList.contains('open')) {
                     closeDrawer();
                 }
             }
