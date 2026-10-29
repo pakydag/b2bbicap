@@ -72,7 +72,7 @@
                                         <div>
                                             <div class="flex justify-between">
                                                 <h3 class="text-base">
-                                                    <a href="{{ !empty($item['b2b_product_id']) ? route('public.product.detail', $item['b2b_product_id']) : '#' }}" class="font-bold text-gray-900 hover:text-[#e35205] transition-colors">
+                                                    <a href="{{ !empty($item['slug']) ? route('public.product.detail', $item['slug']) : (!empty($item['b2b_product_id']) ? route('public.product.detail', $item['b2b_product_id']) : '#') }}" class="font-bold text-gray-900 hover:text-[#e35205] transition-colors">
                                                         {{ $item['prodotto_nome'] }}
                                                     </a>
                                                 </h3>

@@ -106,7 +106,7 @@ class PublicController extends Controller
                 'calzata' => $calzata,
                 'norma' => $norma,
                 'settori' => $prodSettori,
-                'url' => route('public.product.detail', $p->id),
+                'url' => route('public.product.detail', $p->slug ?: $p->id),
             ];
         });
 
@@ -141,9 +141,36 @@ class PublicController extends Controller
         return view('public.home', compact('products', 'formattedProducts', 'filterOptions', 'seo'));
     }
 
-    public function productDetail($id)
+    public function productDetail($identifier)
     {
-        $product = B2bProduct::with('brand', 'variants')->where('is_active', true)->findOrFail($id);
+        $product = B2bProduct::with('brand', 'variants')
+            ->where('is_active', true)
+            ->where(function ($q) use ($identifier) {
+                $q->where('slug', $identifier);
+                if (is_numeric($identifier)) {
+                    $q->orWhere('id', (int)$identifier);
+                }
+            })
+            ->first();
+
+        // Fallback: cerca per slug generato dal nome
+        if (!$product) {
+            $product = B2bProduct::with('brand', 'variants')
+                ->where('is_active', true)
+                ->get()
+                ->first(function ($p) use ($identifier) {
+                    return \Illuminate\Support\Str::slug($p->name) === $identifier;
+                });
+        }
+
+        if (!$product) {
+            abort(404);
+        }
+
+        // Se l'utente o un vecchio link usa l'ID numerico, esegui redirect 301 SEO allo slug con nome prodotto
+        if (is_numeric($identifier) && !empty($product->slug)) {
+            return redirect()->route('public.product.detail', $product->slug, 301);
+        }
         
         // Verifica disponibilità effettive da Giacenza.csv per garantire coerenza immediata
         $agentController = app(\App\Http\Controllers\Agent\AgentPortalController::class);
@@ -198,7 +225,7 @@ class PublicController extends Controller
             'title' => $product->name . ' - ' . $product->code . ' | BICAP Official',
             'description' => Str::limit(strip_tags($product->localized_description), 160),
             'image' => $product->image_url,
-            'url' => url()->current(),
+            'url' => route('public.product.detail', $product->slug ?: $product->id),
         ];
 
         // Accordion Info (Condizioni di vendita, Resi e rimborsi, Spedizioni, FAQ, Guida alle taglie dal Gestionale)

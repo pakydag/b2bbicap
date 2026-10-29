@@ -650,7 +650,7 @@
         <div class="max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                 @foreach($relatedProducts as $rel)
-                    <a href="{{ route('public.product.detail', $rel->id) }}" class="bicap-correlati-item group">
+                    <a href="{{ route('public.product.detail', $rel->slug ?: $rel->id) }}" class="bicap-correlati-item group">
                         <div class="w-full h-32 sm:h-40 md:h-44 flex items-center justify-center p-1 mb-1 bg-white">
                             <img src="{{ $rel->image_url }}" alt="{{ $rel->name }}" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300">
                         </div>

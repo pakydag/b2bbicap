@@ -121,6 +121,7 @@ class PublicShopCartController extends Controller
                     'b2b_product_id' => $b2bProduct->id,
                     'b2b_variant_id' => $variant ? $variant->id : null,
                     'prodotto_nome' => $b2bProduct->name,
+                    'slug' => $b2bProduct->slug,
                     'sku' => $b2bProduct->code,
                     'colore' => $variant?->color ?? 'UNICO',
                     'taglia' => $taglia,

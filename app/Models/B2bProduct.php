@@ -6,11 +6,46 @@ use Illuminate\Database\Eloquent\Model;
 
 class B2bProduct extends Model
 {
-    protected $fillable = ['name', 'code', 'b2b_brand_id', 'season', 'description', 'image', 'has_stock', 'is_active', 'price', 'characteristics'];
+    protected $fillable = ['name', 'slug', 'code', 'b2b_brand_id', 'season', 'description', 'image', 'has_stock', 'is_active', 'price', 'characteristics'];
 
     protected $casts = [
         'characteristics' => 'array',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($product) {
+            if (empty($product->slug) && !empty($product->name)) {
+                $product->slug = static::generateUniqueSlug($product->name, $product->id);
+            }
+        });
+    }
+
+    public static function generateUniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $baseSlug = \Illuminate\Support\Str::slug($name);
+        if (empty($baseSlug)) {
+            $baseSlug = 'prodotto';
+        }
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (static::where('slug', $slug)
+            ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
+    }
 
     public static function normalizeCode(?string $code): string
     {
