@@ -81,6 +81,11 @@
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">In Lavorazione</span>
                                             @elseif($o->stato === 'spedito')
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Spedito</span>
+                                                @if($o->tracking_number)
+                                                    <div class="text-[10px] text-gray-600 font-mono mt-0.5 font-bold">
+                                                        {{ $o->corriere ? $o->corriere . ': ' : '' }}{{ $o->tracking_number }}
+                                                    </div>
+                                                @endif
                                             @elseif($o->stato === 'annullato')
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Annullato</span>
                                             @else

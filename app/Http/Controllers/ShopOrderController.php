@@ -25,24 +25,49 @@ class ShopOrderController extends Controller
             'stato' => 'required|string',
             'stato_pagamento' => 'required|string',
             'note_admin' => 'nullable|string',
+            'corriere' => 'nullable|string|max:100',
+            'tracking_number' => 'nullable|string|max:100',
+            'tracking_url' => 'nullable|string|max:500',
+            'send_tracking_email' => 'nullable|boolean',
         ]);
 
-        // Controlliamo se lo stato di spedizione è cambiato
         $old_stato = $ordine->stato;
         
+        // Se lo stato passa a spedito, valorizza la data spedito_il se non presente
+        if ($validated['stato'] === 'spedito' && empty($ordine->spedito_il)) {
+            $validated['spedito_il'] = now();
+        }
+
         $ordine->update($validated);
-        
-        // Se lo stato spedizione è cambiato ed è diverso da "nuovo"
-        if ($old_stato !== $ordine->stato && $ordine->stato !== 'nuovo') {
-            try {
-                \Illuminate\Support\Facades\Mail::to($ordine->customer->email)
-                    ->send(new \App\Mail\OrderStatusChanged($ordine));
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Errore invio email cambio stato: ' . $e->getMessage());
+
+        // Se l'ordine è 'spedito' ed è appena passato a spedito, oppure è stata richiesta esplicitamente la notifica:
+        $shouldSendShippingEmail = ($old_stato !== 'spedito' && $ordine->stato === 'spedito') 
+            || ($request->boolean('send_tracking_email') && $ordine->stato === 'spedito');
+
+        if ($shouldSendShippingEmail) {
+            $customerEmail = $ordine->customer?->email ?? $ordine->contact?->email;
+            if ($customerEmail) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($customerEmail)
+                        ->send(new \App\Mail\OrderShipped($ordine));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Errore invio email spedizione: ' . $e->getMessage());
+                }
+            }
+        } elseif ($old_stato !== $ordine->stato && $ordine->stato !== 'nuovo') {
+            // Per gli altri cambi di stato (es. annullato), invia la notifica generica
+            $customerEmail = $ordine->customer?->email ?? $ordine->contact?->email;
+            if ($customerEmail) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($customerEmail)
+                        ->send(new \App\Mail\OrderStatusChanged($ordine));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Errore invio email cambio stato: ' . $e->getMessage());
+                }
             }
         }
 
-        return redirect()->route('admin.shop.ordini.index')->with('success', 'Ordine aggiornato con successo.');
+        return redirect()->route('admin.shop.ordini.index')->with('success', 'Ordine aggiornato con successo' . ($shouldSendShippingEmail ? ' ed email con tracking inviata al cliente.' : '.'));
     }
     
     public function destroy(ShopOrder $ordine)
