@@ -128,9 +128,9 @@
                     <div class="onetap-module-card">
                         <span class="onetap-card-title">Dimensione del carattere</span>
                         <div class="onetap-font-controls">
-                            <button data-action="fontMinus" class="onetap-circle-btn" title="Riduci carattere" aria-label="Riduci dimensione testo">-</button>
-                            <span id="onetap-font-indicator">Predefinito</span>
                             <button data-action="fontPlus" class="onetap-circle-btn" title="Aumenta carattere" aria-label="Aumenta dimensione testo">+</button>
+                            <span id="onetap-font-indicator">Predefinito</span>
+                            <button data-action="fontMinus" class="onetap-circle-btn" title="Riduci carattere" aria-label="Riduci dimensione testo">-</button>
                         </div>
                     </div>
 
@@ -371,16 +371,17 @@
         align-items: center !important;
     }
     .onetap-header-icon {
-        width: 58px !important;
-        height: 58px !important;
-        background: rgba(255, 255, 255, 0.2) !important;
+        width: 54px !important;
+        height: 54px !important;
+        background: #003dbb !important;
+        border: 2px solid rgba(255, 255, 255, 0.28) !important;
         border-radius: 50% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         color: #ffffff !important;
         margin-bottom: 10px !important;
-        box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     }
     .onetap-header-main h2 {
         font-size: 1.38rem !important;
@@ -404,11 +405,17 @@
         cursor: pointer !important;
     }
 
-    /* Content Body */
+    /* Content Body (Floating White Card overlapping Blue Header like Maldarizzi) */
     .onetap-body {
         flex: 1 !important;
         overflow-y: auto !important;
-        padding: 20px !important;
+        padding: 20px 18px !important;
+        background: #ffffff !important;
+        border-radius: 20px 20px 0 0 !important;
+        margin-top: -14px !important;
+        position: relative !important;
+        z-index: 2 !important;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05) !important;
     }
     .onetap-section {
         margin-bottom: 22px !important;
@@ -1002,6 +1009,10 @@
         const panel = root.querySelector('#accessibility-panel');
         const overlay = root.querySelector('#accessibility-overlay');
         const closeBtn = root.querySelector('.onetap-close-btn');
+        const declModal = root.querySelector('#onetap-declaration-modal');
+        const declTrigger = root.querySelector('#onetap-declaration-trigger');
+        const declCloseBtn = root.querySelector('#onetap-decl-close');
+        const declCloseFooterBtn = root.querySelector('#onetap-decl-close-btn');
 
         const openDrawer = () => {
             panel.classList.add('open');
@@ -1013,9 +1024,32 @@
             overlay.classList.remove('active');
         };
 
+        const openDeclModal = () => {
+            if (declModal) {
+                declModal.style.display = 'flex';
+                declModal.setAttribute('aria-hidden', 'false');
+            }
+        };
+
+        const closeDeclModal = () => {
+            if (declModal) {
+                declModal.style.display = 'none';
+                declModal.setAttribute('aria-hidden', 'true');
+            }
+        };
+
         if (trigger) trigger.onclick = openDrawer;
         if (closeBtn) closeBtn.onclick = closeDrawer;
         if (overlay) overlay.onclick = closeDrawer;
+
+        if (declTrigger) declTrigger.onclick = openDeclModal;
+        if (declCloseBtn) declCloseBtn.onclick = closeDeclModal;
+        if (declCloseFooterBtn) declCloseFooterBtn.onclick = closeDeclModal;
+        if (declModal) {
+            declModal.onclick = (e) => {
+                if (e.target === declModal) closeDeclModal();
+            };
+        }
 
         const hideTriggerBtn = root.querySelector('#onetap-hide-trigger');
         if (hideTriggerBtn) {
@@ -1101,8 +1135,12 @@
         }, { passive: true });
 
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && panel.classList.contains('open')) {
-                closeDrawer();
+            if (e.key === 'Escape') {
+                if (declModal && declModal.style.display !== 'none') {
+                    closeDeclModal();
+                } else if (panel.classList.contains('open')) {
+                    closeDrawer();
+                }
             }
         });
 
