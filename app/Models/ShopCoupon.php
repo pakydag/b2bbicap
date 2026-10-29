@@ -100,3 +100,4 @@ class ShopCoupon extends Model
         $this->save();
     }
 }
+

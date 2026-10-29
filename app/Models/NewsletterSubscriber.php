@@ -10,6 +10,7 @@ class NewsletterSubscriber extends Model
         'email',
         'ip_address',
         'locale',
+        'coupon_code',
         'active',
     ];
 
@@ -17,3 +18,4 @@ class NewsletterSubscriber extends Model
         'active' => 'boolean',
     ];
 }
+

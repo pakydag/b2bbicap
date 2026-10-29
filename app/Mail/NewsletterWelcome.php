@@ -78,3 +78,4 @@ class NewsletterWelcome extends Mailable
         return [];
     }
 }
+

@@ -22,13 +22,28 @@
 
             <!-- Right Form Column -->
             <div style="flex: 1 1 380px; max-width: 440px; width: 100%;" x-data="newsletterForm()">
-                <!-- Inline Feedback Alert -->
+                <!-- Inline Feedback Alert (Box ad altissimo contrasto) -->
                 <div x-show="message" 
                      x-transition 
-                     :class="success ? 'bg-emerald-900/90 text-emerald-200 border-emerald-500' : 'bg-rose-900/90 text-rose-200 border-rose-500'" 
-                     class="p-3.5 mb-3 rounded-none border text-xs font-semibold leading-relaxed" 
+                     :style="success ? 'background-color: #ffffff; color: #111111; border-left: 5px solid #fedb00;' : 'background-color: #ffffff; color: #b91c1c; border-left: 5px solid #dc2626;'" 
+                     class="p-4 mb-4 rounded-none shadow-lg text-xs leading-relaxed" 
                      style="display: none;">
-                    <p x-text="message"></p>
+                    <div class="flex items-start gap-2.5">
+                        <span x-show="success && couponCode" class="text-base shrink-0">🎟️</span>
+                        <span x-show="success && !couponCode" class="text-base shrink-0">✅</span>
+                        <span x-show="!success" class="text-base shrink-0">⚠️</span>
+                        <div class="flex-1">
+                            <p class="font-bold text-sm" x-text="message" style="margin: 0;"></p>
+                            <template x-if="couponCode">
+                                <div class="mt-2 pt-2 border-t border-gray-200">
+                                    <span class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">{{ $isEn ? 'Your Welcome Code:' : 'Il tuo Codice Benvenuto:' }}</span>
+                                    <div class="mt-0.5 inline-block font-mono font-bold text-sm bg-yellow-100 text-black px-2.5 py-1 rounded border border-yellow-300">
+                                        <span x-text="couponCode"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
                 </div>
 
                 <form @submit.prevent="submitNewsletter" action="{{ route('public.newsletter.subscribe') }}" method="POST" style="width: 100%; display: flex; flex-direction: column;">
@@ -47,26 +62,31 @@
                             style="width: 100%; height: 44px; background-color: #fedb00 !important; color: #000000 !important; font-family: 'Bebas Neue', sans-serif !important; font-size: 22px !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; border: 1px solid #fedb00 !important; cursor: pointer !important; display: flex; align-items: center; justify-content: center; margin: 0 0 10px 0; transition: opacity 0.2s;"
                             onmouseover="this.style.opacity='0.9'" 
                             onmouseout="this.style.opacity='1'">
-                        <span x-show="!loading">{{ $isEn ? 'SUBSCRIBE' : 'ISCRIVITI' }}</span>
+                        <span x-show="!loading && nl_op === 'IN'">{{ $isEn ? 'SUBSCRIBE' : 'ISCRIVITI' }}</span>
+                        <span x-show="!loading && nl_op === 'OUT'" style="display: none;">{{ $isEn ? 'UNSUBSCRIBE' : 'CANCELLATI' }}</span>
                         <span x-show="loading" style="display: none;">{{ $isEn ? 'SENDING...' : 'INVIO IN CORSO...' }}</span>
                     </button>
 
                     <!-- Informativa Newsletter link -->
                     <div style="margin-bottom: 8px;">
-                        <a href="https://www.bicap.it/bicap-Informativa-Newsletter" target="_blank" rel="noopener noreferrer" style="color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 11.5px; text-decoration: underline;">
+                        <a href="https://www.bicap.it/bicap-Informativa-Newsletter" target="_blank" rel="noopener noreferrer" style="color: #fedb00 !important; font-family: 'Montserrat', sans-serif !important; font-size: 12px !important; font-weight: 600 !important; text-decoration: underline !important;">
                             <u>{{ $isEn ? 'Newsletter Information Notice' : 'Informativa Newsletter' }}</u>
                         </a>
                     </div>
 
-                    <!-- Radios -->
-                    <div style="display: flex; align-items: center; gap: 20px; color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600;">
-                        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="radio" name="nl_op" value="IN" x-model="nl_op" style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
-                            <span>{{ $isEn ? 'Subscribe' : 'Iscriviti' }}</span>
+                    <!-- Radios Opzione Iscrizione / Cancellazione (Ben visibile con testo bianco in grassetto) -->
+                    <div style="background-color: rgba(20, 20, 20, 0.85); border: 1px solid #4a4a4a; padding: 8px 14px; border-radius: 4px; display: flex; align-items: center; gap: 24px; margin-top: 4px;">
+                        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                            <input type="radio" name="nl_op" value="IN" x-model="nl_op" style="accent-color: #fedb00; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-size: 13px !important; font-weight: 700 !important; letter-spacing: 0.5px !important; text-transform: uppercase !important;">
+                                {{ $isEn ? 'Subscribe' : 'Iscriviti' }}
+                            </span>
                         </label>
-                        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="radio" name="nl_op" value="OUT" x-model="nl_op" style="accent-color: #fedb00; width: 15px; height: 15px; cursor: pointer;">
-                            <span>{{ $isEn ? 'Unsubscribe' : 'Cancellati' }}</span>
+                        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                            <input type="radio" name="nl_op" value="OUT" x-model="nl_op" style="accent-color: #fedb00; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #ffffff !important; font-family: 'Montserrat', sans-serif !important; font-size: 13px !important; font-weight: 700 !important; letter-spacing: 0.5px !important; text-transform: uppercase !important;">
+                                {{ $isEn ? 'Unsubscribe' : 'Cancellati' }}
+                            </span>
                         </label>
                     </div>
                 </form>
@@ -251,12 +271,14 @@
             nl_op: 'IN',
             loading: false,
             message: '',
+            couponCode: '',
             success: true,
 
             async submitNewsletter() {
                 if (!this.email) return;
                 this.loading = true;
                 this.message = '';
+                this.couponCode = '';
 
                 try {
                     const response = await fetch('{{ route('public.newsletter.subscribe') }}', {
@@ -278,17 +300,20 @@
                     if (response.ok && data.success) {
                         this.success = true;
                         this.message = data.message;
+                        this.couponCode = data.coupon || '';
                         if (this.nl_op === 'IN') {
                             this.email = '';
                         }
                     } else {
                         this.success = false;
                         this.message = data.message || '{{ $isEn ? "An error occurred, please try again." : "Si è verificato un errore, riprova più tardi." }}';
+                        this.couponCode = '';
                     }
                 } catch (err) {
                     this.loading = false;
                     this.success = false;
                     this.message = '{{ $isEn ? "Connection error. Please try again later." : "Errore di connessione. Riprova più tardi." }}';
+                    this.couponCode = '';
                 }
             }
         };

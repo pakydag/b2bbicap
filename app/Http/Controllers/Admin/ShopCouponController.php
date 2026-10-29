@@ -127,3 +127,4 @@ class ShopCouponController extends Controller
         return redirect()->route('admin.shop.coupons.index')->with('success', 'Coupon eliminato con successo.');
     }
 }
+

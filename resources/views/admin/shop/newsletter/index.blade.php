@@ -105,6 +105,7 @@
                         <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
                             <tr>
                                 <th class="py-3.5 px-6 text-left font-bold">Indirizzo E-mail</th>
+                                <th class="py-3.5 px-6 text-left font-bold">Coupon Assegnato</th>
                                 <th class="py-3.5 px-6 text-left font-bold">Data e Ora Iscrizione</th>
                                 <th class="py-3.5 px-6 text-left font-bold">Indirizzo IP</th>
                                 <th class="py-3.5 px-6 text-center font-bold">Lingua</th>
@@ -117,6 +118,15 @@
                                 <tr class="hover:bg-slate-50/80 transition-colors">
                                     <td class="py-4 px-6 font-bold text-slate-900">
                                         {{ $sub->email }}
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        @if($sub->coupon_code)
+                                            <span class="font-mono text-xs font-bold bg-amber-50 text-amber-900 px-2.5 py-1 rounded-md border border-amber-200">
+                                                {{ $sub->coupon_code }}
+                                            </span>
+                                        @else
+                                            <span class="text-xs text-slate-400">—</span>
+                                        @endif
                                     </td>
                                     <td class="py-4 px-6 text-slate-600">
                                         <div class="flex items-center gap-1.5 font-medium">
@@ -157,7 +167,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-12 text-center text-slate-400">
+                                    <td colspan="7" class="py-12 text-center text-slate-400">
                                         <div class="text-4xl mb-2">📭</div>
                                         <p class="font-medium">Nessun iscritto alla newsletter presente.</p>
                                     </td>
@@ -177,3 +187,4 @@
         </div>
     </div>
 </x-app-layout>
+

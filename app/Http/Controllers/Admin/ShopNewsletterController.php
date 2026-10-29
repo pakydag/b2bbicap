@@ -65,13 +65,14 @@ class ShopNewsletterController extends Controller
             // BOM UTF-8 per corretta visualizzazione in Excel
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
-            fputcsv($handle, ['ID', 'Email', 'Indirizzo IP', 'Lingua', 'Stato', 'Data e Ora Iscrizione'], ';');
+            fputcsv($handle, ['ID', 'Email', 'Coupon Assegnato', 'Indirizzo IP', 'Lingua', 'Stato', 'Data e Ora Iscrizione'], ';');
 
             NewsletterSubscriber::orderBy('created_at', 'desc')->chunk(200, function ($rows) use ($handle) {
                 foreach ($rows as $row) {
                     fputcsv($handle, [
                         $row->id,
                         $row->email,
+                        $row->coupon_code ?: 'N/D',
                         $row->ip_address ?: 'N/D',
                         strtoupper($row->locale ?: 'IT'),
                         $row->active ? 'Attivo' : 'Disiscritto',
@@ -84,3 +85,4 @@ class ShopNewsletterController extends Controller
         }, 200, $headers);
     }
 }
+
