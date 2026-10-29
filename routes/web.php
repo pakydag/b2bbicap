@@ -19,6 +19,10 @@ Route::get('/', function () {
             return redirect()->route('agent.dashboard');
         }
         if ($user->role === 'admin') {
+            $shop_enabled = \App\Models\Setting::where('key', 'shop_enabled')->value('value') == '1';
+            if ($shop_enabled && ($user->is_super_admin || $user->can_manage_shop)) {
+                return redirect()->route('admin.shop.dashboard');
+            }
             if (!$user->is_super_admin && $user->can_manage_agents && !$user->can_manage_site) {
                 return redirect()->route('admin.b2b.dashboard');
             }
@@ -37,6 +41,23 @@ Route::get('/sito-web', function () {
     return redirect()->route('public.home');
 })->name('public.sito');
 Route::get('/prodotto/{product}', [PublicController::class, 'productDetail'])->name('public.product.detail');
+Route::post('/shop/log-search', function (\Illuminate\Http\Request $request) {
+    $query = trim($request->input('query', ''));
+    $type = $request->input('type', 'keyword');
+    $resultsCount = (int)$request->input('results_count', 0);
+
+    if (!empty($query)) {
+        $log = \App\Models\ShopSearchLog::firstOrNew(['query' => \Illuminate\Support\Str::limit($query, 100)]);
+        $log->type = in_array($type, ['keyword', 'filtro_settore', 'filtro_categoria', 'filtro_collezione', 'filtro_materiale']) ? $type : 'keyword';
+        $log->results_count = $resultsCount;
+        $log->hits = ($log->hits ?? 0) + 1;
+        $log->ip_address = $request->ip();
+        $log->user_id = auth()->id();
+        $log->save();
+        return response()->json(['success' => true]);
+    }
+    return response()->json(['success' => false]);
+})->name('public.shop.log_search');
 
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['it', 'en'])) {
@@ -60,6 +81,10 @@ Route::get('/dashboard', function () {
         return redirect()->route('agent.dashboard');
     }
     if ($user->role === 'admin') {
+        $shop_enabled = \App\Models\Setting::where('key', 'shop_enabled')->value('value') == '1';
+        if ($shop_enabled && ($user->is_super_admin || $user->can_manage_shop)) {
+            return redirect()->route('admin.shop.dashboard');
+        }
         if (!$user->is_super_admin && $user->can_manage_agents && !$user->can_manage_site) {
             return redirect()->route('admin.b2b.dashboard');
         }
@@ -171,6 +196,7 @@ Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')-
 
     // Shop B2B (E-commerce)
     Route::prefix('shop')->name('shop.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ShopDashboardController::class, 'index'])->name('dashboard');
         Route::resource('categorie', \App\Http\Controllers\ShopCategoryController::class)->parameters(['categorie' => 'categoria']);
         Route::resource('collezioni', \App\Http\Controllers\ShopCollectionController::class)->parameters(['collezioni' => 'collezione']);
         Route::resource('marche', \App\Http\Controllers\ShopBrandController::class)->parameters(['marche' => 'marca']);

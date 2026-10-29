@@ -18,6 +18,10 @@
             <div class="pt-2 pb-2">
                 <p class="px-3 text-[10px] font-black tracking-widest text-gray-400 uppercase">Shop</p>
                 <div class="mt-2 space-y-1">
+                    <a href="{{ route('admin.shop.dashboard') }}" class="{{ request()->routeIs('admin.shop.dashboard') ? $activeClass : $inactiveClass }} group flex items-center px-3 py-2.5 text-sm rounded-lg transition-all duration-200">
+                        <span class="mr-3 text-base">📊</span>
+                        <span>Dashboard</span>
+                    </a>
                     <a href="{{ route('admin.shop.ordini.index') }}" class="{{ request()->routeIs('admin.shop.ordini.*') ? $activeClass : $inactiveClass }} group flex items-center px-3 py-2.5 text-sm rounded-lg transition-all duration-200">
                         <span class="mr-3 text-base">🛒</span>
                         <span>Gestione Ordini</span>
@@ -234,6 +238,7 @@
                 @if($shop_enabled && ($user->is_super_admin || $user->can_manage_shop))
                 <div class="mb-3">
                     <p class="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Shop</p>
+                    <a @click="mobileNavOpen = false" href="{{ route('admin.shop.dashboard') }}" class="{{ request()->routeIs('admin.shop.dashboard') ? $mobileActive : $mobileInactive }}">📊 Dashboard</a>
                     <a @click="mobileNavOpen = false" href="{{ route('admin.shop.ordini.index') }}" class="{{ request()->routeIs('admin.shop.ordini.*') ? $mobileActive : $mobileInactive }}">🛒 Gestione Ordini</a>
                     <a @click="mobileNavOpen = false" href="{{ route('admin.shop.coupons.index') }}" class="{{ request()->routeIs('admin.shop.coupons.*') ? $mobileActive : $mobileInactive }}">🎟️ Gestione Coupon</a>
                     <a @click="mobileNavOpen = false" href="{{ route('admin.shop.newsletter.index') }}" class="{{ request()->routeIs('admin.shop.newsletter.*') ? $mobileActive : $mobileInactive }}">✉️ Newsletter</a>

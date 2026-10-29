@@ -41,6 +41,24 @@ class PublicController extends Controller
             })
             ->values();
 
+        // Tracciamento ricerche per la Dashboard Shop
+        $searchQuery = trim($request->get('q') ?? $request->get('cerca') ?? '');
+        if (!empty($searchQuery)) {
+            $matchingCount = $products->filter(function ($p) use ($searchQuery) {
+                return stripos($p->name, $searchQuery) !== false 
+                    || stripos($p->code, $searchQuery) !== false 
+                    || stripos($p->description, $searchQuery) !== false;
+            })->count();
+
+            $log = \App\Models\ShopSearchLog::firstOrNew(['query' => \Illuminate\Support\Str::limit($searchQuery, 100)]);
+            $log->type = 'keyword';
+            $log->results_count = $matchingCount;
+            $log->hits = ($log->hits ?? 0) + 1;
+            $log->ip_address = $request->ip();
+            $log->user_id = auth()->id();
+            $log->save();
+        }
+
         // Collezioni (Brands)
         $collezioni = B2bBrand::orderBy('name')->pluck('name')->all();
 

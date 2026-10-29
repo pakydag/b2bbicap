@@ -81,8 +81,12 @@ class AuthenticatedSessionController extends Controller
         // Determina la fallback route in base al ruolo se non c'è un url intended vero e proprio
         if ($request->user()->role === 'admin') {
             $user = $request->user();
-            // Se è un admin B2B e NON è super_admin, lo mandiamo direttamente al dashboard B2B
-            if (!$user->is_super_admin && $user->can_manage_agents && !$user->can_manage_site) {
+            $shop_enabled = \App\Models\Setting::where('key', 'shop_enabled')->value('value') == '1';
+            // Se l'utente può gestire/vedere lo Shop, la sua prima pagina è la Dashboard Shop
+            if ($shop_enabled && ($user->is_super_admin || $user->can_manage_shop)) {
+                $fallbackRoute = route('admin.shop.dashboard', absolute: false);
+            } elseif (!$user->is_super_admin && $user->can_manage_agents && !$user->can_manage_site) {
+                // Se è un admin B2B e NON è super_admin, lo mandiamo direttamente al dashboard B2B
                 $fallbackRoute = route('admin.b2b.dashboard', absolute: false);
             } else {
                 $fallbackRoute = route('dashboard', absolute: false);

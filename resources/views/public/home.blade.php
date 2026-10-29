@@ -306,6 +306,32 @@ function bicapShopCatalog(allProducts, filterOptions) {
             norme: [],
         },
 
+        init() {
+            for (const key of Object.keys(this.selected)) {
+                this.$watch('selected.' + key, (newVal) => {
+                    if (newVal && newVal.length > 0) {
+                        const lastItem = newVal[newVal.length - 1];
+                        if (lastItem) {
+                            try {
+                                fetch('{{ route('public.shop.log_search') }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                                    },
+                                    body: JSON.stringify({
+                                        query: lastItem,
+                                        type: 'filtro_' + key,
+                                        results_count: this.filteredProducts.length
+                                    })
+                                });
+                            } catch (e) {}
+                        }
+                    }
+                });
+            }
+        },
+
         // Filtered products list
         get filteredProducts() {
             return this.products.filter(p => {
