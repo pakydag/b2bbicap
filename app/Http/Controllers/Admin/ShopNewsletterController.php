@@ -17,28 +17,31 @@ class ShopNewsletterController extends Controller
             $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('email', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%");
+                  ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhere('coupon_code', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('status')) {
-            if ($request->status === 'active') {
-                $query->where('active', true);
-            } elseif ($request->status === 'inactive') {
+            if ($request->status === 'confirmed') {
+                $query->where('confirmed', true)->where('active', true);
+            } elseif ($request->status === 'pending') {
+                $query->where('confirmed', false);
+            } elseif ($request->status === 'unsubscribed') {
                 $query->where('active', false);
             }
         }
 
         $subscribers = $query->paginate(25)->withQueryString();
         $totalCount = NewsletterSubscriber::count();
-        $activeCount = NewsletterSubscriber::where('active', true)->count();
-        $todayCount = NewsletterSubscriber::whereDate('created_at', today())->count();
+        $confirmedCount = NewsletterSubscriber::where('confirmed', true)->where('active', true)->count();
+        $pendingCount = NewsletterSubscriber::where('confirmed', false)->count();
 
         return view('admin.shop.newsletter.index', compact(
             'subscribers',
             'totalCount',
-            'activeCount',
-            'todayCount'
+            'confirmedCount',
+            'pendingCount'
         ));
     }
 
@@ -65,17 +68,22 @@ class ShopNewsletterController extends Controller
             // BOM UTF-8 per corretta visualizzazione in Excel
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
-            fputcsv($handle, ['ID', 'Email', 'Coupon Assegnato', 'Indirizzo IP', 'Lingua', 'Stato', 'Data e Ora Iscrizione'], ';');
+            fputcsv($handle, ['ID', 'Email', 'Stato Verifica', 'Data Conferma', 'Coupon Assegnato', 'Indirizzo IP', 'Lingua', 'Stato Iscrizione', 'Data Registrazione'], ';');
 
             NewsletterSubscriber::orderBy('created_at', 'desc')->chunk(200, function ($rows) use ($handle) {
                 foreach ($rows as $row) {
+                    $statoVerifica = $row->confirmed ? 'Confermato (Double Opt-In)' : 'In attesa di conferma email';
+                    $statoIscrizione = $row->active ? 'Attivo' : 'Disiscritto';
+
                     fputcsv($handle, [
                         $row->id,
                         $row->email,
+                        $statoVerifica,
+                        $row->confirmed_at ? $row->confirmed_at->format('d/m/Y H:i:s') : 'N/D',
                         $row->coupon_code ?: 'N/D',
                         $row->ip_address ?: 'N/D',
                         strtoupper($row->locale ?: 'IT'),
-                        $row->active ? 'Attivo' : 'Disiscritto',
+                        $statoIscrizione,
                         $row->created_at ? $row->created_at->format('d/m/Y H:i:s') : 'N/D',
                     ], ';');
                 }
@@ -85,4 +93,3 @@ class ShopNewsletterController extends Controller
         }, 200, $headers);
     }
 }
-

@@ -352,6 +352,7 @@ Route::post('/shop/cart/coupon/remove', [\App\Http\Controllers\PublicShopCartCon
 
 // Newsletter Pubblica
 Route::post('/newsletter/subscribe', [\App\Http\Controllers\PublicNewsletterController::class, 'subscribe'])->name('public.newsletter.subscribe');
+Route::get('/newsletter/confirm/{token}', [\App\Http\Controllers\PublicNewsletterController::class, 'confirm'])->name('public.newsletter.confirm');
 
 Route::get('/shop/checkout', [\App\Http\Controllers\PublicShopCartController::class, 'checkout'])->name('public.shop.cart.checkout');
 Route::post('/shop/checkout/process', [\App\Http\Controllers\PublicShopCartController::class, 'processCheckout'])->name('public.shop.cart.process');

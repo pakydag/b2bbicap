@@ -33,7 +33,7 @@
                         <span x-show="success && !couponCode" class="text-base shrink-0">✅</span>
                         <span x-show="!success" class="text-base shrink-0">⚠️</span>
                         <div class="flex-1">
-                            <p class="font-bold text-sm" x-text="message" style="margin: 0;"></p>
+                            <p class="font-bold text-sm" x-text="message" :style="success ? 'margin: 0; color: #111111 !important;' : 'margin: 0; color: #b91c1c !important;'"></p>
                             <template x-if="couponCode">
                                 <div class="mt-2 pt-2 border-t border-gray-200">
                                     <span class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">{{ $isEn ? 'Your Welcome Code:' : 'Il tuo Codice Benvenuto:' }}</span>

@@ -13,7 +13,7 @@
                         <span>✉️</span>
                         <span>Iscritti alla Newsletter</span>
                     </h3>
-                    <p class="text-sm text-slate-500 mt-1">Elenco degli utenti iscritti tramite il form newsletter sul sito web, con data/orario ed indirizzo IP.</p>
+                    <p class="text-sm text-slate-500 mt-1">Elenco degli utenti iscritti con sistema <strong>Double Opt-In</strong> (richiesta conferma email prima dell'invio del coupon), data/orario ed indirizzo IP.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <a href="{{ route('admin.shop.newsletter.export') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm transition-all cursor-pointer">
@@ -41,7 +41,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Totale Iscritti</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Totale Registrati</p>
                         <p class="text-3xl font-black text-slate-900 mt-1">{{ number_format($totalCount, 0, ',', '.') }}</p>
                     </div>
                     <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
@@ -51,8 +51,8 @@
 
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Iscritti Attivi</p>
-                        <p class="text-3xl font-black text-emerald-600 mt-1">{{ number_format($activeCount, 0, ',', '.') }}</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Iscritti Confermato (Double Opt-In)</p>
+                        <p class="text-3xl font-black text-emerald-600 mt-1">{{ number_format($confirmedCount, 0, ',', '.') }}</p>
                     </div>
                     <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
                         ✅
@@ -61,11 +61,11 @@
 
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Iscritti Oggi</p>
-                        <p class="text-3xl font-black text-amber-500 mt-1">{{ number_format($todayCount, 0, ',', '.') }}</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">In Attesa di Conferma</p>
+                        <p class="text-3xl font-black text-amber-500 mt-1">{{ number_format($pendingCount, 0, ',', '.') }}</p>
                     </div>
                     <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
-                        ⭐
+                        ⏳
                     </div>
                 </div>
             </div>
@@ -77,14 +77,15 @@
                         <input type="text" 
                                name="search" 
                                value="{{ request('search') }}" 
-                               placeholder="Cerca per email o indirizzo IP..." 
+                               placeholder="Cerca per email, codice coupon o indirizzo IP..." 
                                class="w-full text-sm border-slate-200 rounded-xl focus:ring-amber-400 focus:border-amber-400">
                     </div>
                     <div>
                         <select name="status" class="text-sm border-slate-200 rounded-xl focus:ring-amber-400 focus:border-amber-400">
                             <option value="">Tutti gli stati</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Solo attivi</option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Disiscritti</option>
+                            <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Solo confermati (Attivi)</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>In attesa di conferma email</option>
+                            <option value="unsubscribed" {{ request('status') === 'unsubscribed' ? 'selected' : '' }}>Disiscritti</option>
                         </select>
                     </div>
                     <button type="submit" class="px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer">
@@ -105,11 +106,11 @@
                         <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
                             <tr>
                                 <th class="py-3.5 px-6 text-left font-bold">Indirizzo E-mail</th>
+                                <th class="py-3.5 px-6 text-left font-bold">Stato &amp; Verifica</th>
                                 <th class="py-3.5 px-6 text-left font-bold">Coupon Assegnato</th>
-                                <th class="py-3.5 px-6 text-left font-bold">Data e Ora Iscrizione</th>
+                                <th class="py-3.5 px-6 text-left font-bold">Data Registrazione</th>
                                 <th class="py-3.5 px-6 text-left font-bold">Indirizzo IP</th>
                                 <th class="py-3.5 px-6 text-center font-bold">Lingua</th>
-                                <th class="py-3.5 px-6 text-center font-bold">Stato</th>
                                 <th class="py-3.5 px-6 text-right font-bold">Azioni</th>
                             </tr>
                         </thead>
@@ -120,12 +121,32 @@
                                         {{ $sub->email }}
                                     </td>
                                     <td class="py-4 px-6">
+                                        @if(!$sub->confirmed)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200" title="In attesa che l'utente clicchi sul link ricevuto via email">
+                                                ⏳ In attesa di conferma
+                                            </span>
+                                        @elseif($sub->active)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Email verificata e utente attivo">
+                                                ● Confermato
+                                            </span>
+                                            @if($sub->confirmed_at)
+                                                <div class="text-[11px] text-slate-400 mt-0.5">
+                                                    il {{ $sub->confirmed_at->format('d/m/Y H:i') }}
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                Disiscritto
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-4 px-6">
                                         @if($sub->coupon_code)
                                             <span class="font-mono text-xs font-bold bg-amber-50 text-amber-900 px-2.5 py-1 rounded-md border border-amber-200">
                                                 {{ $sub->coupon_code }}
                                             </span>
                                         @else
-                                            <span class="text-xs text-slate-400">—</span>
+                                            <span class="text-xs text-slate-400 italic">Non ancora generato</span>
                                         @endif
                                     </td>
                                     <td class="py-4 px-6 text-slate-600">
@@ -144,17 +165,6 @@
                                             {{ strtoupper($sub->locale ?: 'IT') }}
                                         </span>
                                     </td>
-                                    <td class="py-4 px-6 text-center">
-                                        @if($sub->active)
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                ● Iscritto
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                                Cancellato
-                                            </span>
-                                        @endif
-                                    </td>
                                     <td class="py-4 px-6 text-right">
                                         <form action="{{ route('admin.shop.newsletter.destroy', $sub) }}" method="POST" class="inline-block" onsubmit="return confirm('Confermi la rimozione di questo indirizzo dalla lista newsletter?');">
                                             @csrf
@@ -168,8 +178,7 @@
                             @empty
                                 <tr>
                                     <td colspan="7" class="py-12 text-center text-slate-400">
-                                        <div class="text-4xl mb-2">📭</div>
-                                        <p class="font-medium">Nessun iscritto alla newsletter presente.</p>
+                                        Nessun iscritto alla newsletter presente.
                                     </td>
                                 </tr>
                             @endforelse
@@ -178,7 +187,7 @@
                 </div>
 
                 @if($subscribers->hasPages())
-                    <div class="p-4 border-t border-slate-100">
+                    <div class="p-6 border-t border-slate-100">
                         {{ $subscribers->links() }}
                     </div>
                 @endif
@@ -187,4 +196,3 @@
         </div>
     </div>
 </x-app-layout>
-

@@ -11,11 +11,16 @@ class NewsletterSubscriber extends Model
         'ip_address',
         'locale',
         'coupon_code',
+        'verification_token',
+        'confirmed',
+        'confirmed_at',
         'active',
     ];
 
     protected $casts = [
         'active' => 'boolean',
+        'confirmed' => 'boolean',
+        'confirmed_at' => 'datetime',
     ];
 }
 
