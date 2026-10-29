@@ -225,6 +225,22 @@
         .group:hover .bicap-product-img {
             transform: scale(1.26) !important;
         }
+        .bicap-main-photo {
+            max-height: 480px !important;
+            max-width: 100% !important;
+            object-fit: contain !important;
+            transform-origin: center center !important;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .bicap-main-photo.is-first-photo {
+            transform: scale(1.38) !important;
+        }
+        .group:hover .bicap-main-photo.is-first-photo {
+            transform: scale(1.42) !important;
+        }
+        .group:hover .bicap-main-photo:not(.is-first-photo) {
+            transform: scale(1.04) !important;
+        }
         /* Mobile offcanvas drawer (< 1024px) */
         @media (max-width: 1023px) {
             .bicap-sidebar {

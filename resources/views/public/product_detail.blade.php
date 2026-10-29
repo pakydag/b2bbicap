@@ -106,14 +106,7 @@
 
 @section('content')
 <div class="bg-white text-black min-h-screen py-6 sm:py-10" 
-     x-data="{ 
-         activeImage: '{{ $photos[0] ?? '' }}', 
-         is360: false, 
-         selectedSize: '42', 
-         quantity: 1, 
-         accordionOpen: null, 
-         showFullDesc: false 
-     }">
+     x-data="productDetailGallery(@js($photos))">
     <div class="max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8">
 
         @if(session('success'))
@@ -157,10 +150,13 @@
                 <div class="flex sm:flex-col gap-2.5 overflow-x-auto sm:overflow-visible shrink-0 pb-2 sm:pb-0 max-h-[580px] sm:overflow-y-auto pr-1">
                     @foreach($photos as $index => $photo)
                         <button type="button"
-                                @click="activeImage = '{{ $photo }}'; is360 = false;" 
-                                class="w-16 h-16 sm:w-18 sm:h-18 p-1 border rounded-none flex items-center justify-center transition-all bg-white cursor-pointer"
+                                @click="activeImage = '{{ $photo }}'; is360 = false; lightboxIndex = {{ $index }};" 
+                                class="w-16 h-16 sm:w-18 sm:h-18 p-1 border rounded-none flex items-center justify-center transition-all bg-white cursor-pointer overflow-hidden"
                                 :class="(!is360 && activeImage === '{{ $photo }}') ? 'border-black ring-1 ring-black' : 'border-gray-200 hover:border-gray-400 opacity-80 hover:opacity-100'">
-                            <img src="{{ $photo }}" alt="{{ $product->name }}" class="max-h-full max-w-full object-contain pointer-events-none" onerror="this.closest('button').remove()">
+                            <img src="{{ $photo }}" 
+                                 alt="{{ $product->name }}" 
+                                 class="max-h-full max-w-full object-contain pointer-events-none {{ $index === 0 ? 'scale-[1.38]' : '' }}" 
+                                 onerror="this.closest('button').remove()">
                         </button>
                     @endforeach
 
@@ -178,9 +174,22 @@
                 </div>
 
                 <!-- Big Main Photo Display -->
-                <div class="flex-1 w-full bg-white flex items-center justify-center p-2 sm:p-6 min-h-[360px] sm:min-h-[500px]">
+                <div class="flex-1 w-full bg-white flex items-center justify-center p-2 sm:p-6 min-h-[360px] sm:min-h-[500px] relative group overflow-hidden">
                     <template x-if="!is360">
-                        <img :src="activeImage" alt="{{ $product->name }}" class="max-h-[480px] max-w-full object-contain transition-all duration-200">
+                        <div class="relative flex items-center justify-center w-full h-full cursor-zoom-in"
+                             @click="openLightbox(activeImage)"
+                             title="{{ $isEn ? 'Click to enlarge and navigate all photos' : 'Clicca per ingrandire e navigare tra tutte le foto' }}">
+                            <img :src="activeImage" 
+                                 alt="{{ $product->name }}" 
+                                 class="bicap-main-photo select-none"
+                                 :class="{ 'is-first-photo': activeImage === '{{ $photos[0] ?? '' }}' }">
+                            
+                            <!-- Floating Zoom Badge on Hover -->
+                            <div class="absolute bottom-3 right-3 bg-white/90 hover:bg-black hover:text-white text-black px-3 py-1.5 rounded-md shadow-md border border-gray-200 transition-all opacity-80 group-hover:opacity-100 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider pointer-events-none">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                <span>{{ $isEn ? 'Zoom' : 'Ingrandisci' }}</span>
+                            </div>
+                        </div>
                     </template>
                     <template x-if="is360">
                         <div x-data="bicap360Viewer(@js($frames360))" 
@@ -657,11 +666,170 @@
         </div>
     @endif
 
+    <!-- ================= FULLSCREEN LIGHTBOX MODAL ================= -->
+    <div x-show="lightboxOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @keydown.window.escape="if (lightboxOpen) closeLightbox()"
+         @keydown.window.arrow-right="if (lightboxOpen) nextPhoto()"
+         @keydown.window.arrow-left="if (lightboxOpen) prevPhoto()"
+         class="fixed inset-0 z-[99999] bg-black/95 flex flex-col justify-between select-none"
+         style="display: none;">
+         
+        <!-- Top Header Bar -->
+        <div class="w-full flex items-center justify-between px-4 sm:px-8 py-4 bg-gradient-to-b from-black to-transparent z-10 shrink-0">
+            <div class="flex items-center gap-3">
+                <h3 class="font-['Bebas_Neue',sans-serif] text-xl sm:text-2xl text-white tracking-wider uppercase m-0 leading-none">
+                    {{ $product->name }}
+                </h3>
+                <span class="text-xs font-mono font-bold bg-zinc-800 text-[#fedb00] px-3 py-1 rounded-full border border-zinc-700"
+                      x-text="(lightboxIndex + 1) + ' / ' + photos.length">
+                </span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <span class="hidden md:inline text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">
+                    {{ $isEn ? 'ESC to close • Arrows to navigate' : 'ESC per chiudere • Frecce per navigare' }}
+                </span>
+                <button type="button" 
+                        @click="closeLightbox()" 
+                        class="w-10 h-10 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-white hover:text-[#fedb00] flex items-center justify-center text-xl font-bold transition-colors cursor-pointer border border-zinc-700 leading-none"
+                        title="{{ $isEn ? 'Close (ESC)' : 'Chiudi (ESC)' }}">
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <!-- Center Carousel View with Navigation Arrows -->
+        <div class="relative flex-1 w-full flex items-center justify-center px-2 sm:px-16 overflow-hidden"
+             @click.self="closeLightbox()"
+             @touchstart="handleTouchStart($event)"
+             @touchend="handleTouchEnd($event)">
+             
+            <!-- Prev Button -->
+            <button type="button" 
+                    x-show="photos.length > 1"
+                    @click.stop="prevPhoto()" 
+                    class="absolute left-3 sm:left-6 z-20 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-zinc-900/90 hover:bg-black text-white hover:text-[#fedb00] border border-zinc-700 flex items-center justify-center transition-all cursor-pointer shadow-2xl hover:scale-105 active:scale-95"
+                    title="{{ $isEn ? 'Previous photo (Left arrow)' : 'Foto precedente (Freccia sinistra)' }}">
+                <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+
+            <!-- Current Active Lightbox Image -->
+            <div class="relative max-w-5xl max-h-[75vh] w-full flex items-center justify-center p-2 overflow-hidden"
+                 @click.self="closeLightbox()">
+                <img :src="photos[lightboxIndex]" 
+                     :alt="'{{ $product->name }} - ' + (lightboxIndex + 1)" 
+                     class="max-h-[70vh] sm:max-h-[75vh] max-w-full object-contain select-none transition-transform duration-200"
+                     :style="lightboxIndex === 0 ? 'transform: scale(1.38); transform-origin: center center;' : ''"
+                     draggable="false">
+            </div>
+
+            <!-- Next Button -->
+            <button type="button" 
+                    x-show="photos.length > 1"
+                    @click.stop="nextPhoto()" 
+                    class="absolute right-3 sm:right-6 z-20 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-zinc-900/90 hover:bg-black text-white hover:text-[#fedb00] border border-zinc-700 flex items-center justify-center transition-all cursor-pointer shadow-2xl hover:scale-105 active:scale-95"
+                    title="{{ $isEn ? 'Next photo (Right arrow)' : 'Foto successiva (Freccia destra)' }}">
+                <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </button>
+        </div>
+
+        <!-- Bottom Thumbnails Strip -->
+        <div class="w-full bg-black/90 border-t border-zinc-800 px-4 py-3 shrink-0 z-10">
+            <div class="max-w-4xl mx-auto flex items-center justify-center gap-2 overflow-x-auto py-1">
+                <template x-for="(thumb, idx) in photos" :key="idx">
+                    <button type="button" 
+                            @click.stop="goToPhoto(idx)"
+                            class="w-14 h-14 sm:w-16 sm:h-16 shrink-0 p-1 bg-white border-2 rounded-none transition-all cursor-pointer overflow-hidden flex items-center justify-center"
+                            :class="lightboxIndex === idx ? 'border-[#fedb00] ring-2 ring-[#fedb00] scale-105' : 'border-zinc-700 opacity-60 hover:opacity-100'">
+                        <img :src="thumb" 
+                             :alt="'thumb-' + idx" 
+                             class="max-h-full max-w-full object-contain pointer-events-none"
+                             :style="idx === 0 ? 'transform: scale(1.38); transform-origin: center center;' : ''">
+                    </button>
+                </template>
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
 
 @push('scripts')
 <script>
+    function productDetailGallery(photos) {
+        return {
+            photos: photos || [],
+            activeImage: (photos && photos.length > 0) ? photos[0] : '',
+            is360: false,
+            selectedSize: '42',
+            quantity: 1,
+            accordionOpen: null,
+            showFullDesc: false,
+
+            // Lightbox state
+            lightboxOpen: false,
+            lightboxIndex: 0,
+            touchStartX: 0,
+            touchEndX: 0,
+
+            openLightbox(imgUrl) {
+                let idx = this.photos.indexOf(imgUrl);
+                if (idx === -1) idx = 0;
+                this.lightboxIndex = idx;
+                this.lightboxOpen = true;
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeLightbox() {
+                this.lightboxOpen = false;
+                document.body.style.overflow = '';
+            },
+
+            nextPhoto() {
+                if (this.photos.length > 0) {
+                    this.lightboxIndex = (this.lightboxIndex + 1) % this.photos.length;
+                    this.activeImage = this.photos[this.lightboxIndex];
+                }
+            },
+
+            prevPhoto() {
+                if (this.photos.length > 0) {
+                    this.lightboxIndex = (this.lightboxIndex - 1 + this.photos.length) % this.photos.length;
+                    this.activeImage = this.photos[this.lightboxIndex];
+                }
+            },
+
+            goToPhoto(idx) {
+                if (idx >= 0 && idx < this.photos.length) {
+                    this.lightboxIndex = idx;
+                    this.activeImage = this.photos[idx];
+                }
+            },
+
+            handleTouchStart(e) {
+                this.touchStartX = e.changedTouches ? e.changedTouches[0].screenX : 0;
+            },
+
+            handleTouchEnd(e) {
+                this.touchEndX = e.changedTouches ? e.changedTouches[0].screenX : 0;
+                const diff = this.touchStartX - this.touchEndX;
+                if (Math.abs(diff) > 40) {
+                    if (diff > 0) {
+                        this.nextPhoto();
+                    } else {
+                        this.prevPhoto();
+                    }
+                }
+            }
+        };
+    }
+
     window.__bicap360Frames = @js($frames360 ?? []);
     
     // Background preloader for 360 frames to ensure zero lag
