@@ -74,9 +74,12 @@ class CustomerAreaController extends Controller
                 ]);
             }
 
-            $redirectTo = $request->input('redirect_to') ?: session()->pull('url.intended', route('public.account.dashboard'));
+            $isEn = app()->getLocale() === 'en';
+            $successMsg = $isEn
+                ? 'Welcome back! You have successfully logged in to your Personal Area.'
+                : 'Bentornato! Hai effettuato l\'accesso alla tua Area Personale.';
 
-            return redirect()->to($redirectTo)->with('success', 'Bentornato! Hai effettuato l\'accesso alla tua Area Personale.');
+            return redirect()->to($redirectTo)->with('success', $successMsg);
         }
 
         // Se non trovato in users, controlliamo se esiste in customers (creato prima dell'unificazione)
@@ -97,12 +100,22 @@ class CustomerAreaController extends Controller
 
             $redirectTo = $request->input('redirect_to') ?: session()->pull('url.intended', route('public.account.dashboard'));
 
-            return redirect()->to($redirectTo)->with('success', 'Bentornato! Hai effettuato l\'accesso alla tua Area Personale.');
+            $isEn = app()->getLocale() === 'en';
+            $successMsg = $isEn
+                ? 'Welcome back! You have successfully logged in to your Personal Area.'
+                : 'Bentornato! Hai effettuato l\'accesso alla tua Area Personale.';
+
+            return redirect()->to($redirectTo)->with('success', $successMsg);
         }
+
+        $isEn = app()->getLocale() === 'en';
+        $errMsg = $isEn
+            ? 'Invalid credentials. Please verify your email and password.'
+            : 'Credenziali non valide. Verifica l\'indirizzo email e la password inseriti.';
 
         return back()
             ->withInput($request->only('email'))
-            ->withErrors(['email' => 'Credenziali non valide. Verifica l\'indirizzo email e la password inseriti.']);
+            ->withErrors(['email' => $errMsg]);
     }
 
     /**

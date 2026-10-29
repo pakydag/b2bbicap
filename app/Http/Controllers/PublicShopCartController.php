@@ -202,9 +202,10 @@ class PublicShopCartController extends Controller
 
     public function processCheckout(Request $request)
     {
+        $isEn = app()->getLocale() === 'en';
         $cart = session()->get('cart', []);
         if (empty($cart)) {
-            return redirect()->route('public.home')->with('error', 'Il tuo carrello è vuoto.');
+            return redirect()->route('public.home')->with('error', $isEn ? 'Your cart is empty.' : 'Il tuo carrello è vuoto.');
         }
 
         // 1. Validation for the different fields depending on checkout mode
@@ -227,7 +228,15 @@ class PublicShopCartController extends Controller
             // SDI e PEC sono solitamente opzionali
         }
 
-        $messages = [
+        $messages = $isEn ? [
+            'password.required' => 'Password is required to create an account.',
+            'password.min' => 'Password must contain at least :min characters.',
+            'password.confirmed' => 'Password confirmation does not match.',
+            'password.mixed' => 'Password must contain at least one uppercase letter.',
+            'password.numbers' => 'Password must contain at least one number.',
+            'password.symbols' => 'Password must contain at least one special character (!@#$%&*...).',
+            'email.unique' => 'This email address is already registered. Please log in or use a different email.',
+        ] : [
             'password.required' => 'La password è obbligatoria per creare un account.',
             'password.min' => 'La password deve contenere almeno :min caratteri.',
             'password.confirmed' => 'La conferma della password non coincide con la password inserita.',
@@ -315,7 +324,10 @@ class PublicShopCartController extends Controller
         $costoContrassegno = 0;
         if (($request->payment_method ?? '') === 'contrassegno') {
             if (strtolower(trim($request->nazione)) !== 'italia') {
-                return back()->withErrors(['payment_method' => 'Il pagamento in contrassegno è disponibile esclusivamente per le spedizioni con destinazione in Italia.'])->withInput();
+                $errContr = $isEn
+                    ? 'Cash on delivery is exclusively available for shipments with destination in Italy.'
+                    : 'Il pagamento in contrassegno è disponibile esclusivamente per le spedizioni con destinazione in Italia.';
+                return back()->withErrors(['payment_method' => $errContr])->withInput();
             }
             $costoContrassegno = (float)(\App\Models\Setting::where('key', 'payment_contrassegno_fee')->value('value') ?? 10.00);
         }

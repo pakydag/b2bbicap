@@ -1,11 +1,13 @@
 @extends('public.layouts.main')
 
-@section('title', 'Il Tuo Carrello - ' . config('app.name'))
-
-@section('content')
 @php
+    $isEn = app()->getLocale() === 'en';
     $totale = $totale ?? 0;
 @endphp
+
+@section('title', ($isEn ? 'Your Cart - ' : 'Il Tuo Carrello - ') . config('app.name'))
+
+@section('content')
 <div class="bg-gray-50 min-h-screen pt-12 pb-24">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
@@ -14,10 +16,10 @@
             <span>/</span>
             <a href="{{ route('public.home') }}" class="hover:text-gray-900">Shop</a>
             <span>/</span>
-            <span class="text-gray-900 font-medium">Carrello</span>
+            <span class="text-gray-900 font-medium">{{ $isEn ? 'Cart' : 'Carrello' }}</span>
         </div>
 
-        <h1 class="text-3xl font-extrabold text-gray-900 mb-8">Il Tuo Carrello</h1>
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-8">{{ $isEn ? 'Your Cart' : 'Il Tuo Carrello' }}</h1>
 
         @if(session('success'))
             <div class="mb-6 bg-green-100 text-green-700 px-4 py-3 rounded text-sm font-bold border border-green-200">
@@ -35,11 +37,11 @@
                 <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                <h3 class="mt-2 text-lg font-medium text-gray-900">Il tuo carrello è vuoto</h3>
-                <p class="mt-1 text-sm text-gray-500">Aggiungi dei prodotti per poter procedere all'acquisto.</p>
+                <h3 class="mt-2 text-lg font-medium text-gray-900">{{ $isEn ? 'Your cart is empty' : 'Il tuo carrello è vuoto' }}</h3>
+                <p class="mt-1 text-sm text-gray-500">{{ $isEn ? 'Add products to proceed with the purchase.' : 'Aggiungi dei prodotti per poter procedere all\'acquisto.' }}</p>
                 <div class="mt-6">
                     <a href="{{ route('public.home') }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-none shadow-sm text-white bg-black hover:bg-zinc-800 transition">
-                        Inizia lo Shopping
+                        {{ $isEn ? 'Start Shopping' : 'Inizia lo Shopping' }}
                     </a>
                 </div>
             </div>
@@ -77,25 +79,25 @@
                                             </div>
                                             <div class="mt-1 flex text-sm">
                                                 @if(!empty($item['colore']))
-                                                    <p class="text-gray-500">Colore: {{ $item['colore'] }}</p>
+                                                    <p class="text-gray-500">{{ $isEn ? 'Color:' : 'Colore:' }} {{ $item['colore'] }}</p>
                                                 @endif
                                                 @if(!empty($item['taglia']))
-                                                    <p class="ml-4 pl-4 border-l border-gray-200 text-gray-500">Taglia: {{ $item['taglia'] }}</p>
+                                                    <p class="ml-4 pl-4 border-l border-gray-200 text-gray-500">{{ $isEn ? 'Size:' : 'Taglia:' }} {{ $item['taglia'] }}</p>
                                                 @endif
                                             </div>
                                             <p class="mt-1 text-sm font-medium text-gray-900">€ {{ number_format($item['prezzo'], 2, ',', '.') }} x {{ $item['quantita'] }}</p>
                                         </div>
 
                                         <div class="mt-4 sm:mt-0 sm:pr-9">
-                                            <label for="quantity-{{ $variant_id }}" class="sr-only">Quantità, {{ $item['prodotto_nome'] }}</label>
-                                            <p class="text-sm font-bold text-gray-900">Subtotale: € {{ number_format($subtotale, 2, ',', '.') }}</p>
+                                            <label for="quantity-{{ $variant_id }}" class="sr-only">{{ $isEn ? 'Quantity,' : 'Quantità,' }} {{ $item['prodotto_nome'] }}</label>
+                                            <p class="text-sm font-bold text-gray-900">{{ $isEn ? 'Subtotal:' : 'Subtotale:' }} € {{ number_format($subtotale, 2, ',', '.') }}</p>
 
                                             <div class="absolute top-0 right-0">
                                                 <form action="{{ route('public.shop.cart.remove', $variant_id) }}" method="POST">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="-m-2 p-2 inline-flex text-gray-400 hover:text-red-500">
-                                                        <span class="sr-only">Rimuovi</span>
+                                                    <button type="submit" class="-m-2 p-2 inline-flex text-gray-400 hover:text-red-500 cursor-pointer">
+                                                        <span class="sr-only">{{ $isEn ? 'Remove' : 'Rimuovi' }}</span>
                                                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                           <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                                                         </svg>
@@ -108,7 +110,7 @@
                                         <svg class="flex-shrink-0 h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                           <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                                         </svg>
-                                        <span>Disponibile per la spedizione</span>
+                                        <span>{{ $isEn ? 'Available for shipping' : 'Disponibile per la spedizione' }}</span>
                                     </p>
                                 </div>
                             </li>
@@ -117,19 +119,19 @@
 
                     <div class="mt-6 flex items-center justify-between">
                         <a href="{{ route('public.home') }}" class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-black hover:text-[#e35205] transition-colors py-2">
-                            <span>&larr; Continua lo Shopping</span>
+                            <span>&larr; {{ $isEn ? 'Continue Shopping' : 'Continua lo Shopping' }}</span>
                         </a>
                     </div>
                 </div>
 
                 <!-- Riepilogo Ordine -->
                 <section aria-labelledby="summary-heading" class="mt-16 bg-white rounded-lg px-4 py-6 sm:p-6 lg:p-8 lg:mt-0 lg:col-span-4 shadow border-t-2 border-indigo-500 sticky top-6">
-                    <h2 id="summary-heading" class="text-xl font-bold text-gray-900 border-b pb-4 mb-6">Riepilogo Ordine</h2>
+                    <h2 id="summary-heading" class="text-xl font-bold text-gray-900 border-b pb-4 mb-6">{{ $isEn ? 'Order Summary' : 'Riepilogo Ordine' }}</h2>
 
                     <div class="mb-6">
-                        <label for="estimate_nation" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Destinazione per la stima</label>
+                        <label for="estimate_nation" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ $isEn ? 'Destination for estimate' : 'Destinazione per la stima' }}</label>
                         <select id="estimate_nation" x-model="nazione" @change="updateShipping()" class="w-full bg-slate-50 border-slate-200 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all p-3">
-                            <option value="">Seleziona nazione...</option>
+                            <option value="">{{ $isEn ? 'Select country...' : 'Seleziona nazione...' }}</option>
                             @foreach($shippingCosts as $cost)
                                 <option value="{{ $cost->nazione }}">{{ $cost->nazione }}</option>
                             @endforeach
@@ -138,27 +140,31 @@
 
                     <dl class="mt-6 space-y-4">
                         <div class="flex items-center justify-between">
-                            <dt class="text-sm text-gray-600">Subtotale Prodotti</dt>
+                            <dt class="text-sm text-gray-600">{{ $isEn ? 'Products Subtotal' : 'Subtotale Prodotti' }}</dt>
                             <dd class="text-sm font-bold text-gray-900">€ <span x-text="formatPrice(subtotal)"></span></dd>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-100 pt-4 group relative">
                             <dt class="text-sm text-gray-600 flex items-center">
-                                Spedizione stimata
+                                {{ $isEn ? 'Estimated shipping' : 'Spedizione stimata' }}
                                 <svg class="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </dt>
                             <dd class="text-sm font-bold text-gray-900">
                                 <span x-show="shippingCost > 0">€ <span x-text="formatPrice(shippingCost)"></span></span>
-                                <span x-show="shippingCost == 0" class="text-emerald-600 uppercase tracking-widest text-xs">Gratis</span>
+                                <span x-show="shippingCost == 0" class="text-emerald-600 uppercase tracking-widest text-xs">{{ $isEn ? 'FREE' : 'Gratis' }}</span>
                             </dd>
 
                             <template x-if="isFreeEligible() && freeThreshold > 0 && subtotal < freeThreshold">
                                 <div class="absolute -top-10 right-0 bg-slate-800 text-white text-[10px] px-2 py-2 rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-20">
-                                    Aggiungi € <span x-text="formatPrice(freeThreshold - subtotal)"></span> per la spedizione <span class="text-emerald-400 font-bold">Gratis</span><span x-text="freeShippingScope === 'all' ? '' : ' in Italia'"></span>!
+                                    @if($isEn)
+                                        Add € <span x-text="formatPrice(freeThreshold - subtotal)"></span> for <span class="text-emerald-400 font-bold">FREE</span> shipping<span x-text="freeShippingScope === 'all' ? '' : ' in Italy'"></span>!
+                                    @else
+                                        Aggiungi € <span x-text="formatPrice(freeThreshold - subtotal)"></span> per la spedizione <span class="text-emerald-400 font-bold">Gratis</span><span x-text="freeShippingScope === 'all' ? '' : ' in Italy'"></span>!
+                                    @endif
                                 </div>
                             </template>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-200 pt-4">
-                            <dt class="text-base font-bold text-gray-900">Totale Ordine</dt>
+                            <dt class="text-base font-bold text-gray-900">{{ $isEn ? 'Order Total' : 'Totale Ordine' }}</dt>
                             <dd class="text-2xl font-black text-black">€ <span x-text="formatPrice(parseFloat(subtotal) + parseFloat(shippingCost))"></span></dd>
                         </div>
                     </dl>
@@ -169,7 +175,7 @@
                            onmouseover="this.style.backgroundColor='#c94500'" 
                            onmouseout="this.style.backgroundColor='#e35205'"
                            style="background-color: #e35205 !important; color: #ffffff !important; font-family: 'Bebas Neue', 'Montserrat', sans-serif !important; font-size: 22px !important; letter-spacing: 1px !important; text-decoration: none !important; border: none !important; border-radius: 0 !important; font-weight: bold !important;">
-                            PROCEDI AL CHECKOUT &rarr;
+                            {{ $isEn ? 'PROCEED TO CHECKOUT →' : 'PROCEDI AL CHECKOUT →' }}
                         </a>
                     </div>
                 </section>
