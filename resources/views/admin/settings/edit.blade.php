@@ -13,7 +13,63 @@
     </x-slot>
 
     <div class="py-12" x-data="{ 
-        activeTab: 'generali' 
+        activeTab: '{{ session('active_tab', 'generali') }}',
+        testEmailB2B: '{{ auth()->user()->email ?? '' }}',
+        testEmailShop: '{{ auth()->user()->email ?? '' }}',
+        b2bLoading: false,
+        b2bMessage: null,
+        b2bSuccess: false,
+        shopLoading: false,
+        shopMessage: null,
+        shopSuccess: false,
+        sendTest(type) {
+            const isShop = type === 'shop';
+            const email = isShop ? this.testEmailShop : this.testEmailB2B;
+            if (!email) {
+                alert('Inserisci un indirizzo email valido per il test.');
+                return;
+            }
+            if (isShop) {
+                this.shopLoading = true;
+                this.shopMessage = null;
+            } else {
+                this.b2bLoading = true;
+                this.b2bMessage = null;
+            }
+
+            fetch('{{ route('admin.settings.test_email') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email: email, type: type })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (isShop) {
+                    this.shopLoading = false;
+                    this.shopSuccess = data.success;
+                    this.shopMessage = data.message;
+                } else {
+                    this.b2bLoading = false;
+                    this.b2bSuccess = data.success;
+                    this.b2bMessage = data.message;
+                }
+            })
+            .catch(err => {
+                if (isShop) {
+                    this.shopLoading = false;
+                    this.shopSuccess = false;
+                    this.shopMessage = 'Errore di connessione: ' + err.message;
+                } else {
+                    this.b2bLoading = false;
+                    this.b2bSuccess = false;
+                    this.b2bMessage = 'Errore di connessione: ' + err.message;
+                }
+            });
+        }
     }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -163,41 +219,156 @@
                         </div>
 
                         <!-- TAB: Email -->
-                        <div x-show="activeTab === 'email'" style="display: none;" class="space-y-6">
-                            <h3 class="text-lg font-medium leading-6 text-gray-900 border-b pb-2">Configurazione Provider di Posta (SMTP)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">Protocollo (Mailer)</label>
-                                    <select name="mail_mailer" class="shadow border rounded w-full py-2 px-3 focus:outline-none">
-                                        <option value="smtp" {{ (old('mail_mailer', $settings['mail_mailer'] ?? 'smtp') == 'smtp') ? 'selected' : '' }}>SMTP</option>
-                                        <option value="log" {{ (old('mail_mailer', $settings['mail_mailer'] ?? '') == 'log') ? 'selected' : '' }}>Log (Solo Test)</option>
-                                    </select>
+                        <div x-show="activeTab === 'email'" style="display: none;" class="space-y-8">
+                            
+                            <!-- 1. Configurazione Email B2B & Agenti -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-sm">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-2 mb-6">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xl">🏢</span>
+                                            <h3 class="text-lg font-bold text-gray-900">Email SMTP — Portale B2B & Agenti</h3>
+                                            <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">B2B & Gestionale</span>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">Utilizzato per notifiche ordini B2B ingrosso, credenziali clienti B2B, comunicazioni agenti e comunicazioni interne.</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">Indirizzo Server (Host)</label>
-                                    <input type="text" name="mail_host" value="{{ old('mail_host', $settings['mail_host'] ?? '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 focus:outline-none" placeholder="es. smtp.gmail.com">
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Protocollo (Mailer)</label>
+                                        <select name="mail_mailer" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                            <option value="smtp" {{ (old('mail_mailer', $settings['mail_mailer'] ?? 'smtp') == 'smtp') ? 'selected' : '' }}>SMTP</option>
+                                            <option value="log" {{ (old('mail_mailer', $settings['mail_mailer'] ?? '') == 'log') ? 'selected' : '' }}>Log (Solo Test Locale)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Indirizzo Server (Host)</label>
+                                        <input type="text" name="mail_host" value="{{ old('mail_host', $settings['mail_host'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" placeholder="es. mail.cedam.it">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Porta Server</label>
+                                        <input type="text" name="mail_port" value="{{ old('mail_port', $settings['mail_port'] ?? '25') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" placeholder="25 o 587">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Crittografia (Encryption)</label>
+                                        <select name="mail_encryption" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                            <option value="" {{ empty(old('mail_encryption', $settings['mail_encryption'] ?? '')) ? 'selected' : '' }}>Nessuna (Default)</option>
+                                            <option value="tls" {{ (old('mail_encryption', $settings['mail_encryption'] ?? '') == 'tls') ? 'selected' : '' }}>TLS</option>
+                                            <option value="ssl" {{ (old('mail_encryption', $settings['mail_encryption'] ?? '') == 'ssl') ? 'selected' : '' }}>SSL</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Username (Account)</label>
+                                        <input type="text" name="mail_username" value="{{ old('mail_username', $settings['mail_username'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" placeholder="es. sales@cedam.it">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Password</label>
+                                        <input type="password" name="mail_password" value="{{ old('mail_password', $settings['mail_password'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Email Mittente (From)</label>
+                                        <input type="email" name="mail_from_address" value="{{ old('mail_from_address', $settings['mail_from_address'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" placeholder="es. sales@cedam.it">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Nome Mittente</label>
+                                        <input type="text" name="mail_from_name" value="{{ old('mail_from_name', $settings['mail_from_name'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" placeholder="es. Calzaturificio 5b">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">Porta Server</label>
-                                    <input type="text" name="mail_port" value="{{ old('mail_port', $settings['mail_port'] ?? '587') }}" class="shadow appearance-none border rounded w-full py-2 px-3 focus:outline-none" placeholder="587">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">Username</label>
-                                    <input type="text" name="mail_username" value="{{ old('mail_username', $settings['mail_username'] ?? '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-                                    <input type="password" name="mail_password" value="{{ old('mail_password', $settings['mail_password'] ?? '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">Email Mittente</label>
-                                    <input type="email" name="mail_from_address" value="{{ old('mail_from_address', $settings['mail_from_address'] ?? '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">Nome Mittente</label>
-                                    <input type="text" name="mail_from_name" value="{{ old('mail_from_name', $settings['mail_from_name'] ?? '') }}" class="shadow appearance-none border rounded w-full py-2 px-3 focus:outline-none">
+
+                                <!-- Test invio email B2B -->
+                                <div class="mt-5 pt-4 border-t border-slate-200 bg-white rounded-lg p-3.5 border">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-bold text-gray-800">🧪 Verifica Connessione B2B:</span>
+                                            <span class="text-xs text-gray-500">Invia un'email di prova con i parametri attuali</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 flex-1 sm:max-w-md justify-end">
+                                            <input type="email" x-model="testEmailB2B" placeholder="latua@email.it" class="shadow-sm border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full sm:w-60">
+                                            <button type="button" @click="sendTest('b2b')" :disabled="b2bLoading" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 px-4 rounded-lg shadow-sm whitespace-nowrap transition disabled:opacity-50">
+                                                <span x-show="!b2bLoading">Invia Test B2B</span>
+                                                <span x-show="b2bLoading">Invio in corso...</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div x-show="b2bMessage" class="mt-2 text-xs font-semibold p-2 rounded" :class="b2bSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="b2bMessage"></div>
                                 </div>
                             </div>
+
+                            <!-- 2. Configurazione Email Sito Web & Shop -->
+                            <div class="bg-amber-50/50 border border-amber-200 rounded-xl p-6 shadow-sm">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-amber-200 gap-2 mb-6">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xl">🛍️</span>
+                                            <h3 class="text-lg font-bold text-gray-900">Email SMTP — Sito Web & Shop Online</h3>
+                                            <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Shop & Sito Pubblico</span>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">Utilizzato per tutte le comunicazioni con i clienti dello SHOP: conferme d'ordine, tracking spedizione, coupon newsletter e modulo contatti del sito.</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Protocollo (Mailer)</label>
+                                        <select name="shop_mail_mailer" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+                                            <option value="smtp" {{ (old('shop_mail_mailer', $settings['shop_mail_mailer'] ?? 'smtp') == 'smtp') ? 'selected' : '' }}>SMTP</option>
+                                            <option value="log" {{ (old('shop_mail_mailer', $settings['shop_mail_mailer'] ?? '') == 'log') ? 'selected' : '' }}>Log (Solo Test Locale)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Indirizzo Server (Host)</label>
+                                        <input type="text" name="shop_mail_host" value="{{ old('shop_mail_host', $settings['shop_mail_host'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white" placeholder="es. smtp.bicap.it o mail.cedam.it">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Porta Server</label>
+                                        <input type="text" name="shop_mail_port" value="{{ old('shop_mail_port', $settings['shop_mail_port'] ?? '587') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white" placeholder="465 o 587 o 25">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Crittografia (Encryption)</label>
+                                        <select name="shop_mail_encryption" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+                                            <option value="" {{ empty(old('shop_mail_encryption', $settings['shop_mail_encryption'] ?? '')) ? 'selected' : '' }}>Nessuna</option>
+                                            <option value="tls" {{ (old('shop_mail_encryption', $settings['shop_mail_encryption'] ?? '') == 'tls') ? 'selected' : '' }}>TLS (Porta 587)</option>
+                                            <option value="ssl" {{ (old('shop_mail_encryption', $settings['shop_mail_encryption'] ?? '') == 'ssl') ? 'selected' : '' }}>SSL (Porta 465)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Username (Account Shop)</label>
+                                        <input type="text" name="shop_mail_username" value="{{ old('shop_mail_username', $settings['shop_mail_username'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white" placeholder="es. shop@bicap.it">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Password</label>
+                                        <input type="password" name="shop_mail_password" value="{{ old('shop_mail_password', $settings['shop_mail_password'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Email Mittente Shop</label>
+                                        <input type="email" name="shop_mail_from_address" value="{{ old('shop_mail_from_address', $settings['shop_mail_from_address'] ?? '') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white" placeholder="es. shop@bicap.it">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1.5">Nome Mittente Shop</label>
+                                        <input type="text" name="shop_mail_from_name" value="{{ old('shop_mail_from_name', $settings['shop_mail_from_name'] ?? 'BICAP Official Shop') }}" class="shadow-sm border border-gray-300 rounded-lg w-full py-2 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white" placeholder="es. BICAP Official Shop">
+                                    </div>
+                                </div>
+
+                                <!-- Test invio email Shop -->
+                                <div class="mt-5 pt-4 border-t border-amber-200 bg-white rounded-lg p-3.5 border">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-bold text-gray-800">🧪 Verifica Connessione Shop:</span>
+                                            <span class="text-xs text-gray-500">Invia un'email di prova per testare il server SMTP dello Shop</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 flex-1 sm:max-w-md justify-end">
+                                            <input type="email" x-model="testEmailShop" placeholder="latua@email.it" class="shadow-sm border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none w-full sm:w-60">
+                                            <button type="button" @click="sendTest('shop')" :disabled="shopLoading" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs py-2 px-4 rounded-lg shadow-sm whitespace-nowrap transition disabled:opacity-50">
+                                                <span x-show="!shopLoading">Invia Test Shop</span>
+                                                <span x-show="shopLoading">Invio in corso...</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div x-show="shopMessage" class="mt-2 text-xs font-semibold p-2 rounded" :class="shopSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="shopMessage"></div>
+                                </div>
+                            </div>
+
                         </div>
 
                         <!-- TAB: Pagamenti Shop -->

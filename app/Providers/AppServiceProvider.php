@@ -25,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
                 $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
                 \Illuminate\Support\Facades\View::share('global_settings', $settings);
 
+                // 1. Configurazione Mail B2B (default mailer 'smtp')
                 if (!empty($settings['mail_host'])) {
                     config([
                         'mail.mailers.smtp.host'       => $settings['mail_host'] ?? config('mail.mailers.smtp.host'),
@@ -39,10 +40,28 @@ class AppServiceProvider extends ServiceProvider
                     if (!empty($settings['mail_mailer'])) {
                         config(['mail.default' => $settings['mail_mailer']]);
                     }
-                    
-                    // Forza il ricaricamento del mailer con la nuova configurazione
-                    \Illuminate\Support\Facades\Mail::purge();
                 }
+
+                // 2. Configurazione Mail Sito Web & Shop (mailer 'shop_smtp')
+                $shopHost = !empty($settings['shop_mail_host']) ? $settings['shop_mail_host'] : ($settings['mail_host'] ?? null);
+                if (!empty($shopHost)) {
+                    $shopMailer = !empty($settings['shop_mail_mailer']) ? $settings['shop_mail_mailer'] : ($settings['mail_mailer'] ?? 'smtp');
+                    config([
+                        'mail.mailers.shop_smtp' => [
+                            'transport'    => $shopMailer === 'log' ? 'log' : 'smtp',
+                            'host'         => $shopHost,
+                            'port'         => !empty($settings['shop_mail_port']) ? $settings['shop_mail_port'] : ($settings['mail_port'] ?? 587),
+                            'encryption'   => !empty($settings['shop_mail_encryption']) ? $settings['shop_mail_encryption'] : (!empty($settings['mail_encryption']) ? $settings['mail_encryption'] : null),
+                            'username'     => !empty($settings['shop_mail_username']) ? $settings['shop_mail_username'] : ($settings['mail_username'] ?? null),
+                            'password'     => !empty($settings['shop_mail_password']) ? $settings['shop_mail_password'] : ($settings['mail_password'] ?? null),
+                            'timeout'      => null,
+                            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+                        ],
+                    ]);
+                }
+
+                // Forza il ricaricamento dei mailer con le nuove configurazioni
+                \Illuminate\Support\Facades\Mail::purge();
             }
         } catch (\Exception $e) {
             // Ignora errori di boot se ad esempio il DB non è ancora migrato

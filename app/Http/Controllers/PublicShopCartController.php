@@ -579,9 +579,12 @@ class PublicShopCartController extends Controller
         // 7. Handle Payments and Post-order actions
         if ($order->metodo_pagamento === 'bonifico' || $order->metodo_pagamento === 'contrassegno') {
             try {
-                \Illuminate\Support\Facades\Mail::to($customer->email)
-                    ->bcc(config('mail.from.address')) // Manda copia anche all'admin
-                    ->send(new \App\Mail\OrderConfirmed($order, session('locale') ?? app()->getLocale()));
+                $shopAdminEmail = \App\Services\ShopMailService::getShopFrom()['address'];
+                \App\Services\ShopMailService::sendWithBcc(
+                    $customer->email,
+                    $shopAdminEmail,
+                    new \App\Mail\OrderConfirmed($order, session('locale') ?? app()->getLocale())
+                );
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Errore invio email ordine (' . $order->metodo_pagamento . '): ' . $e->getMessage());
             }
@@ -767,9 +770,12 @@ class PublicShopCartController extends Controller
                     $order->save();
                     
                     try {
-                        \Illuminate\Support\Facades\Mail::to($order->customer->email)
-                            ->bcc(config('mail.from.address'))
-                            ->send(new \App\Mail\OrderConfirmed($order, session('locale') ?? app()->getLocale()));
+                        $shopAdminEmail = \App\Services\ShopMailService::getShopFrom()['address'];
+                        \App\Services\ShopMailService::sendWithBcc(
+                            $order->customer->email,
+                            $shopAdminEmail,
+                            new \App\Mail\OrderConfirmed($order, session('locale') ?? app()->getLocale())
+                        );
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error('Errore invio email ordine (stripe): ' . $e->getMessage());
                     }
@@ -864,9 +870,12 @@ class PublicShopCartController extends Controller
                     $order->save();
                     
                     try {
-                        \Illuminate\Support\Facades\Mail::to($order->customer->email)
-                            ->bcc(config('mail.from.address'))
-                            ->send(new \App\Mail\OrderConfirmed($order, session('locale') ?? app()->getLocale()));
+                        $shopAdminEmail = \App\Services\ShopMailService::getShopFrom()['address'];
+                        \App\Services\ShopMailService::sendWithBcc(
+                            $order->customer->email,
+                            $shopAdminEmail,
+                            new \App\Mail\OrderConfirmed($order, session('locale') ?? app()->getLocale())
+                        );
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error('Errore invio email ordine (paypal): ' . $e->getMessage());
                     }

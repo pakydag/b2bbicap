@@ -413,10 +413,11 @@ class PublicController extends Controller
             'richiesta' => 'required|string',
         ]);
 
-        $recipient = config('mail.from.address');
+        $shopFrom = \App\Services\ShopMailService::getShopFrom();
+        $recipient = \App\Models\Setting::where('key', 'company_email_public')->value('value') ?: $shopFrom['address'];
         if ($recipient) {
             try {
-                \Illuminate\Support\Facades\Mail::to($recipient)->send(new \App\Mail\ContactRequestMail($validated));
+                \App\Services\ShopMailService::send($recipient, new \App\Mail\ContactRequestMail($validated));
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error("Failed to send contact request email: " . $e->getMessage());
             }

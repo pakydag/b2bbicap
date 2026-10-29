@@ -93,7 +93,7 @@ class PublicNewsletterController extends Controller
 
         // Invia email di richiesta conferma (Double Opt-In) - NESSUN coupon viene creato/inviato ora!
         try {
-            Mail::to($subscriber->email)->send(new NewsletterConfirmEmail($subscriber, $locale));
+            \App\Services\ShopMailService::send($subscriber->email, new NewsletterConfirmEmail($subscriber, $locale));
         } catch (\Exception $e) {
             Log::error('Errore durante invio email di conferma newsletter (' . $subscriber->email . '): ' . $e->getMessage());
         }
@@ -153,7 +153,7 @@ class PublicNewsletterController extends Controller
 
         // 3. Invia email di benvenuto con il coupon sconto
         try {
-            Mail::to($subscriber->email)->send(new NewsletterWelcome($subscriber, $coupon, $subscriber->locale));
+            \App\Services\ShopMailService::send($subscriber->email, new NewsletterWelcome($subscriber, $coupon, $subscriber->locale));
         } catch (\Exception $e) {
             Log::error('Errore invio email welcome newsletter (' . $subscriber->email . '): ' . $e->getMessage());
         }

@@ -68,9 +68,9 @@ class SettingController extends Controller
         ];
 
         $generalSettings = [
-            'site_domain', 'site_logo', 'site_favicon', 'mail_mailer', 'mail_host', 'mail_port', 
-            'mail_username', 'mail_password', 'mail_encryption', 
-            'mail_from_address', 'mail_from_name',
+            'site_domain', 'site_logo', 'site_favicon', 
+            'mail_mailer', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 'mail_from_address', 'mail_from_name',
+            'shop_mail_mailer', 'shop_mail_host', 'shop_mail_port', 'shop_mail_username', 'shop_mail_password', 'shop_mail_encryption', 'shop_mail_from_address', 'shop_mail_from_name',
             'vapi_key', 'vapi_assistant_id', 'spoki_key',
             'company_address', 'company_phone', 'company_email_public', 'company_vat',
             'social_facebook', 'social_instagram', 'social_linkedin', 'social_youtube',
@@ -89,6 +89,14 @@ class SettingController extends Controller
             'mail_encryption' => 'nullable|string',
             'mail_from_address' => 'nullable|email',
             'mail_from_name' => 'nullable|string',
+            'shop_mail_mailer' => 'nullable|string',
+            'shop_mail_host' => 'nullable|string',
+            'shop_mail_port' => 'nullable|string',
+            'shop_mail_username' => 'nullable|string',
+            'shop_mail_password' => 'nullable|string',
+            'shop_mail_encryption' => 'nullable|string',
+            'shop_mail_from_address' => 'nullable|email',
+            'shop_mail_from_name' => 'nullable|string',
             'stripe_key' => 'nullable|string',
             'stripe_secret' => 'nullable|string',
             'paypal_client_id' => 'nullable|string',
@@ -169,5 +177,62 @@ class SettingController extends Controller
         }
 
         return redirect()->route('admin.settings.edit')->with('success', 'Configurazione aggiornata con successo.');
+    }
+
+    /**
+     * Invia un'email di prova per testare la connessione SMTP (B2B o Shop).
+     */
+    public function sendTestEmail(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'type'  => 'required|in:b2b,shop',
+        ]);
+
+        $recipient = $request->input('email');
+        $type = $request->input('type');
+        $isShop = ($type === 'shop');
+
+        try {
+            $settings = Setting::pluck('value', 'key')->toArray();
+
+            if ($isShop) {
+                $host = !empty($settings['shop_mail_host']) ? $settings['shop_mail_host'] : ($settings['mail_host'] ?? config('mail.mailers.smtp.host'));
+                $from = \App\Services\ShopMailService::getShopFrom();
+
+                $mailable = new \App\Mail\TestEmail(
+                    type: 'Sito Web & Shop Online',
+                    serverHost: $host,
+                    fromEmail: $from['address'],
+                    fromName: $from['name']
+                );
+
+                \App\Services\ShopMailService::send($recipient, $mailable);
+            } else {
+                $host = !empty($settings['mail_host']) ? $settings['mail_host'] : config('mail.mailers.smtp.host');
+                $fromAddress = !empty($settings['mail_from_address']) ? $settings['mail_from_address'] : config('mail.from.address');
+                $fromName = !empty($settings['mail_from_name']) ? $settings['mail_from_name'] : (config('mail.from.name') ?? 'Calzaturificio 5b');
+
+                $mailable = new \App\Mail\TestEmail(
+                    type: 'Portale B2B & Agenti',
+                    serverHost: $host,
+                    fromEmail: $fromAddress,
+                    fromName: $fromName
+                );
+
+                \Illuminate\Support\Facades\Mail::to($recipient)->send($mailable);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Email di prova inviata con successo a {$recipient} tramite il server {$host}!"
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Errore test email ($type): " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => "Errore di connessione o autenticazione SMTP: " . $e->getMessage()
+            ], 422);
+        }
     }
 }

@@ -48,8 +48,7 @@ class ShopOrderController extends Controller
             $customerEmail = $ordine->customer?->email ?? $ordine->contact?->email;
             if ($customerEmail) {
                 try {
-                    \Illuminate\Support\Facades\Mail::to($customerEmail)
-                        ->send(new \App\Mail\OrderShipped($ordine));
+                    \App\Services\ShopMailService::send($customerEmail, new \App\Mail\OrderShipped($ordine));
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('Errore invio email spedizione: ' . $e->getMessage());
                 }
@@ -59,8 +58,7 @@ class ShopOrderController extends Controller
             $customerEmail = $ordine->customer?->email ?? $ordine->contact?->email;
             if ($customerEmail) {
                 try {
-                    \Illuminate\Support\Facades\Mail::to($customerEmail)
-                        ->send(new \App\Mail\OrderStatusChanged($ordine));
+                    \App\Services\ShopMailService::send($customerEmail, new \App\Mail\OrderStatusChanged($ordine));
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('Errore invio email cambio stato: ' . $e->getMessage());
                 }

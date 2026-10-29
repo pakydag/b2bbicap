@@ -183,6 +183,7 @@ Route::middleware(['auth', 'admin'])->prefix('amministrazione')->name('admin.')-
     // Configurazione Sito
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('settings.edit');
     Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings/test-email', [\App\Http\Controllers\Admin\SettingController::class, 'sendTestEmail'])->name('settings.test_email');
     Route::post('/settings/sitemap', function () {
         \Illuminate\Support\Facades\Artisan::call('sitemap:generate');
         return redirect()->back()->with('success', 'Sitemap rigenerata con successo! ' . \Illuminate\Support\Facades\Artisan::output());
