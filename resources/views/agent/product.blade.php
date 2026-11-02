@@ -526,7 +526,7 @@
                     $inputIndex = 0;
                 @endphp
 
-                <form action="{{ route('agent.cart.add') }}" method="POST" class="variant-form-container">
+                <form action="{{ route('agent.cart.add') }}" method="POST" class="variant-form-container" data-loading-type="cart">
                     @csrf
 
                     @php
@@ -730,19 +730,33 @@
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = document.querySelectorAll('.qty-input');
             const display = document.getElementById('total-qty-display');
+            const form = document.querySelector('.variant-form-container');
             
             const updateTotal = () => {
                 let total = 0;
                 inputs.forEach(input => {
                     total += parseInt(input.value) || 0;
                 });
-                display.innerText = total;
+                if (display) display.innerText = total;
+                return total;
             };
 
             inputs.forEach(input => {
                 input.addEventListener('input', updateTotal);
                 input.addEventListener('change', updateTotal);
             });
+
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const total = updateTotal();
+                    if (total <= 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('{{ $isEn ? "Please select at least 1 piece before adding to cart." : "Seleziona almeno un articolo inserendo la quantità desiderata prima di aggiungere al carrello." }}');
+                        return false;
+                    }
+                });
+            }
         });
     </script>
     @endpush

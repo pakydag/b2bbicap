@@ -293,7 +293,7 @@
                 </div>
 
                 <!-- Size & Quantity Selectors and Add to Cart Form -->
-                <form action="{{ route('public.shop.cart.add') }}" method="POST" class="pt-1 space-y-4">
+                <form action="{{ route('public.shop.cart.add') }}" method="POST" class="pt-1 space-y-4" data-loading-type="cart">
                     @csrf
                     <input type="hidden" name="b2b_product_id" value="{{ $product->id }}">
 

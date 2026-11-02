@@ -440,6 +440,7 @@
             }).catch(() => {});
         }, 120000);
     </script>
+    <x-loading-overlay />
     @stack('scripts')
 </body>
 </html>

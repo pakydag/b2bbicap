@@ -799,6 +799,8 @@
         <x-accessibility-widget />
     @endif
 
+    <x-loading-overlay />
+
     @stack('scripts')
 
     <!-- Cookie Consent Banner (BOTTOM) -->

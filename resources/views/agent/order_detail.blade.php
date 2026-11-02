@@ -138,7 +138,7 @@
                             </button>
                         </form>
 
-                        <form action="{{ route('agent.orders.confirm', $order) }}" method="POST" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <form action="{{ route('agent.orders.confirm', $order) }}" method="POST" data-loading-type="confirmOrder" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                             @csrf
                             <label class="inline-flex items-center gap-2 cursor-pointer select-none bg-emerald-50/70 border border-emerald-200/80 px-3.5 py-2.5 rounded-xl hover:bg-emerald-100/70 transition">
                                 <input type="checkbox" name="send_email_to_customer" value="1" checked class="w-4 h-4 text-emerald-600 bg-white border-gray-300 rounded focus:ring-emerald-500 focus:ring-2 cursor-pointer">

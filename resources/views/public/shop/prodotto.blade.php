@@ -92,7 +92,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('public.shop.cart.add') }}" method="POST" class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <form action="{{ route('public.shop.cart.add') }}" method="POST" data-loading-type="cart" class="bg-gray-50 border border-gray-200 rounded-lg p-6">
                     @csrf
                     <input type="hidden" name="variant_id" :value="selectedVariantId">
                     

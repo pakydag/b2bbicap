@@ -152,7 +152,7 @@
                 @endguest
 
                 <!-- Form Principale Checkout -->
-                <form action="{{ route('public.shop.cart.process') }}" method="POST" class="space-y-8" id="checkout-form">
+                <form action="{{ route('public.shop.cart.process') }}" method="POST" class="space-y-8" id="checkout-form" data-loading-type="order">
                     @csrf
                     
                     <input type="hidden" name="checkout_mode" :value="checkoutMode">

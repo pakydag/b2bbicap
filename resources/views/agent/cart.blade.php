@@ -189,7 +189,7 @@
                                     <p class="font-black text-indigo-900 uppercase">{{ auth()->user()->b2bCustomer->business_name }}</p>
                                     <p class="text-[10px] text-gray-500 font-bold mt-1">VAT/P.IVA: {{ auth()->user()->b2bCustomer->vat_number ?? 'N/D' }}</p>
                                 </div>
-                                <form action="{{ route('agent.process_checkout') }}" method="POST" id="checkout-form">
+                                <form action="{{ route('agent.process_checkout') }}" method="POST" id="checkout-form" data-loading-type="order">
                                     @csrf
                                     <div class="space-y-6">
                             @else
@@ -312,7 +312,7 @@
                                     </div>
                                 </div>
                                 
-                                <form action="{{ route('agent.process_checkout') }}" method="POST" id="checkout-form">
+                                <form action="{{ route('agent.process_checkout') }}" method="POST" id="checkout-form" data-loading-type="order">
                                     @csrf
                                     <input type="hidden" name="b2b_customer_id" value="{{ $customer ? $customer->id : '' }}">
                                     <div class="space-y-6">
